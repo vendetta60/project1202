@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
     Box,
     Paper,
@@ -12,37 +12,18 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    TextField,
-    Button,
-    IconButton,
-    Tooltip,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Alert,
 } from '@mui/material';
-import {
-    Add as AddIcon,
-    Edit as EditIcon,
-    Delete as DeleteIcon,
-} from '@mui/icons-material';
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import {
-    getMilitaryUnits,
-    createMilitaryUnit,
-    updateMilitaryUnit,
-    deleteMilitaryUnit,
-} from '../../api/militaryUnits';
-import {
-    getAppealTypes,
-    createAppealType,
-    updateAppealType,
-    deleteAppealType,
-} from '../../api/appealTypes';
-import type { MilitaryUnit } from '../../api/militaryUnits';
-import type { AppealType } from '../../api/appealTypes';
+    getDepartments,
+    getRegions,
+    getApStatuses,
+    getApIndexes,
+    getChiefInstructions,
+    getInSections,
+    getWhoControls,
+} from '../../api/lookups';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -59,261 +40,54 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
-// ─── Generic CRUD Table ────────────────────────────────────────────────
-interface CrudTableProps<T extends { id: number; name: string }> {
-    title: string;
-    queryKey: string;
-    items: T[] | undefined;
-    isLoading: boolean;
-    onAdd: (name: string) => Promise<void>;
-    onUpdate: (id: number, name: string) => Promise<void>;
-    onDelete: (id: number) => Promise<void>;
-}
-
-function CrudTable<T extends { id: number; name: string }>({
-    title,
-    items,
-    isLoading,
-    onAdd,
-    onUpdate,
-    onDelete,
-}: CrudTableProps<T>) {
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [editItem, setEditItem] = useState<T | null>(null);
-    const [deleteItem, setDeleteItem] = useState<T | null>(null);
-    const [name, setName] = useState('');
-    const [error, setError] = useState('');
-    const [saving, setSaving] = useState(false);
-
-    const handleOpenAdd = () => {
-        setEditItem(null);
-        setName('');
-        setError('');
-        setDialogOpen(true);
-    };
-
-    const handleOpenEdit = (item: T) => {
-        setEditItem(item);
-        setName(item.name);
-        setError('');
-        setDialogOpen(true);
-    };
-
-    const handleOpenDelete = (item: T) => {
-        setDeleteItem(item);
-        setDeleteDialogOpen(true);
-    };
-
-    const handleSave = async () => {
-        if (!name.trim()) {
-            setError('Ad boş ola bilməz');
-            return;
-        }
-        setSaving(true);
-        try {
-            if (editItem) {
-                await onUpdate(editItem.id, name.trim());
-            } else {
-                await onAdd(name.trim());
-            }
-            setDialogOpen(false);
-        } catch (err: any) {
-            const msg =
-                err?.response?.data?.detail || 'Xəta baş verdi';
-            setError(msg);
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleConfirmDelete = async () => {
-        if (!deleteItem) return;
-        try {
-            await onDelete(deleteItem.id);
-            setDeleteDialogOpen(false);
-            setDeleteItem(null);
-        } catch {
-            // silent
-        }
-    };
-
-    if (isLoading) return <LoadingSpinner />;
-
+// Simple Read-Only Table
+function SimpleTable({ items, columns }: { items: any[] | undefined, columns: { id: string, label: string }[] }) {
+    if (!items || items.length === 0) {
+        return <Typography color="text.secondary" sx={{ py: 2 }}>Məlumat yoxdur</Typography>;
+    }
     return (
-        <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="subtitle1" fontWeight={600} color="#374151">
-                    {title} ({items?.length || 0})
-                </Typography>
-                <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<AddIcon />}
-                    onClick={handleOpenAdd}
-                    sx={{
-                        bgcolor: '#1976d2',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        '&:hover': { bgcolor: '#1565c0' },
-                    }}
-                >
-                    Əlavə et
-                </Button>
-            </Box>
-
-            <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-                <TableContainer sx={{ bgcolor: 'white' }}>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow sx={{ bgcolor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                                <TableCell sx={{ fontWeight: 600, color: '#374151', width: 60 }}>#</TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Ad</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 600, color: '#374151', width: 120 }}>
-                                    Əməliyyatlar
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {items?.map((item, idx) => (
-                                <TableRow
-                                    key={item.id}
-                                    hover
-                                    sx={{ borderBottom: '1px solid #e5e7eb', '&:hover': { bgcolor: '#f9fafb' } }}
-                                >
-                                    <TableCell sx={{ color: '#6b7280' }}>{idx + 1}</TableCell>
-                                    <TableCell>{item.name}</TableCell>
-                                    <TableCell align="right">
-                                        <Tooltip title="Redaktə et">
-                                            <IconButton size="small" onClick={() => handleOpenEdit(item)}>
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title="Sil">
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => handleOpenDelete(item)}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </TableCell>
-                                </TableRow>
+        <TableContainer sx={{ bgcolor: 'white', border: '1px solid #e5e7eb' }}>
+            <Table size="small">
+                <TableHead>
+                    <TableRow sx={{ bgcolor: '#f3f4f6' }}>
+                        {columns.map(col => (
+                            <TableCell key={col.id} sx={{ fontWeight: 600 }}>{col.label}</TableCell>
+                        ))}
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {items.map((item, idx) => (
+                        <TableRow key={idx} hover>
+                            {columns.map(col => (
+                                <TableCell key={col.id}>{item[col.id]}</TableCell>
                             ))}
-                            {(!items || items.length === 0) && (
-                                <TableRow>
-                                    <TableCell colSpan={3} align="center">
-                                        <Typography color="text.secondary" sx={{ py: 3 }}>
-                                            Məlumat yoxdur
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Paper>
-
-            {/* Add/Edit Dialog */}
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>{editItem ? 'Redaktə et' : 'Yeni əlavə et'}</DialogTitle>
-                <DialogContent>
-                    {error && (
-                        <Alert severity="error" sx={{ mb: 2, mt: 1 }}>
-                            {error}
-                        </Alert>
-                    )}
-                    <TextField
-                        fullWidth
-                        label="Ad"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        margin="normal"
-                        autoFocus
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSave();
-                        }}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDialogOpen(false)}>Ləğv et</Button>
-                    <Button variant="contained" onClick={handleSave} disabled={saving}>
-                        {editItem ? 'Yenilə' : 'Əlavə et'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                <DialogTitle>Silmek istədiyinizdən əminsiniz?</DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        <strong>{deleteItem?.name}</strong> silinəcək. Bu əməliyyat geri qaytarıla bilməz.
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Ləğv et</Button>
-                    <Button variant="contained" color="error" onClick={handleConfirmDelete}>
-                        Sil
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
     );
 }
 
-// ─── Main Parameters Page ──────────────────────────────────────────────
 export default function Parameters() {
     const [tab, setTab] = useState(0);
-    const queryClient = useQueryClient();
 
-    // Military Units
-    const { data: militaryUnits, isLoading: muLoading } = useQuery({
-        queryKey: ['militaryUnits'],
-        queryFn: getMilitaryUnits,
-    });
-
-    // Appeal Types
-    const { data: appealTypes, isLoading: atLoading } = useQuery({
-        queryKey: ['appealTypes'],
-        queryFn: getAppealTypes,
-    });
-
-    const handleAddMU = async (name: string) => {
-        await createMilitaryUnit({ name });
-        queryClient.invalidateQueries({ queryKey: ['militaryUnits'] });
-    };
-    const handleUpdateMU = async (id: number, name: string) => {
-        await updateMilitaryUnit(id, { name });
-        queryClient.invalidateQueries({ queryKey: ['militaryUnits'] });
-    };
-    const handleDeleteMU = async (id: number) => {
-        await deleteMilitaryUnit(id);
-        queryClient.invalidateQueries({ queryKey: ['militaryUnits'] });
-    };
-
-    const handleAddAT = async (name: string) => {
-        await createAppealType({ name });
-        queryClient.invalidateQueries({ queryKey: ['appealTypes'] });
-    };
-    const handleUpdateAT = async (id: number, name: string) => {
-        await updateAppealType(id, { name });
-        queryClient.invalidateQueries({ queryKey: ['appealTypes'] });
-    };
-    const handleDeleteAT = async (id: number) => {
-        await deleteAppealType(id);
-        queryClient.invalidateQueries({ queryKey: ['appealTypes'] });
-    };
+    const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: getDepartments });
+    const { data: regions } = useQuery({ queryKey: ['regions'], queryFn: getRegions });
+    const { data: statuses } = useQuery({ queryKey: ['apStatuses'], queryFn: getApStatuses });
+    const { data: indexes } = useQuery({ queryKey: ['apIndexes'], queryFn: getApIndexes });
+    const { data: instructions } = useQuery({ queryKey: ['chiefInstructions'], queryFn: getChiefInstructions });
+    const { data: inSections } = useQuery({ queryKey: ['inSections'], queryFn: getInSections });
+    const { data: whoControls } = useQuery({ queryKey: ['whoControls'], queryFn: getWhoControls });
 
     return (
         <Layout>
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h5" component="h1" gutterBottom fontWeight="bold" sx={{ color: '#1f2937' }}>
-                    Parametrlər
+                    Parametrlər (Məlumat Kitabçaları)
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Sistemdəki parametrləri idarə edin (hərbi hissələr, müraciət növləri və s.)
+                    Sistemdəki soraqçaların siyahısı (Oxunur rejimdə)
                 </Typography>
             </Box>
 
@@ -321,39 +95,61 @@ export default function Parameters() {
                 <Tabs
                     value={tab}
                     onChange={(_, v) => setTab(v)}
-                    sx={{
-                        borderBottom: '1px solid #e5e7eb',
-                        px: 2,
-                        '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 },
-                    }}
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    sx={{ borderBottom: '1px solid #e5e7eb' }}
                 >
-                    <Tab label="Hərbi Hissələr" />
-                    <Tab label="Müraciət Növləri" />
+                    <Tab label="İdarələr" />
+                    <Tab label="Regionlar" />
+                    <Tab label="Statuslar" />
+                    <Tab label="İndekslər" />
+                    <Tab label="Rəhbər Göstərişləri" />
+                    <Tab label="Daxili Şöbələr" />
+                    <Tab label="Nəzarətçilər" />
                 </Tabs>
 
                 <Box sx={{ p: 3 }}>
                     <TabPanel value={tab} index={0}>
-                        <CrudTable<MilitaryUnit>
-                            title="Hərbi Hissələr"
-                            queryKey="militaryUnits"
-                            items={militaryUnits}
-                            isLoading={muLoading}
-                            onAdd={handleAddMU}
-                            onUpdate={handleUpdateMU}
-                            onDelete={handleDeleteMU}
-                        />
+                        <SimpleTable items={departments} columns={[
+                            { id: 'id', label: 'ID' },
+                            { id: 'department', label: 'İdarə Adı' }
+                        ]} />
                     </TabPanel>
-
                     <TabPanel value={tab} index={1}>
-                        <CrudTable<AppealType>
-                            title="Müraciət Növləri"
-                            queryKey="appealTypes"
-                            items={appealTypes}
-                            isLoading={atLoading}
-                            onAdd={handleAddAT}
-                            onUpdate={handleUpdateAT}
-                            onDelete={handleDeleteAT}
-                        />
+                        <SimpleTable items={regions} columns={[
+                            { id: 'id', label: 'ID' },
+                            { id: 'region', label: 'Region Adı' }
+                        ]} />
+                    </TabPanel>
+                    <TabPanel value={tab} index={2}>
+                        <SimpleTable items={statuses} columns={[
+                            { id: 'id', label: 'ID' },
+                            { id: 'status', label: 'Status' }
+                        ]} />
+                    </TabPanel>
+                    <TabPanel value={tab} index={3}>
+                        <SimpleTable items={indexes} columns={[
+                            { id: 'id', label: 'ID' },
+                            { id: 'ap_index', label: 'İndeks' }
+                        ]} />
+                    </TabPanel>
+                    <TabPanel value={tab} index={4}>
+                        <SimpleTable items={instructions} columns={[
+                            { id: 'id', label: 'ID' },
+                            { id: 'instructions', label: 'Göstəriş' }
+                        ]} />
+                    </TabPanel>
+                    <TabPanel value={tab} index={5}>
+                        <SimpleTable items={inSections} columns={[
+                            { id: 'id', label: 'ID' },
+                            { id: 'section', label: 'Şöbə' }
+                        ]} />
+                    </TabPanel>
+                    <TabPanel value={tab} index={6}>
+                        <SimpleTable items={whoControls} columns={[
+                            { id: 'id', label: 'ID' },
+                            { id: 'chief', label: 'Nəzarətçi' }
+                        ]} />
                     </TabPanel>
                 </Box>
             </Paper>

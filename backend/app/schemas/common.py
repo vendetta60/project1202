@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict
 
 
@@ -8,6 +6,4 @@ class ORMBase(BaseModel):
 
 
 class Timestamped(ORMBase):
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-
+    pass

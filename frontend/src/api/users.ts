@@ -1,33 +1,15 @@
 import apiClient from './client';
-import type { Role } from './roles';
+import type { User } from './auth';
 
-export interface User {
-    id: number;
-    username: string;
-    full_name: string | null;
-    is_active: boolean;
-    is_admin: boolean;
-    org_unit_id: number | null;
-    org_unit?: {
-        id: number;
-        name: string;
-        code: string;
-    };
-    roles: Role[];
-}
+// Re-export User from auth to keep it consistent
+export type { User };
 
 export interface UserCreate {
     username: string;
     password: string;
-    full_name?: string;
-    org_unit_id?: number;
-    is_admin?: boolean;
-}
-
-export interface UserUpdate {
-    full_name?: string;
-    org_unit_id?: number;
-    is_admin?: boolean;
+    surname?: string;
+    name?: string;
+    section_id?: number;
 }
 
 export interface UserListResponse {
@@ -55,29 +37,5 @@ export const getUser = async (id: number): Promise<User> => {
 
 export const createUser = async (data: UserCreate): Promise<User> => {
     const response = await apiClient.post('/users', data);
-    return response.data;
-};
-
-export const updateUser = async (id: number, data: UserUpdate): Promise<User> => {
-    const response = await apiClient.patch(`/users/${id}`, data);
-    return response.data;
-};
-
-export const toggleUserActive = async (id: number): Promise<User> => {
-    const response = await apiClient.patch(`/users/${id}/toggle-active`);
-    return response.data;
-};
-
-export const resetUserPassword = async (id: number, newPassword: string): Promise<User> => {
-    const response = await apiClient.post(`/users/${id}/reset-password`, {
-        new_password: newPassword,
-    });
-    return response.data;
-};
-
-export const assignUserRoles = async (userId: number, roleIds: number[]): Promise<User> => {
-    const response = await apiClient.post(`/users/${userId}/roles`, {
-        role_ids: roleIds,
-    });
     return response.data;
 };

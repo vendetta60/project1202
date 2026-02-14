@@ -23,7 +23,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import { getAppeals } from '../api/appeals';
-import { getOrgUnits } from '../api/orgUnits';
+import { getDepartments, getApStatuses, getRegions } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -32,7 +32,11 @@ export default function AppealsList() {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
-  const [orgUnitFilter, setOrgUnitFilter] = useState<number | ''>('');
+
+  // Filters
+  const [depFilter, setDepFilter] = useState<number | ''>('');
+  const [regionFilter, setRegionFilter] = useState<number | ''>('');
+  const [statusFilter, setStatusFilter] = useState<number | ''>('');
   const [search, setSearch] = useState('');
 
   const { data: user } = useQuery({
@@ -40,19 +44,31 @@ export default function AppealsList() {
     queryFn: getCurrentUser,
   });
 
-  const { data: orgUnits } = useQuery({
-    queryKey: ['orgUnits'],
-    queryFn: getOrgUnits,
-    enabled: user?.is_admin,
+  // Lookups
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: getDepartments,
+  });
+
+  const { data: statuses } = useQuery({
+    queryKey: ['apStatuses'],
+    queryFn: getApStatuses,
+  });
+
+  const { data: regions } = useQuery({
+    queryKey: ['regions'],
+    queryFn: getRegions,
   });
 
   const { data: appealsData, isLoading } = useQuery({
-    queryKey: ['appeals', page, rowsPerPage, orgUnitFilter, search],
+    queryKey: ['appeals', page, rowsPerPage, depFilter, regionFilter, statusFilter, search],
     queryFn: () =>
       getAppeals({
         limit: rowsPerPage,
         offset: page * rowsPerPage,
-        org_unit_id: orgUnitFilter || undefined,
+        dep_id: depFilter || undefined,
+        region_id: regionFilter || undefined,
+        status: statusFilter || undefined,
         q: search || undefined,
       }),
   });
@@ -66,17 +82,32 @@ export default function AppealsList() {
     setPage(0);
   };
 
-  const statusLabel = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Gözləyir';
-      case 'in_progress':
-        return 'İcradadır';
-      case 'completed':
-        return 'İcra olundu';
-      default:
-        return status;
-    }
+  const getStatusName = (statusId?: number) => {
+    if (!statusId) return '-';
+    // Statuses in DB might be different from IDs, but typically we map ID to name
+    // The lookups API returns { id, status }
+    return statuses?.find(s => s.id === statusId)?.status || statusId;
+  };
+
+  const getDepName = (depId?: number) => {
+    if (!depId) return '-';
+    return departments?.find(d => d.id === depId)?.department || depId;
+  };
+
+  const getRegionName = (regionId?: number) => {
+    if (!regionId) return '-';
+    return regions?.find(r => r.id === regionId)?.region || regionId;
+  };
+
+  // Helper for status colors - logic might need adjustment based on actual status IDs/Names
+  const getStatusColor = (statusId?: number) => {
+    // Example logic - adjust based on real data
+    // Assuming 1=Yeni/Pending, 2=İcrada, 3=Tamamlanıb etc.
+    // Use names for safe fallback if IDs are unknown or unstable
+    const name = getStatusName(statusId).toString().toLowerCase();
+    if (name.includes('icra') && name.includes('olun')) return { bg: '#d1fae5', text: '#065f46' }; // Completed
+    if (name.includes('icra')) return { bg: '#fef3c7', text: '#92400e' }; // In progress
+    return { bg: '#e0e7ff', text: '#3730a3' }; // Pending/Other
   };
 
   if (isLoading) {
@@ -89,155 +120,183 @@ export default function AppealsList() {
 
   return (
     <Layout>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" component="h1" fontWeight="bold" sx={{ color: '#1f2937' }}>
-          Müraciətlər
+      <Box sx={{ mb: 4 }} className="animate-fade-in">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h4" component="h1" fontWeight="900" color="primary">
+            Müraciətlər
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/appeals/new')}
+            sx={{
+              bgcolor: '#3e4a21',
+              px: 3,
+              '&:hover': { bgcolor: '#2c3518' },
+            }}
+          >
+            Yeni Müraciət Daxil Et
+          </Button>
+        </Box>
+        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
+          Sistemdəki bütün müraciətlərin siyahısı və idarəedilməsi
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/appeals/new')}
-          sx={{
-            bgcolor: '#1976d2',
-            color: 'white',
-            textTransform: 'none',
-            fontWeight: 600,
-            '&:hover': {
-              bgcolor: '#1565c0',
-            },
-          }}
-        >
-          Yeni Müraciət
-        </Button>
       </Box>
 
-      <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+      <Paper
+        className="animate-fade-in glass-card"
+        sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)' }}
+      >
+        <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
-            placeholder="Qeydiyyat № və ya mövzu ilə axtar..."
+            placeholder="Axtarış (№, məzmun, vətəndaş)..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(0);
             }}
             size="small"
-            sx={{ maxWidth: 400, bgcolor: 'white' }}
+            sx={{ flexGrow: 1, minWidth: 300 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
+                  <SearchIcon color="primary" />
                 </InputAdornment>
               ),
+              sx: { bgcolor: 'white', borderRadius: 2 }
             }}
           />
 
-          {user?.is_admin && (
-            <FormControl sx={{ minWidth: 250 }}>
-              <InputLabel>İdarə</InputLabel>
-              <Select
-                value={orgUnitFilter}
-                label="İdarə"
-                onChange={(e) => {
-                  setOrgUnitFilter(e.target.value as number | '');
-                  setPage(0);
-                }}
-                size="small"
-              >
-                <MenuItem value="">Hamısı</MenuItem>
-                {orgUnits?.map((unit) => (
-                  <MenuItem key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
+          <FormControl sx={{ minWidth: 200 }} size="small">
+            <InputLabel>İdarə</InputLabel>
+            <Select
+              value={depFilter}
+              label="İdarə"
+              onChange={(e) => {
+                setDepFilter(e.target.value as number | '');
+                setPage(0);
+              }}
+              sx={{ bgcolor: 'white', borderRadius: 2 }}
+            >
+              <MenuItem value="">Hamısı</MenuItem>
+              {departments?.map((dep) => (
+                <MenuItem key={dep.id} value={dep.id}>
+                  {dep.department}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 150 }} size="small">
+            <InputLabel>Region</InputLabel>
+            <Select
+              value={regionFilter}
+              label="Region"
+              onChange={(e) => {
+                setRegionFilter(e.target.value as number | '');
+                setPage(0);
+              }}
+              sx={{ bgcolor: 'white', borderRadius: 2 }}
+            >
+              <MenuItem value="">Hamısı</MenuItem>
+              {regions?.map((reg) => (
+                <MenuItem key={reg.id} value={reg.id}>
+                  {reg.region}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 150 }} size="small">
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Status"
+              onChange={(e) => {
+                setStatusFilter(e.target.value as number | '');
+                setPage(0);
+              }}
+              sx={{ bgcolor: 'white', borderRadius: 2 }}
+            >
+              <MenuItem value="">Hamısı</MenuItem>
+              {statuses?.map((st) => (
+                <MenuItem key={st.id} value={st.id}>
+                  {st.status}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </Paper>
 
-      <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-        <TableContainer sx={{ bgcolor: 'white' }}>
+      <Paper
+        className="animate-slide-up glass-card"
+        sx={{ borderRadius: 4, overflow: 'hidden' }}
+      >
+        <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Qeydiyyat №</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Mövzu</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Vətəndaş</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İdarə</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İcra şöbəsi</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İcraçı</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Daxil</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İcra</TableCell>
+              <TableRow>
+                <TableCell className="military-table-header">Qeydiyyat №</TableCell>
+                <TableCell className="military-table-header">Vətəndaş</TableCell>
+                <TableCell className="military-table-header">Region</TableCell>
+                <TableCell className="military-table-header">İdarə</TableCell>
+                <TableCell className="military-table-header" sx={{ maxWidth: 300 }}>Məzmun</TableCell>
+                <TableCell className="military-table-header">Status</TableCell>
+                <TableCell className="military-table-header">Tarix</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {appealsData?.items && appealsData.items.length > 0 ? (
-                appealsData.items.map((appeal) => (
-                  <TableRow
-                    key={appeal.id}
-                    hover
-                    sx={{
-                      cursor: 'pointer',
-                      '&:hover': {
-                        bgcolor: '#f9fafb',
-                      },
-                      borderBottom: '1px solid #e5e7eb',
-                    }}
-                    onClick={() => navigate(`/appeals/${appeal.id}`)}
-                  >
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{appeal.reg_no}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{appeal.subject}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                      {appeal.citizen
-                        ? `${appeal.citizen.first_name} ${appeal.citizen.last_name}`
-                        : '-'}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{appeal.org_unit?.name || '-'}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                      {appeal.executor_org_unit?.name || '-'}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{appeal.executor?.full_name || '-'}</TableCell>
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: 'inline-block',
-                          px: 2,
-                          py: 0.5,
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          bgcolor:
-                            appeal.status === 'completed'
-                              ? '#d1fae5'
-                              : appeal.status === 'in_progress'
-                                ? '#fef3c7'
-                                : '#e0e7ff',
-                          color:
-                            appeal.status === 'completed'
-                              ? '#065f46'
-                              : appeal.status === 'in_progress'
-                                ? '#92400e'
-                                : '#3730a3',
-                        }}
-                      >
-                        {statusLabel(appeal.status)}
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                      {new Date(appeal.received_at || appeal.created_at).toLocaleDateString('az-AZ')}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                      {appeal.execution_date
-                        ? new Date(appeal.execution_date).toLocaleDateString('az-AZ')
-                        : '-'}
-                    </TableCell>
-                  </TableRow>
-                ))
+                appealsData.items.map((appeal) => {
+                  const statusColor = getStatusColor(appeal.status);
+                  return (
+                    <TableRow
+                      key={appeal.id}
+                      hover
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.05)' },
+                        '& td': { py: 2.5, fontSize: '0.875rem', fontWeight: 500 }
+                      }}
+                      onClick={() => navigate(`/appeals/${appeal.id}`)}
+                    >
+                      <TableCell sx={{ fontWeight: 800, color: '#3e4a21' }}>{appeal.reg_num || '-'}</TableCell>
+                      <TableCell>{appeal.person || '-'}</TableCell>
+                      <TableCell>{getRegionName(appeal.region_id as any)}</TableCell>
+                      <TableCell>{getDepName(appeal.dep_id as any)}</TableCell>
+                      <TableCell sx={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {appeal.content || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: 'inline-block',
+                            px: 2,
+                            py: 0.75,
+                            borderRadius: '20px',
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            bgcolor: statusColor.bg,
+                            color: statusColor.text,
+                            border: `1px solid ${statusColor.text}30`
+                          }}
+                        >
+                          {getStatusName(appeal.status as any)}
+                        </Box>
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>
+                        {appeal.reg_date ? new Date(appeal.reg_date).toLocaleDateString('az-AZ') : '-'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">Müraciət tapılmadı</Typography>
+                  <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 600 }}>Axtarışa uyğun müraciət tapılmadı</Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -252,13 +311,14 @@ export default function AppealsList() {
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage="Səhifə başına:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
           sx={{
-            bgcolor: '#f9fafb',
-            borderTop: '1px solid #e5e7eb',
-            '& .MuiTablePagination-root': {
-              color: '#374151',
-            },
+            bgcolor: 'rgba(62, 74, 33, 0.03)',
+            borderTop: '1px solid rgba(0,0,0,0.05)',
+            '& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              color: '#3e4a21'
+            }
           }}
         />
       </Paper>

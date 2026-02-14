@@ -1,26 +1,30 @@
 from pydantic import BaseModel
 from app.schemas.common import ORMBase
-from app.schemas.org_unit import OrgUnitOut
-from app.schemas.role import RoleOut
 
 
 class UserCreate(ORMBase):
+    surname: str | None = None
+    name: str | None = None
     username: str
     password: str
-    full_name: str | None = None
-    org_unit_id: int | None = None
-    is_admin: bool = False
+    section_id: int | None = None
 
 
 class UserOut(ORMBase):
     id: int
-    username: str
+    surname: str | None = None
+    name: str | None = None
+    username: str | None = None
     full_name: str | None = None
-    is_active: bool
-    is_admin: bool
-    org_unit_id: int | None = None
-    org_unit: OrgUnitOut | None = None
-    roles: list[RoleOut] = []
+    section_id: int | None = None
+    is_admin: bool = False
+    is_active: bool = True
+    # Tab permissions
+    tab1: bool | None = None
+    tab2: bool | None = None
+    tab3: bool | None = None
+    tab4: bool | None = None
+    tab5: bool | None = None
 
 
 class UsersListResponse(BaseModel):
@@ -33,4 +37,3 @@ class UsersListResponse(BaseModel):
 class TokenOut(ORMBase):
     access_token: str
     token_type: str = "bearer"
-    

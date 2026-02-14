@@ -13,14 +13,19 @@ export interface LoginResponse {
 export interface User {
   id: number;
   username: string;
-  full_name: string;
+  surname?: string;
+  name?: string;
+  full_name?: string; // computed
+  section_id?: number;
   is_admin: boolean;
-  org_unit_id?: number;
-  org_unit?: {
-    id: number;
-    name: string;
-    code: string;
-  };
+  is_active: boolean;
+
+  // Tab permissions
+  tab1?: boolean; // Admin
+  tab2?: boolean;
+  tab3?: boolean;
+  tab4?: boolean;
+  tab5?: boolean;
 }
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {

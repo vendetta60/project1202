@@ -1,26 +1,50 @@
+"""
+Maps to MSSQL tables: Direction, ExecutorList, Executors
+"""
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import DateTime, Integer, SmallInteger, String, Boolean
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
 
+class Direction(Base):
+    """İstiqamətlər"""
+    __tablename__ = "Direction"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    direction: Mapped[str | None] = mapped_column(String(50))
+    IsDeleted: Mapped[bool | None] = mapped_column(Boolean)
+    section_id: Mapped[int | None] = mapped_column(Integer)
+
+
+class ExecutorList(Base):
+    """İcraçılar siyahısı"""
+    __tablename__ = "ExecutorList"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    direction_id: Mapped[int | None] = mapped_column(Integer)
+    executor: Mapped[str | None] = mapped_column(String(50))
+    IsDeleted: Mapped[bool | None] = mapped_column(Boolean)
+
+
 class Executor(Base):
-    """
-    Person to whom an appeal is assigned for execution, bound to a specific org unit (şöbə).
-    """
+    """Appeal-a bağlı icraçılar"""
+    __tablename__ = "Executors"
 
-    __tablename__ = "executors"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    full_name: Mapped[str] = mapped_column(String(255))
-
-    org_unit_id: Mapped[int] = mapped_column(ForeignKey("org_units.id"), index=True)
-    org_unit = relationship("OrgUnit")
-
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    appeal_id: Mapped[int | None] = mapped_column(Integer)
+    direction_id: Mapped[int | None] = mapped_column(Integer)
+    executor_id: Mapped[int | None] = mapped_column(Integer)
+    out_num: Mapped[str | None] = mapped_column(String(50))
+    out_date: Mapped[datetime | None] = mapped_column(DateTime)
+    attach_num: Mapped[str | None] = mapped_column(String(50))
+    attach_paper_num: Mapped[str | None] = mapped_column(String(50))
+    r_prefix: Mapped[int | None] = mapped_column(SmallInteger)
+    r_num: Mapped[int | None] = mapped_column(Integer)
+    r_date: Mapped[datetime | None] = mapped_column(DateTime)
+    posted_sec: Mapped[str | None] = mapped_column(String(300))
+    active: Mapped[bool | None] = mapped_column(Boolean)
+    PC: Mapped[str | None] = mapped_column(String(35))
+    PC_Tarixi: Mapped[datetime | None] = mapped_column(DateTime)

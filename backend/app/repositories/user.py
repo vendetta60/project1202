@@ -9,27 +9,17 @@ class UserRepository:
         self.db = db
 
     def list(self, q: str | None = None, limit: int = 50, offset: int = 0) -> list[User]:
-        """
-        List users with optional simple search and pagination.
-        Search is performed over username and full_name.
-        """
         query = self.db.query(User)
-
         if q:
             pattern = f"%{q}%"
             query = query.filter(
                 or_(
                     User.username.ilike(pattern),
-                    User.full_name.ilike(pattern),
+                    User.surname.ilike(pattern),
+                    User.name.ilike(pattern),
                 )
             )
-
-        return (
-            query.order_by(User.id.asc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(User.id.asc()).offset(offset).limit(limit).all()
 
     def get_by_username(self, username: str) -> User | None:
         return self.db.query(User).filter(User.username == username).first()
@@ -52,4 +42,5 @@ class UserRepository:
         self.db.refresh(obj)
         return obj
 
-
+    def count(self) -> int:
+        return self.db.query(User).count()

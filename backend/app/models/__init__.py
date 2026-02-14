@@ -1,10 +1,22 @@
-from app.models.appeal import Appeal
-from app.models.citizen import Citizen
-from app.models.executor import Executor
-from app.models.org_unit import OrgUnit
 from app.models.user import User
-from app.models.military_unit import MilitaryUnit
-from app.models.appeal_type import AppealType
-from app.models.lookup import ReportIndex, AppealIndex
+from app.models.appeal import Appeal
+from app.models.department import Department, DepOfficial
+from app.models.executor import Direction, ExecutorList, Executor
+from app.models.lookup import (
+    AccountIndex, ApIndex, ApStatus, ContentType,
+    ChiefInstruction, InSection, Section, UserSection,
+    WhoControl, Movzu, Holiday,
+)
+from app.models.region import Region
+from app.models.organ import Organ
+from app.models.contact import Contact
 
-__all__ = ["OrgUnit", "User", "Citizen", "Appeal", "Executor", "MilitaryUnit", "AppealType", "ReportIndex", "AppealIndex"]
+__all__ = [
+    "User", "Appeal",
+    "Department", "DepOfficial",
+    "Direction", "ExecutorList", "Executor",
+    "AccountIndex", "ApIndex", "ApStatus", "ContentType",
+    "ChiefInstruction", "InSection", "Section", "UserSection",
+    "WhoControl", "Movzu", "Holiday",
+    "Region", "Organ", "Contact",
+]

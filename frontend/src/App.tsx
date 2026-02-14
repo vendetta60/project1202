@@ -9,6 +9,7 @@ import AppealForm from './pages/AppealForm';
 import UsersList from './pages/admin/UsersList';
 import UserForm from './pages/admin/UserForm';
 import Parameters from './pages/admin/Parameters';
+import Reports from './pages/Reports';
 import ProtectedRoute from './components/ProtectedRoute';
 import { isAuthenticated } from './utils/auth';
 
@@ -25,14 +26,61 @@ const queryClient = new QueryClient({
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#3e4a21', // Military Olive
+      light: '#5a6b32',
+      dark: '#2c3e50', // Slate contrast
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#2e7d32',
+      main: '#a68b44', // Brass accent
+      contrastText: '#ffffff',
+    },
+    background: {
+      default: '#f4f6f0',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#1f2937',
+      secondary: '#4b5563',
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
+    h5: {
+      fontWeight: 800,
+      letterSpacing: '-0.02em',
+    },
+    h4: {
+      fontWeight: 800,
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 600,
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+        },
+      },
+    },
   },
 });
 
@@ -100,6 +148,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <Reports />
                 </ProtectedRoute>
               }
             />

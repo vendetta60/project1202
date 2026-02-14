@@ -21,15 +21,16 @@ import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-materia
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useToast } from '../../components/Toast';
-import { getUser, createUser, updateUser } from '../../api/users';
-import { getOrgUnits } from '../../api/orgUnits';
-import type { UserCreate, UserUpdate } from '../../api/users';
+import { getUser, createUser } from '../../api/users';
+import { getUserSections } from '../../api/lookups';
+import type { UserCreate } from '../../api/users';
 
 interface FormData {
     username: string;
     password?: string;
-    full_name?: string;
-    org_unit_id?: number | '';
+    surname?: string;
+    name?: string;
+    section_id?: number | '';
     is_admin: boolean;
 }
 
@@ -49,26 +50,24 @@ export default function UserForm() {
         defaultValues: {
             username: '',
             password: '',
-            full_name: '',
-            org_unit_id: '',
+            surname: '',
+            name: '',
+            section_id: '',
             is_admin: false,
         },
     });
 
-    // Fetch user data if editing
     const { data: user, isLoading: userLoading } = useQuery({
         queryKey: ['user', id],
         queryFn: () => getUser(Number(id)),
         enabled: isEdit,
     });
 
-    // Fetch org units for dropdown
-    const { data: orgUnits } = useQuery({
-        queryKey: ['orgUnits'],
-        queryFn: getOrgUnits,
+    const { data: userSections } = useQuery({
+        queryKey: ['userSections'],
+        queryFn: getUserSections,
     });
 
-    // Create user mutation
     const createMutation = useMutation({
         mutationFn: createUser,
         onSuccess: () => {
@@ -81,28 +80,13 @@ export default function UserForm() {
         },
     });
 
-    // Update user mutation
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: number; data: UserUpdate }) =>
-            updateUser(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
-            queryClient.invalidateQueries({ queryKey: ['user', id] });
-            showToast('İstifadəçi yeniləndi', 'success');
-            navigate('/admin/users');
-        },
-        onError: (error: any) => {
-            showToast(error.response?.data?.detail || 'Xəta baş verdi', 'error');
-        },
-    });
-
-    // Populate form when editing
     useEffect(() => {
         if (user) {
             reset({
                 username: user.username,
-                full_name: user.full_name || '',
-                org_unit_id: user.org_unit_id || '',
+                surname: user.surname || '',
+                name: user.name || '',
+                section_id: user.section_id || '',
                 is_admin: user.is_admin,
             });
         }
@@ -110,12 +94,7 @@ export default function UserForm() {
 
     const onSubmit = (data: FormData) => {
         if (isEdit) {
-            const updateData: UserUpdate = {
-                full_name: data.full_name || undefined,
-                org_unit_id: data.org_unit_id ? Number(data.org_unit_id) : undefined,
-                is_admin: data.is_admin,
-            };
-            updateMutation.mutate({ id: Number(id), data: updateData });
+            showToast('Redaktə hələ aktiv deyil', 'info');
         } else {
             if (!data.password) {
                 showToast('Şifrə tələb olunur', 'error');
@@ -124,9 +103,9 @@ export default function UserForm() {
             const createData: UserCreate = {
                 username: data.username,
                 password: data.password,
-                full_name: data.full_name || undefined,
-                org_unit_id: data.org_unit_id ? Number(data.org_unit_id) : undefined,
-                is_admin: data.is_admin,
+                surname: data.surname || undefined,
+                name: data.name || undefined,
+                section_id: data.section_id ? Number(data.section_id) : undefined,
             };
             createMutation.mutate(createData);
         }
@@ -210,12 +189,12 @@ export default function UserForm() {
 
                         <Grid item xs={12} md={6}>
                             <Controller
-                                name="full_name"
+                                name="surname"
                                 control={control}
                                 render={({ field }) => (
                                     <TextField
                                         {...field}
-                                        label="Tam ad"
+                                        label="Soyad"
                                         fullWidth
                                         size="small"
                                         sx={{ bgcolor: 'white' }}
@@ -226,18 +205,34 @@ export default function UserForm() {
 
                         <Grid item xs={12} md={6}>
                             <Controller
-                                name="org_unit_id"
+                                name="name"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Ad"
+                                        fullWidth
+                                        size="small"
+                                        sx={{ bgcolor: 'white' }}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} md={6}>
+                            <Controller
+                                name="section_id"
                                 control={control}
                                 render={({ field }) => (
                                     <FormControl fullWidth size="small">
-                                        <InputLabel>İdarə</InputLabel>
-                                        <Select {...field} label="İdarə" sx={{ bgcolor: 'white' }}>
+                                        <InputLabel>User Section</InputLabel>
+                                        <Select {...field} label="User Section" sx={{ bgcolor: 'white' }}>
                                             <MenuItem value="">
                                                 <em>Seçilməyib</em>
                                             </MenuItem>
-                                            {orgUnits?.map((unit) => (
-                                                <MenuItem key={unit.id} value={unit.id}>
-                                                    {unit.name}
+                                            {userSections?.map((us) => (
+                                                <MenuItem key={us.id} value={us.id}>
+                                                    {us.user_section}
                                                 </MenuItem>
                                             ))}
                                         </Select>
@@ -253,7 +248,7 @@ export default function UserForm() {
                                 render={({ field }) => (
                                     <FormControlLabel
                                         control={<Switch {...field} checked={field.value} />}
-                                        label="Admin hüquqları"
+                                        label="Admin hüquqları?"
                                         sx={{ color: '#374151' }}
                                     />
                                 )}
@@ -266,7 +261,7 @@ export default function UserForm() {
                                     type="submit"
                                     variant="contained"
                                     startIcon={<SaveIcon />}
-                                    disabled={createMutation.isPending || updateMutation.isPending}
+                                    disabled={createMutation.isPending}
                                     sx={{
                                         bgcolor: '#1976d2',
                                         color: 'white',

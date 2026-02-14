@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -18,47 +18,24 @@ import {
     InputAdornment,
     TablePagination,
     Tooltip,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    OutlinedInput,
-    Checkbox,
-    ListItemText,
 } from '@mui/material';
 import {
     Add as AddIcon,
     Edit as EditIcon,
-    Lock as LockIcon,
-    LockOpen as LockOpenIcon,
     Search as SearchIcon,
-    PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import ConfirmDialog, { useConfirmDialog } from '../../components/ConfirmDialog';
+import { getUsers } from '../../api/users';
 import { useToast } from '../../components/Toast';
-import { getUsers, toggleUserActive, assignUserRoles } from '../../api/users';
-import { getRoles } from '../../api/roles';
-import type { User } from '../../api/users';
-import type { Role } from '../../api/roles';
 
 export default function UsersList() {
     const navigate = useNavigate();
-    const queryClient = useQueryClient();
-    const { showToast, ToastComponent } = useToast();
-    const { dialogState, showConfirm, hideConfirm, handleConfirm } = useConfirmDialog();
+    const { ToastComponent } = useToast();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [roleDialogOpen, setRoleDialogOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
 
     // Fetch users
     const { data: usersData, isLoading: usersLoading } = useQuery({
@@ -70,63 +47,6 @@ export default function UsersList() {
                 offset: page * rowsPerPage,
             }),
     });
-
-    // Fetch roles for assignment dialog
-    const { data: roles } = useQuery({
-        queryKey: ['roles'],
-        queryFn: getRoles,
-    });
-
-    // Toggle user active mutation
-    const toggleActiveMutation = useMutation({
-        mutationFn: toggleUserActive,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
-            showToast('İstifadəçi statusu dəyişdirildi', 'success');
-        },
-        onError: () => {
-            showToast('Xəta baş verdi', 'error');
-        },
-    });
-
-    // Assign roles mutation
-    const assignRolesMutation = useMutation({
-        mutationFn: ({ userId, roleIds }: { userId: number; roleIds: number[] }) =>
-            assignUserRoles(userId, roleIds),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
-            setRoleDialogOpen(false);
-            setSelectedUser(null);
-            showToast('Rollar təyin edildi', 'success');
-        },
-        onError: () => {
-            showToast('Xəta baş verdi', 'error');
-        },
-    });
-
-    const handleToggleActive = (user: User) => {
-        showConfirm(
-            user.is_active ? 'İstifadəçini deaktiv et?' : 'İstifadəçini aktiv et?',
-            `${user.username} istifadəçisini ${user.is_active ? 'deaktiv' : 'aktiv'} etmək istədiyinizdən əminsiniz?`,
-            () => toggleActiveMutation.mutate(user.id),
-            'warning'
-        );
-    };
-
-    const handleOpenRoleDialog = (user: User) => {
-        setSelectedUser(user);
-        setSelectedRoleIds(user.roles.map((r) => r.id));
-        setRoleDialogOpen(true);
-    };
-
-    const handleAssignRoles = () => {
-        if (selectedUser) {
-            assignRolesMutation.mutate({
-                userId: selectedUser.id,
-                roleIds: selectedRoleIds,
-            });
-        }
-    };
 
     const handleChangePage = (_event: unknown, newPage: number) => {
         setPage(newPage);
@@ -196,12 +116,12 @@ export default function UsersList() {
                     <Table>
                         <TableHead>
                             <TableRow sx={{ bgcolor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                            <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İstifadəçi adı</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Tam ad</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Rollar</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İdarə</TableCell>
-                            <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Status</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 600, color: '#374151' }}>Əməliyyatlar</TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İstifadəçi adı</TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Soyad</TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Ad</TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Section ID</TableCell>
+                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Admin</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 600, color: '#374151' }}>Əməliyyatlar</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -219,33 +139,15 @@ export default function UsersList() {
                                     <TableCell sx={{ fontSize: '0.875rem' }}>
                                         <Typography fontWeight="500">{user.username}</Typography>
                                     </TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.full_name || '-'}</TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                            {user.roles.length > 0 ? (
-                                                user.roles.map((role) => (
-                                                    <Chip
-                                                        key={role.id}
-                                                        label={role.name}
-                                                        size="small"
-                                                        color={role.is_system ? 'primary' : 'default'}
-                                                        variant="outlined"
-                                                    />
-                                                ))
-                                            ) : (
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Rol yoxdur
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.org_unit?.name || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.surname || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.name || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.section_id || '-'}</TableCell>
                                     <TableCell>
                                         <Chip
-                                            label={user.is_active ? 'Aktiv' : 'Deaktiv'}
-                                            color={user.is_active ? 'success' : 'default'}
+                                            label={user.is_admin ? 'Admin' : 'User'}
+                                            color={user.is_admin ? 'primary' : 'default'}
                                             size="small"
-                                            variant="filled"
+                                            variant="outlined"
                                         />
                                     </TableCell>
                                     <TableCell align="right">
@@ -257,33 +159,12 @@ export default function UsersList() {
                                                 <EditIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
-                                        <Tooltip title="Rolları təyin et">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleOpenRoleDialog(user)}
-                                            >
-                                                <PersonAddIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title={user.is_active ? 'Deaktiv et' : 'Aktiv et'}>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleToggleActive(user)}
-                                                color={user.is_active ? 'error' : 'success'}
-                                            >
-                                                {user.is_active ? (
-                                                    <LockIcon fontSize="small" />
-                                                ) : (
-                                                    <LockOpenIcon fontSize="small" />
-                                                )}
-                                            </IconButton>
-                                        </Tooltip>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {usersData?.items.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center">
+                                    <TableCell colSpan={6} align="center">
                                         <Typography color="text.secondary" sx={{ py: 3 }}>
                                             İstifadəçi tapılmadı
                                         </Typography>
@@ -308,58 +189,6 @@ export default function UsersList() {
                     }}
                 />
             </Paper>
-
-            {/* Role Assignment Dialog */}
-            <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Rolları təyin et - {selectedUser?.username}</DialogTitle>
-                <DialogContent>
-                    <FormControl fullWidth sx={{ mt: 2 }}>
-                        <InputLabel>Rollar</InputLabel>
-                        <Select
-                            multiple
-                            value={selectedRoleIds}
-                            onChange={(e) => setSelectedRoleIds(e.target.value as number[])}
-                            input={<OutlinedInput label="Rollar" />}
-                            renderValue={(selected) =>
-                                roles
-                                    ?.filter((r) => selected.includes(r.id))
-                                    .map((r) => r.name)
-                                    .join(', ')
-                            }
-                        >
-                            {roles?.map((role) => (
-                                <MenuItem key={role.id} value={role.id}>
-                                    <Checkbox checked={selectedRoleIds.includes(role.id)} />
-                                    <ListItemText
-                                        primary={role.name}
-                                        secondary={role.description}
-                                    />
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setRoleDialogOpen(false)}>Ləğv et</Button>
-                    <Button
-                        onClick={handleAssignRoles}
-                        variant="contained"
-                        disabled={assignRolesMutation.isPending}
-                    >
-                        Təyin et
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            <ConfirmDialog
-                open={dialogState.open}
-                title={dialogState.title}
-                message={dialogState.message}
-                onConfirm={handleConfirm}
-                onCancel={hideConfirm}
-                severity={dialogState.severity}
-            />
-
             <ToastComponent />
         </Layout>
     );

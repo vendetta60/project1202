@@ -12,14 +12,9 @@ import {
   Container,
 } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
-import { login } from '../api/auth';
+import { login, LoginRequest } from '../api/auth';
 import { setToken } from '../utils/auth';
 import { getErrorMessage } from '../utils/errors';
-
-interface LoginForm {
-  username: string;
-  password: string;
-}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,16 +25,16 @@ export default function Login() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>();
+  } = useForm<LoginRequest>();
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: LoginRequest) => {
     setError('');
     setLoading(true);
 
     try {
       const response = await login(data);
       setToken(response.access_token);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

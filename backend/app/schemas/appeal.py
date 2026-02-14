@@ -1,142 +1,96 @@
 from datetime import datetime
-
-from app.models.appeal import AppealStatus
-from app.schemas.common import ORMBase, Timestamped
+from app.schemas.common import ORMBase
 
 
 class AppealCreate(ORMBase):
-    subject: str
-    description: str | None = None
-    summary: str | None = None
-    appeal_type: str | None = None
-    # Vətəndaş birbaşa formdan daxil edilir
-    citizen_first_name: str
-    citizen_last_name: str
-    citizen_father_name: str | None = None
-    citizen_email: str | None = None
-    org_unit_id: int
-    received_at: datetime | None = None
-    execution_date: datetime | None = None
-    report_index: str | None = None
-    appeal_index: str | None = None
-    page_count: int | None = None
-    chairman_decision_number: str | None = None
-    chairman_decision_date: datetime | None = None
-    incoming_appeal_number: str | None = None
-    incoming_appeal_date: datetime | None = None
-    related_appeal_number: str | None = None
-    related_appeal_date: datetime | None = None
-    appeal_submitter_role: str | None = None
-    is_transferred: bool = False
-    executor_org_unit_id: int | None = None
-    executor_id: int | None = None
-    registration_number: str
-    registration_date: datetime
-    execution_deadline: datetime | None = None
-    originating_military_unit: str | None = None
-    leader_decision: str | None = None
-    other_military_unit_number: str | None = None
-    other_institution_date: datetime | None = None
-    incoming_appeal_number: str | None = None
-    incoming_appeal_date: datetime | None = None
-    originating_institution: str | None = None
-    appeal_submitter: str | None = None
-    submitter_full_name: str | None = None
-    submitter_saa: str | None = None
-    address: str | None = None
-    appeal_review_status: str | None = None
+    num: int | None = None
+    reg_num: str | None = None
+    reg_date: datetime | None = None
+    sec_in_ap_num: str | None = None
+    in_ap_num: str | None = None
+    sec_in_ap_date: datetime | None = None
+    in_ap_date: datetime | None = None
+    dep_id: int | None = None
+    official_id: int | None = None
+    region_id: int | None = None
+    person: str | None = None
     email: str | None = None
-    phone_number: str | None = None
-    is_repeat_appeal: bool = False
-    reviewed_by: str | None = None
-    is_under_supervision: bool = False
-    short_content: str | None = None
+    content: str | None = None
+    content_type_id: int | None = None
+    account_index_id: int | None = None
+    ap_index_id: int | None = None
+    paper_count: str | None = None
+    exp_date: datetime | None = None
+    who_control_id: int | None = None
+    instructions_id: int | None = None
+    status: int | None = None
+    InSection: int | None = None
+    IsExecuted: bool | None = False
+    repetition: bool | None = False
+    control: bool | None = False
+    user_section_id: int | None = None
+    PC: str | None = None
+    PC_Tarixi: datetime | None = None
 
 
 class AppealUpdate(ORMBase):
-    subject: str | None = None
-    description: str | None = None
-    summary: str | None = None
-    appeal_type: str | None = None
-    status: AppealStatus | None = None
-    org_unit_id: int | None = None
-    executor_org_unit_id: int | None = None
-    executor_id: int | None = None
-    received_at: datetime | None = None
-    execution_date: datetime | None = None
-    report_index: str | None = None
-    appeal_index: str | None = None
-    page_count: int | None = None
-    chairman_decision_number: str | None = None
-    chairman_decision_date: datetime | None = None
-    incoming_appeal_number: str | None = None
-    incoming_appeal_date: datetime | None = None
-    related_appeal_number: str | None = None
-    related_appeal_date: datetime | None = None
-    appeal_submitter_role: str | None = None
-    citizen_email: str | None = None
-    is_transferred: bool | None = None
-    registration_number: str | None = None
-    registration_date: datetime | None = None
-    execution_deadline: datetime | None = None
-    originating_military_unit: str | None = None
-    leader_decision: str | None = None
-    other_military_unit_number: str | None = None
-    other_institution_date: datetime | None = None
-    incoming_appeal_number: str | None = None
-    incoming_appeal_date: datetime | None = None
-    originating_institution: str | None = None
-    appeal_submitter: str | None = None
-    submitter_full_name: str | None = None
-    submitter_saa: str | None = None
-    address: str | None = None
-    appeal_review_status: str | None = None
+    num: int | None = None
+    reg_num: str | None = None
+    reg_date: datetime | None = None
+    sec_in_ap_num: str | None = None
+    in_ap_num: str | None = None
+    sec_in_ap_date: datetime | None = None
+    in_ap_date: datetime | None = None
+    dep_id: int | None = None
+    official_id: int | None = None
+    region_id: int | None = None
+    person: str | None = None
     email: str | None = None
-    phone_number: str | None = None
-    is_repeat_appeal: bool | None = None
-    reviewed_by: str | None = None
-    is_under_supervision: bool | None = None
-    short_content: str | None = None
+    content: str | None = None
+    content_type_id: int | None = None
+    account_index_id: int | None = None
+    ap_index_id: int | None = None
+    paper_count: str | None = None
+    exp_date: datetime | None = None
+    who_control_id: int | None = None
+    instructions_id: int | None = None
+    status: int | None = None
+    InSection: int | None = None
+    IsExecuted: bool | None = None
+    repetition: bool | None = None
+    control: bool | None = None
+    user_section_id: int | None = None
+    PC: str | None = None
+    PC_Tarixi: datetime | None = None
 
 
-class AppealOut(Timestamped):
+class AppealOut(ORMBase):
     id: int
-    reg_no: str
-    subject: str
-    description: str | None = None
-    summary: str | None = None
-    appeal_type: str | None = None
-    status: AppealStatus
-    citizen_id: int
-    org_unit_id: int
-    executor_org_unit_id: int | None = None
-    executor_id: int | None = None
-    created_by_user_id: int | None = None
-    received_at: datetime
-    execution_date: datetime | None = None
-    report_index: str | None = None
-    appeal_index: str | None = None
-    page_count: int | None = None
-    chairman_decision_number: str | None = None
-    chairman_decision_date: datetime | None = None
-    incoming_appeal_number: str | None = None
-    incoming_appeal_date: datetime | None = None
-    related_appeal_number: str | None = None
-    related_appeal_date: datetime | None = None
-    appeal_submitter_role: str | None = None
-    citizen_email: str | None = None
-    is_transferred: bool = False
-    # Include related objects if loaded
-    citizen: "CitizenOut | None" = None
-    org_unit: "OrgUnitOut | None" = None
-    executor_org_unit: "OrgUnitOut | None" = None
-    executor: "ExecutorOut | None" = None
-    submitter_full_name: str | None = None
-    submitter_saa: str | None = None
-
-# Forward reference fix
-from app.schemas.citizen import CitizenOut
-from app.schemas.org_unit import OrgUnitOut
-from app.schemas.executor import ExecutorOut
-
-AppealOut.model_rebuild()
+    num: int | None = None
+    reg_num: str | None = None
+    reg_date: datetime | None = None
+    sec_in_ap_num: str | None = None
+    in_ap_num: str | None = None
+    sec_in_ap_date: datetime | None = None
+    in_ap_date: datetime | None = None
+    dep_id: int | None = None
+    official_id: int | None = None
+    region_id: int | None = None
+    person: str | None = None
+    email: str | None = None
+    content: str | None = None
+    content_type_id: int | None = None
+    account_index_id: int | None = None
+    ap_index_id: int | None = None
+    paper_count: str | None = None
+    exp_date: datetime | None = None
+    who_control_id: int | None = None
+    instructions_id: int | None = None
+    status: int | None = None
+    InSection: int | None = None
+    IsExecuted: bool | None = None
+    repetition: bool | None = None
+    control: bool | None = None
+    user_section_id: int | None = None
+    PC: str | None = None
+    PC_Tarixi: datetime | None = None

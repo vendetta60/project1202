@@ -2,70 +2,34 @@ import apiClient from './client';
 
 export interface Appeal {
   id: number;
-  reg_no: string; // Backend uses reg_no, not reg_number
-  subject: string;
-  description?: string;
-  summary?: string;
-  appeal_type?: string;
-  status: string;
-  citizen_id: number;
-  org_unit_id: number;
-  executor_org_unit_id?: number | null;
-  executor_id?: number | null;
-  received_at: string;
-  execution_date?: string | null;
-  created_at: string;
-  updated_at: string;
-  report_index?: string | null;
-  appeal_index?: string | null;
-  page_count?: number | null;
-  chairman_decision_number?: string | null;
-  chairman_decision_date?: string | null;
-  incoming_appeal_number?: string | null;
-  incoming_appeal_date?: string | null;
-  related_appeal_number?: string | null;
-  related_appeal_date?: string | null;
-  appeal_submitter_role?: string | null;
-  citizen_email?: string | null;
-  is_transferred?: boolean;
-  registration_number?: string;
-  registration_date?: string;
-  execution_deadline?: string | null;
-  originating_military_unit?: string | null;
-  leader_decision?: string | null;
-  other_military_unit_number?: string | null;
-  other_institution_date?: string | null;
-  originating_institution?: string | null;
-  appeal_submitter?: string | null;
-  submitter_full_name?: string | null;
-  submitter_saa?: string | null;
-  address?: string | null;
-  appeal_review_status?: string | null;
-  email?: string | null;
-  phone_number?: string | null;
-  is_repeat_appeal?: boolean;
-  reviewed_by?: string | null;
-  is_under_supervision?: boolean;
-  short_content?: string | null;
-  citizen?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-    fin: string;
-  };
-  org_unit?: {
-    id: number;
-    name: string;
-  };
-  executor_org_unit?: {
-    id: number;
-    name: string;
-  } | null;
-  executor?: {
-    id: number;
-    full_name: string;
-    org_unit_id: number;
-  } | null;
+  num?: number;
+  reg_num?: string;
+  reg_date?: string; // datetime
+  sec_in_ap_num?: string;
+  in_ap_num?: string;
+  sec_in_ap_date?: string; // datetime
+  in_ap_date?: string; // datetime
+  dep_id?: number;
+  official_id?: number;
+  region_id?: number;
+  person?: string;
+  email?: string;
+  content?: string;
+  content_type_id?: number;
+  account_index_id?: number;
+  ap_index_id?: number;
+  paper_count?: string;
+  exp_date?: string; // datetime
+  who_control_id?: number;
+  instructions_id?: number;
+  status?: number | null;
+  InSection?: number | null;
+  IsExecuted?: boolean | null;
+  repetition?: boolean | null;
+  control?: boolean | null;
+  user_section_id?: number | null;
+  PC?: string | null;
+  PC_Tarixi?: string | null; // datetime
 }
 
 export interface AppealsResponse {
@@ -75,98 +39,13 @@ export interface AppealsResponse {
   offset: number;
 }
 
-export interface CreateAppealRequest {
-  subject: string;
-  description?: string;
-  summary?: string;
-  appeal_type?: string;
-  citizen_first_name: string;
-  citizen_last_name: string;
-  citizen_father_name?: string;
-  citizen_email?: string;
-  org_unit_id: number;
-  received_at?: string;
-  execution_date?: string;
-  report_index?: string;
-  appeal_index?: string;
-  page_count?: number;
-  chairman_decision_number?: string;
-  chairman_decision_date?: string;
-  incoming_appeal_number?: string;
-  incoming_appeal_date?: string;
-  related_appeal_number?: string;
-  related_appeal_date?: string;
-  appeal_submitter_role?: string;
-  is_transferred?: boolean;
-  executor_org_unit_id?: number | null;
-  executor_id?: number | null;
-  registration_number: string;
-  registration_date: string;
-  execution_deadline?: string;
-  originating_military_unit?: string;
-  leader_decision?: string;
-  other_military_unit_number?: string;
-  other_institution_date?: string;
-  originating_institution?: string;
-  appeal_submitter?: string;
-  submitter_full_name?: string;
-  submitter_saa?: string;
-  address?: string;
-  appeal_review_status?: string;
-  email?: string;
-  phone_number?: string;
-  is_repeat_appeal?: boolean;
-  reviewed_by?: string;
-  is_under_supervision?: boolean;
-  short_content?: string;
-}
-
-export interface UpdateAppealRequest {
-  subject?: string;
-  description?: string;
-  summary?: string;
-  appeal_type?: string;
-  status?: string;
-  org_unit_id?: number;
-  executor_org_unit_id?: number | null;
-  executor_id?: number | null;
-  received_at?: string;
-  execution_date?: string;
-  report_index?: string;
-  appeal_index?: string;
-  page_count?: number;
-  chairman_decision_number?: string;
-  chairman_decision_date?: string;
-  incoming_appeal_number?: string;
-  incoming_appeal_date?: string;
-  related_appeal_number?: string;
-  related_appeal_date?: string;
-  appeal_submitter_role?: string;
-  citizen_email?: string;
-  is_transferred?: boolean;
-  registration_number?: string;
-  registration_date?: string;
-  execution_deadline?: string;
-  originating_military_unit?: string;
-  leader_decision?: string;
-  other_military_unit_number?: string;
-  other_institution_date?: string;
-  originating_institution?: string;
-  appeal_submitter?: string;
-  submitter_full_name?: string;
-  submitter_saa?: string;
-  address?: string;
-  appeal_review_status?: string;
-  email?: string;
-  phone_number?: string;
-  is_repeat_appeal?: boolean;
-  reviewed_by?: string;
-  is_under_supervision?: boolean;
-  short_content?: string;
-}
+export interface CreateAppealRequest extends Omit<Appeal, 'id'> { }
+export interface UpdateAppealRequest extends Omit<Appeal, 'id'> { }
 
 export const getAppeals = async (params: {
-  org_unit_id?: number;
+  dep_id?: number;
+  region_id?: number;
+  status?: number;
   q?: string;
   limit?: number;
   offset?: number;

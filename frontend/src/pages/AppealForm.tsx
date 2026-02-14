@@ -8,125 +8,123 @@ import {
   Typography,
   TextField,
   Button,
-  FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Alert,
   Grid,
   Divider,
   IconButton,
-  Autocomplete,
-  Card,
-  CardContent,
-  CardHeader,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
-import AddIcon from '@mui/icons-material/Add';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import DescriptionIcon from '@mui/icons-material/Description';
+import BusinessIcon from '@mui/icons-material/Business';
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import GavelIcon from '@mui/icons-material/Gavel';
+
 import { getAppeal, createAppeal, updateAppeal } from '../api/appeals';
-import { getOrgUnits } from '../api/orgUnits';
-import { getExecutors, createExecutor } from '../api/executors';
-import { getMilitaryUnits, createMilitaryUnit } from '../api/militaryUnits';
-import { getAppealTypes } from '../api/appealTypes';
-import { getReportIndexes, getAppealIndexes } from '../api/lookups';
+import {
+  getDepartments,
+  getRegions,
+  getApStatuses,
+  getApIndexes,
+  getContentTypes,
+  getChiefInstructions,
+  getInSections,
+  getWhoControls,
+  getDepOfficialsByDep,
+  getAccountIndexes
+} from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getErrorMessage } from '../utils/errors';
 
 interface AppealFormData {
-  subject: string;
-  description: string;
-  citizen_first_name: string;
-  citizen_last_name: string;
-  citizen_father_name?: string;
-  org_unit_id: number;
-  executor_org_unit_id?: number | null;
-  executor_id?: number | null;
-  status?: string;
-  received_at?: string;
-  execution_date?: string;
-  summary: string;
-  appeal_type: string;
-  report_index: string;
-  appeal_index: string;
-  page_count: number;
-  chairman_decision_number: string;
-  chairman_decision_date: string;
-  incoming_appeal_number: string;
-  incoming_appeal_date: string;
-  related_appeal_number: string;
-  related_appeal_date: string;
-  appeal_submitter_role: string;
-  citizen_email: string;
-  is_transferred: boolean;
-  registration_number: string;
-  registration_date: string;
-  execution_deadline?: string;
-  originating_military_unit?: string;
-  leader_decision?: string;
-  other_military_unit_number?: string;
-  other_institution_date?: string;
-  originating_institution?: string;
-  appeal_submitter?: string;
-  submitter_full_name?: string;
-  submitter_saa?: string;
-  address?: string;
-  appeal_review_status?: string;
-  email?: string;
-  phone_number?: string;
-  is_repeat_appeal?: boolean;
-  reviewed_by?: string;
-  is_under_supervision?: boolean;
-  short_content?: string;
+  num: number | undefined; // Hansı hərbi hissədən daxil olub
+  reg_num: string; // Qeydealınma nömrəsi
+  reg_date: string | undefined; // Qeydealınma tarixi
+  exp_date: string | undefined; // İcra müddəti
+  sec_in_ap_num: string; // Digər hərbi hissə üzrə nömrə
+  sec_in_ap_date: string | undefined; // Digər qurum üzrə tarix
+  in_ap_num: string; // Daxil olan müraciətin nömrəsi
+  in_ap_date: string | undefined; // Daxil olan müraciətin tarixi
+  dep_id: number | undefined; // Hansı qurumdan gəlib
+  official_id: number | undefined; // Müraciət kimdən gəlib / İcraçılar
+  person: string; // Müraciət edənin SAA
+  region_id: number | undefined; // Ünvan (Region olaraq işlənir)
+  who_control_id: number | undefined; // Kim baxımdır (Nəzarətçi)
+  instructions_id: number | undefined; // Rəhbərin dərkənarı
+  email: string; // Elektron poçt ünvanı
+  paper_count: string; // Vərəq sayı
+  content: string; // Müraciətin qısa məzmunu
+  content_type_id: number | undefined; // Müraciətin növü
+  account_index_id: number | undefined; // Hesabat indeksi
+  ap_index_id: number | undefined; // Müraciətin indeksi
+  status: number | undefined; // Müraciətin baxılması
+  repetition: boolean; // Təkrar müraciət
+  control: boolean; // Nəzarətdədir
+  InSection: number | undefined;
+  user_section_id: number | undefined;
+  IsExecuted: boolean;
+  PC: string | undefined;
+  PC_Tarixi: string | undefined; // datetime
 }
 
 const defaultValues: Partial<AppealFormData> = {
-  subject: '',
-  description: '',
-  summary: '',
-  appeal_type: '',
-  citizen_first_name: '',
-  citizen_last_name: '',
-  citizen_father_name: '',
-  citizen_email: '',
-  org_unit_id: 0,
-  status: 'pending',
-  executor_org_unit_id: null,
-  executor_id: null,
-  received_at: new Date().toISOString().slice(0, 10),
-  execution_date: '',
-  report_index: '',
-  appeal_index: '',
-  page_count: 0,
-  chairman_decision_number: '',
-  chairman_decision_date: '',
-  incoming_appeal_number: '',
-  incoming_appeal_date: '',
-  related_appeal_number: '',
-  related_appeal_date: '',
-  appeal_submitter_role: '',
-  is_transferred: false,
-  registration_number: '',
-  registration_date: new Date().toISOString().slice(0, 10),
-  execution_deadline: '',
-  originating_military_unit: '',
-  leader_decision: '',
-  other_military_unit_number: '',
-  other_institution_date: '',
-  originating_institution: '',
-  appeal_submitter: '',
-  submitter_full_name: '',
-  submitter_saa: '',
-  address: '',
-  appeal_review_status: '',
+  num: undefined,
+  reg_num: '',
+  reg_date: '',
+  exp_date: '',
+  sec_in_ap_num: '',
+  sec_in_ap_date: '',
+  in_ap_num: '',
+  in_ap_date: '',
+  person: '',
   email: '',
-  phone_number: '',
-  is_repeat_appeal: false,
-  reviewed_by: '',
-  is_under_supervision: false,
-  short_content: '',
+  content: '',
+  paper_count: '',
+  repetition: false,
+  control: false,
+  IsExecuted: false,
+  dep_id: undefined,
+  official_id: undefined,
+  region_id: undefined,
+  who_control_id: undefined,
+  instructions_id: undefined,
+  content_type_id: undefined,
+  account_index_id: undefined,
+  ap_index_id: undefined,
+  status: undefined,
+  InSection: undefined,
+  PC: '',
+  PC_Tarixi: '',
+};
+
+const labelSx = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.5,
+  fontSize: '0.85rem',
+  fontWeight: 500,
+  color: '#475569',
+  mb: 0.5
+};
+
+const inputSx = {
+  '& .MuiInputBase-root': {
+    backgroundColor: '#fff',
+    fontSize: '0.9rem',
+    borderRadius: '4px',
+  },
+  '& .MuiOutlinedInput-notchedOutline': {
+    borderColor: '#cbd5e1',
+  },
+  '&:hover .MuiOutlinedInput-notchedOutline': {
+    borderColor: '#94a3b8',
+  },
 };
 
 export default function AppealForm() {
@@ -135,35 +133,37 @@ export default function AppealForm() {
   const queryClient = useQueryClient();
   const isEditMode = !!id;
   const [error, setError] = useState<string>('');
-  const [newExecutorName, setNewExecutorName] = useState('');
 
-  // Load data from backend
-  const { data: militaryUnits } = useQuery({ queryKey: ['militaryUnits'], queryFn: getMilitaryUnits });
-  const { data: appealTypes } = useQuery({ queryKey: ['appealTypes'], queryFn: getAppealTypes });
-  const { data: reportIndexes } = useQuery({ queryKey: ['reportIndexes'], queryFn: getReportIndexes });
-  const { data: appealIndexes } = useQuery({ queryKey: ['appealIndexes'], queryFn: getAppealIndexes });
-
-  const addMilitaryUnitMutation = useMutation({
-    mutationFn: (name: string) => createMilitaryUnit({ name }),
-    onSuccess: (unit) => {
-      queryClient.invalidateQueries({ queryKey: ['militaryUnits'] });
-      setValue('originating_military_unit', unit.name);
-    },
-    onError: (err: any) => setError(getErrorMessage(err)),
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    control,
+  } = useForm<AppealFormData>({
+    defaultValues,
   });
 
-  const handleAddMilitaryUnit = async () => {
-    const name = window.prompt('Yeni hərbi hissə adı:');
-    if (!name) return;
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    addMilitaryUnitMutation.mutate(trimmed);
-  };
+  const selectedDepId = watch('dep_id');
+  const selectedInSection = watch('InSection');
 
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
+  // Lookups
+  const { data: inSections } = useQuery({ queryKey: ['inSections'], queryFn: getInSections });
+  const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: getDepartments });
+  const { data: regions } = useQuery({ queryKey: ['regions'], queryFn: getRegions });
+  const { data: statuses } = useQuery({ queryKey: ['apStatuses'], queryFn: getApStatuses });
+  const { data: apIndexes } = useQuery({ queryKey: ['apIndexes'], queryFn: getApIndexes });
+  const { data: contentTypes } = useQuery({ queryKey: ['contentTypes'], queryFn: getContentTypes });
+  const { data: instructions } = useQuery({ queryKey: ['chiefInstructions'], queryFn: getChiefInstructions });
+  const { data: whoControls } = useQuery({ queryKey: ['whoControls'], queryFn: getWhoControls });
+  const { data: accountIndexes } = useQuery({ queryKey: ['accountIndexes'], queryFn: getAccountIndexes });
+  const { data: depOfficials, isLoading: officialsLoading } = useQuery({
+    queryKey: ['dep-officials', selectedDepId],
+    queryFn: () => getDepOfficialsByDep(selectedDepId as number),
+    enabled: !!selectedDepId,
   });
+
+  const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: getCurrentUser });
 
   const { data: appeal, isLoading: appealLoading } = useQuery({
     queryKey: ['appeal', id],
@@ -171,76 +171,41 @@ export default function AppealForm() {
     enabled: isEditMode,
   });
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    control,
-  } = useForm<AppealFormData>({
-    defaultValues: {
-      ...defaultValues,
-      org_unit_id: user?.org_unit_id || 0,
-      received_at: new Date().toISOString().slice(0, 10),
-      registration_date: new Date().toISOString().slice(0, 10),
-    },
-  });
+  useEffect(() => {
+    if (user?.section_id && !isEditMode) {
+      setValue('user_section_id', user.section_id);
+    }
+  }, [user, setValue, isEditMode]);
 
   useEffect(() => {
     if (appeal) {
-      setValue('subject', appeal.subject ?? '');
-      setValue('description', appeal.description ?? '');
-      setValue('org_unit_id', appeal.org_unit_id);
-      setValue('status', appeal.status);
-      setValue('executor_org_unit_id', appeal.executor_org_unit_id ?? null);
-      setValue('executor_id', appeal.executor_id ?? null);
-      if (appeal.received_at) {
-        setValue('received_at', appeal.received_at.slice(0, 10));
-      }
-      if (appeal.execution_date) {
-        setValue('execution_date', appeal.execution_date.slice(0, 10));
-      }
-      setValue('summary', appeal.summary ?? '');
-      setValue('appeal_type', appeal.appeal_type ?? '');
-      setValue('report_index', appeal.report_index ?? '');
-      setValue('appeal_index', appeal.appeal_index ?? '');
-      setValue('page_count', appeal.page_count ?? 0);
-      setValue('chairman_decision_number', appeal.chairman_decision_number ?? '');
-      setValue('chairman_decision_date', appeal.chairman_decision_date ? appeal.chairman_decision_date.slice(0, 10) : '');
-      setValue('incoming_appeal_number', appeal.incoming_appeal_number ?? '');
-      setValue('incoming_appeal_date', appeal.incoming_appeal_date ? appeal.incoming_appeal_date.slice(0, 10) : '');
-      setValue('related_appeal_number', appeal.related_appeal_number ?? '');
-      setValue('related_appeal_date', appeal.related_appeal_date ? appeal.related_appeal_date.slice(0, 10) : '');
-      setValue('appeal_submitter_role', appeal.appeal_submitter_role ?? '');
-      setValue('citizen_email', appeal.citizen_email ?? '');
-      setValue('is_transferred', appeal.is_transferred ?? false);
-      setValue('registration_number', appeal.registration_number ?? '');
-      setValue('registration_date', appeal.registration_date ? appeal.registration_date.slice(0, 10) : '');
-      setValue('execution_deadline', appeal.execution_deadline ? appeal.execution_deadline.slice(0, 10) : '');
-      setValue('originating_military_unit', appeal.originating_military_unit ?? '');
-      setValue('leader_decision', appeal.leader_decision ?? '');
-      setValue('other_military_unit_number', appeal.other_military_unit_number ?? '');
-      setValue('other_institution_date', appeal.other_institution_date ? appeal.other_institution_date.slice(0, 10) : '');
-      setValue('originating_institution', appeal.originating_institution ?? '');
-      setValue('appeal_submitter', appeal.appeal_submitter ?? '');
-      setValue('submitter_full_name', appeal.submitter_full_name ?? '');
-      setValue('submitter_saa', appeal.submitter_saa ?? '');
-      setValue('address', appeal.address ?? '');
-      setValue('appeal_review_status', appeal.appeal_review_status ?? '');
-      setValue('email', appeal.email ?? '');
-      setValue('phone_number', appeal.phone_number ?? '');
-      setValue('is_repeat_appeal', appeal.is_repeat_appeal ?? false);
-      setValue('reviewed_by', appeal.reviewed_by ?? '');
-      setValue('is_under_supervision', appeal.is_under_supervision ?? false);
-      setValue('short_content', appeal.short_content ?? '');
+      reset({
+        num: appeal.num,
+        reg_num: appeal.reg_num || '',
+        reg_date: appeal.reg_date ? new Date(appeal.reg_date).toISOString().slice(0, 10) : undefined,
+        exp_date: appeal.exp_date ? new Date(appeal.exp_date).toISOString().slice(0, 10) : undefined,
+        sec_in_ap_num: appeal.sec_in_ap_num || '',
+        sec_in_ap_date: appeal.sec_in_ap_date ? new Date(appeal.sec_in_ap_date).toISOString().slice(0, 10) : undefined,
+        in_ap_num: appeal.in_ap_num || '',
+        in_ap_date: appeal.in_ap_date ? new Date(appeal.in_ap_date).toISOString().slice(0, 10) : undefined,
+        dep_id: appeal.dep_id,
+        official_id: appeal.official_id,
+        region_id: appeal.region_id,
+        person: appeal.person || '',
+        email: appeal.email || '',
+        content: appeal.content || '',
+        content_type_id: appeal.content_type_id,
+        account_index_id: appeal.account_index_id,
+        ap_index_id: appeal.ap_index_id,
+        paper_count: appeal.paper_count || '',
+        who_control_id: appeal.who_control_id,
+        instructions_id: appeal.instructions_id,
+        status: appeal.status || undefined,
+        repetition: appeal.repetition || false,
+        control: appeal.control || false,
+      });
     }
-  }, [appeal, setValue]);
-
-  useEffect(() => {
-    if (user?.org_unit_id && !isEditMode) {
-      setValue('org_unit_id', user.org_unit_id);
-    }
-  }, [user, setValue, isEditMode]);
+  }, [appeal, reset]);
 
   const createMutation = useMutation({
     mutationFn: createAppeal,
@@ -248,430 +213,383 @@ export default function AppealForm() {
       queryClient.invalidateQueries({ queryKey: ['appeals'] });
       navigate('/appeals');
     },
-    onError: (err) => {
-      setError(getErrorMessage(err));
-    },
+    onError: (err) => setError(getErrorMessage(err)),
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: AppealFormData) => updateAppeal(Number(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appeals'] });
-      queryClient.invalidateQueries({ queryKey: ['appeal', id] });
       navigate('/appeals');
     },
-    onError: (err) => {
-      setError(getErrorMessage(err));
-    },
+    onError: (err) => setError(getErrorMessage(err)),
   });
-
-  const selectedExecutorOrgUnitId = watch('executor_org_unit_id');
-
-  const { data: executors } = useQuery({
-    queryKey: ['executors', selectedExecutorOrgUnitId],
-    queryFn: () =>
-      getExecutors({ org_unit_id: selectedExecutorOrgUnitId as number }),
-    enabled: !!selectedExecutorOrgUnitId,
-  });
-
-  const createExecutorMutation = useMutation({
-    mutationFn: createExecutor,
-    onSuccess: (executor) => {
-      queryClient.invalidateQueries({
-        queryKey: ['executors', selectedExecutorOrgUnitId],
-      });
-      setValue('executor_id', executor.id);
-      setNewExecutorName('');
-    },
-    onError: (err: any) => {
-      setError(getErrorMessage(err));
-    },
-  });
-
-  const handleCreateExecutor = () => {
-    setError('');
-    if (!selectedExecutorOrgUnitId) {
-      setError('Əvvəlcə icra şöbəsini seçin');
-      return;
-    }
-    if (!newExecutorName.trim()) {
-      setError('İcraçı adı boş ola bilməz');
-      return;
-    }
-    createExecutorMutation.mutate({
-      full_name: newExecutorName.trim(),
-      org_unit_id: selectedExecutorOrgUnitId as number,
-    });
-  };
 
   const onSubmit = (data: AppealFormData) => {
-    setError('');
-    if (isEditMode) {
-      updateMutation.mutate(data);
-    } else {
-      createMutation.mutate(data);
-    }
+    // Sanitize data: convert empty strings to null for optional fields
+    const sanitizedData = { ...data };
+
+    // Numeric fields: if value is "" or 0 (if 0 is 'not selected'), set to null
+    // But be careful: some IDs might legitimately be 0? Usually not for DB primary keys.
+    const numericFields: (keyof AppealFormData)[] = [
+      'dep_id', 'official_id', 'region_id', 'who_control_id', 'instructions_id',
+      'content_type_id', 'account_index_id', 'ap_index_id', 'status', 'InSection',
+      'user_section_id', 'num'
+    ];
+
+    numericFields.forEach(field => {
+      if (sanitizedData[field] === '' || sanitizedData[field] === 0) {
+        (sanitizedData as any)[field] = undefined;
+      }
+    });
+
+    const dateFields: (keyof AppealFormData)[] = [
+      'reg_date', 'exp_date', 'sec_in_ap_date', 'in_ap_date', 'PC_Tarixi'
+    ];
+    dateFields.forEach(field => {
+      if (sanitizedData[field] === '') {
+        (sanitizedData as any)[field] = undefined;
+      }
+    });
+
+    if (isEditMode) updateMutation.mutate(sanitizedData);
+    else createMutation.mutate(sanitizedData);
   };
 
-  if (appealLoading) {
-    return (
-      <Layout>
-        <LoadingSpinner />
-      </Layout>
-    );
-  }
+  const handleClear = () => reset(defaultValues);
 
-  const cardSx = {
-    mb: 4,
-    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-    borderRadius: 2,
-    border: '1px solid #e5e7eb',
-  };
-
-  const sectionHeaderSx = {
-    bgcolor: '#f8fafc',
-    borderBottom: '1px solid #e5e7eb',
-    '& .MuiCardHeader-title': {
-      fontSize: '1.1rem',
-      fontWeight: 600,
-      color: '#334155',
-    }
-  };
+  if (appealLoading) return <Layout><LoadingSpinner /></Layout>;
 
   return (
     <Layout>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" fontWeight="800" sx={{ color: '#0f172a', letterSpacing: '-0.025em' }}>
-          {isEditMode ? 'Müraciəti Redaktə Et' : 'Yeni Müraciət'}
+      <Box sx={{ mb: 4 }} className="animate-fade-in">
+        <Typography variant="h4" component="h1" fontWeight="900" color="primary" sx={{ mb: 1 }}>
+          {isEditMode ? 'Müraciətin Redaktəsi' : 'Yeni Müraciət Qeydiyyatı'}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
+          Vətəndaş müraciətlərinin sistemə daxil edilməsi və rəsmiləşdirilməsi
         </Typography>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 4, borderRadius: 2 }}>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Qeydiyyat Məlumatları */}
-        <Card sx={cardSx}>
-          <CardHeader title="Qeydiyyat Məlumatları" sx={sectionHeaderSx} />
-          <CardContent sx={{ p: 4 }}>
-            <Grid container spacing={4}>
-              <Grid item xs={12} sm={4}>
-                <TextField fullWidth label="Qeydiyyat №" size="small" {...register('registration_number')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField type="date" fullWidth label="Qeydiyyat tarixi" size="small" {...register('registration_date')} InputLabelProps={{ shrink: true }} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField type="date" fullWidth label="İcra müddəti" size="small" {...register('execution_deadline')} InputLabelProps={{ shrink: true }} sx={{ bgcolor: 'white' }} />
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Müraciət Detalları */}
-        <Card sx={cardSx}>
-          <CardHeader title="Müraciət Detalları" sx={sectionHeaderSx} />
-          <CardContent sx={{ p: 4 }}>
-            <Grid container spacing={4}>
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Controller
-                    name="originating_military_unit"
-                    control={control}
-                    render={({ field }) => (
-                      <Autocomplete
-                        {...field}
-                        fullWidth
-                        size="small"
-                        options={militaryUnits?.map(u => u.name) || []}
-                        onChange={(_, value) => field.onChange(value || '')}
-                        renderInput={(params) => <TextField {...params} label="Hərbi hissə" sx={{ bgcolor: 'white' }} />}
-                      />
-                    )}
-                  />
-                  <IconButton size="small" onClick={handleAddMilitaryUnit} color="primary" title="Yeni hərbi hissə">
-                    <AddIcon />
-                  </IconButton>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Rəhbərin qərarı" size="small" {...register('leader_decision')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Digər hərbi hissə üzrə №" size="small" {...register('other_military_unit_number')} sx={{ bgcolor: 'white' }} disabled={!watch('originating_military_unit')} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField type="date" fullWidth label="Digər qurum üzrə tarix" size="small" {...register('other_institution_date')} InputLabelProps={{ shrink: true }} sx={{ bgcolor: 'white' }} disabled={!watch('originating_military_unit')} />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Daxil olan müraciətin №" size="small" {...register('incoming_appeal_number')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField type="date" fullWidth label="Daxil olan müraciətin tarixi" size="small" {...register('incoming_appeal_date')} InputLabelProps={{ shrink: true }} sx={{ bgcolor: 'white' }} />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Hansı qurumdan" size="small" {...register('originating_institution')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="appeal_type"
-                  control={control}
-                  render={({ field }) => (
-                    <Autocomplete
-                      {...field}
-                      fullWidth
-                      size="small"
-                      options={appealTypes?.map(t => t.name) || []}
-                      onChange={(_, value) => field.onChange(value || '')}
-                      renderInput={(params) => <TextField {...params} label="Müraciətin növü" sx={{ bgcolor: 'white' }} />}
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="report_index"
-                  control={control}
-                  render={({ field }) => (
-                    <Autocomplete
-                      {...field}
-                      fullWidth
-                      size="small"
-                      options={reportIndexes?.map(r => r.name) || []}
-                      onChange={(_, value) => field.onChange(value || '')}
-                      renderInput={(params) => <TextField {...params} label="Hesabat indeksi" sx={{ bgcolor: 'white' }} />}
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="appeal_index"
-                  control={control}
-                  render={({ field }) => (
-                    <Autocomplete
-                      {...field}
-                      fullWidth
-                      size="small"
-                      options={appealIndexes?.map(a => a.name) || []}
-                      onChange={(_, value) => field.onChange(value || '')}
-                      renderInput={(params) => <TextField {...params} label="Müraciətin indeksi" sx={{ bgcolor: 'white' }} />}
-                    />
-                  )}
-                />
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Müraciətçi Məlumatları */}
-        <Card sx={cardSx}>
-          <CardHeader title="Müraciətçi Kontakt" sx={sectionHeaderSx} />
-          <CardContent sx={{ p: 4 }}>
-            <Grid container spacing={4}>
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Müraciət kimdən" size="small" {...register('appeal_submitter')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="SAA" size="small" {...register('submitter_saa')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-
-              <Grid item xs={12} sm={8}>
-                <TextField fullWidth label="Ünvan" size="small" {...register('address')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField fullWidth label="E-poçt" size="small" {...register('email')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Telefon" size="small" {...register('phone_number')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Təkrar müraciət</InputLabel>
-                  <Select
-                    value={watch('is_repeat_appeal') ? 'yes' : 'no'}
-                    label="Təkrar müraciət"
-                    onChange={(e) => setValue('is_repeat_appeal', e.target.value === 'yes')}
-                    sx={{ bgcolor: 'white' }}
-                  >
-                    <MenuItem value="no">Xeyr</MenuItem>
-                    <MenuItem value="yes">Bəli</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* Baxış Və İcra */}
-        <Card sx={cardSx}>
-          <CardHeader title="Baxış Və İcra" sx={sectionHeaderSx} />
-          <CardContent sx={{ p: 4 }}>
-            <Grid container spacing={4}>
-              <Grid item xs={12} sm={6}>
-                <TextField fullWidth label="Kim baxmışdır" size="small" {...register('reviewed_by')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <TextField fullWidth label="Müraciətin baxılması" size="small" {...register('appeal_review_status')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-              <Grid item xs={12} sm={3}>
-                <TextField type="number" fullWidth label="Varaq sayı" size="small" {...register('page_count', { valueAsNumber: true })} sx={{ bgcolor: 'white' }} />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Nəzarətdədir</InputLabel>
-                  <Select
-                    value={watch('is_under_supervision') ? 'yes' : 'no'}
-                    label="Nəzarətdədir"
-                    onChange={(e) => setValue('is_under_supervision', e.target.value === 'yes')}
-                    sx={{ bgcolor: 'white' }}
-                  >
-                    <MenuItem value="no">Xeyr</MenuItem>
-                    <MenuItem value="yes">Bəli</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField fullWidth label="Qısa məzmun" multiline rows={3} size="small" {...register('short_content')} sx={{ bgcolor: 'white' }} />
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
-
-        {/* İcraçı Seçimi (Şərtdən asılıdır) */}
-        {selectedExecutorOrgUnitId && (
-          <Card sx={cardSx}>
-            <CardHeader title="İcraçı Seçimi" sx={sectionHeaderSx} />
-            <CardContent sx={{ p: 4 }}>
-              <Grid container spacing={4}>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>İcraçı</InputLabel>
-                    <Select
-                      {...register('executor_id', { valueAsNumber: true })}
-                      value={watch('executor_id') ?? ''}
-                      label="İcraçı"
-                      sx={{ bgcolor: 'white' }}
-                    >
-                      <MenuItem value="">Seçilməyib</MenuItem>
-                      {executors?.map((exec) => (
-                        <MenuItem key={exec.id} value={exec.id}>
-                          {exec.full_name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+      <Paper
+        className="animate-slide-up glass-card"
+        sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)' }}
+      >
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Grid container spacing={4}>
+            {/* Section 1: Basic Info */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" sx={{ color: '#3e4a21', fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FormatListNumberedIcon fontSize="small" /> QEYDİYYAT MƏLUMATLARI
+              </Typography>
+              <Divider sx={{ mb: 3, opacity: 0.1, bgcolor: '#3e4a21' }} />
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography sx={labelSx}>Qeydealınma nömrəsi:</Typography>
+                  <Controller name="reg_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Məs: 12/A" />} />
                 </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography sx={labelSx}>Qeydealınma tarixi:</Typography>
+                  <Controller name="reg_date" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography sx={labelSx}>İcra müddəti:</Typography>
+                  <Controller name="exp_date" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                </Grid>
+              </Grid>
+            </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <TextField
-                      fullWidth
-                      label="Yeni icraçı əlavə et"
-                      value={newExecutorName}
-                      onChange={(e) => setNewExecutorName(e.target.value)}
-                      size="small"
-                      sx={{ bgcolor: 'white' }}
-                    />
-                    <Button
-                      variant="outlined"
-                      onClick={handleCreateExecutor}
-                      disabled={createExecutorMutation.isPending}
-                      sx={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}
-                    >
-                      Əlavə et
-                    </Button>
+            {/* Section 2: External Registration */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" sx={{ color: '#3e4a21', fontWeight: 800, mb: 2, mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <BusinessIcon fontSize="small" /> XARİCİ QEYDİYYAT MƏLUMATLARI
+              </Typography>
+              <Divider sx={{ mb: 3, opacity: 0.1, bgcolor: '#3e4a21' }} />
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Digər HH üzrə nömrə:</Typography>
+                  <Controller name="sec_in_ap_num" control={control} render={({ field }) => (
+                    <TextField {...field} fullWidth size="small" sx={inputSx} disabled={!selectedInSection} placeholder={!selectedInSection ? "Öncə HH seçin" : "Nömrə"} />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Digər HH üzrə tarix:</Typography>
+                  <Controller name="sec_in_ap_date" control={control} render={({ field }) => (
+                    <TextField {...field} type="date" fullWidth size="small" sx={inputSx} disabled={!selectedInSection} />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Daxil olan mür. nömrəsi:</Typography>
+                  <Controller name="in_ap_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Nömrə" />} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Daxil olan mür. tarixi:</Typography>
+                  <Controller name="in_ap_date" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                </Grid>
+              </Grid>
+            </Grid>
+
+            {/* Section 3: Origin Info */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" sx={{ color: '#3e4a21', fontWeight: 800, mb: 2, mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <DescriptionIcon fontSize="small" /> MƏNBƏ VƏ ÜNVAN
+              </Typography>
+              <Divider sx={{ mb: 3, opacity: 0.1, bgcolor: '#3e4a21' }} />
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography sx={labelSx}>Hansı qurumdan gəlib:</Typography>
+                      <Controller name="dep_id" control={control} render={({ field }) => (
+                        <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty onChange={(e) => { field.onChange(e); setValue('official_id', 0); }}>
+                          <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                          {departments?.map(d => <MenuItem key={d.id} value={d.id} sx={{ fontSize: '0.85rem' }}>{d.department}</MenuItem>)}
+                        </Select>
+                      )} />
+                    </Box>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography sx={labelSx}>Müraciət kimdən gəlib:</Typography>
+                      <Controller name="official_id" control={control} render={({ field }) => (
+                        <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty disabled={!selectedDepId || officialsLoading}>
+                          <MenuItem value=""><em>{selectedDepId ? 'Seçin...' : 'Öncə qurum seçin'}</em></MenuItem>
+                          {depOfficials?.map((o: any) => <MenuItem key={o.id} value={o.id} sx={{ fontSize: '0.85rem' }}>{o.official}</MenuItem>)}
+                        </Select>
+                      )} />
+                    </Box>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography sx={labelSx}>Hansı HH-dən daxil olub:</Typography>
+                      <Controller name="InSection" control={control} render={({ field }) => (
+                        <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                          <MenuItem value={0}><em>Seçilməyib</em></MenuItem>
+                          {inSections?.map((s: any) => <MenuItem key={s.id} value={s.id} sx={{ fontSize: '0.85rem' }}>{s.section}</MenuItem>)}
+                        </Select>
+                      )} />
+                    </Box>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography sx={labelSx}>Müraciət edənin SAA:</Typography>
+                  <Controller name="person" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Ad, Soyad, Ata adı" />} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography sx={labelSx}>Vətəndaşın Ünvanı (Region):</Typography>
+                      <Controller name="region_id" control={control} render={({ field }) => (
+                        <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                          <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                          {regions?.map((r: any) => <MenuItem key={r.id} value={r.id} sx={{ fontSize: '0.85rem' }}>{r.region}</MenuItem>)}
+                        </Select>
+                      )} />
+                    </Box>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography sx={labelSx}>Elektron poçt:</Typography>
+                  <Controller name="email" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="example@mail.com" />} />
+                </Grid>
+              </Grid>
+            </Grid>
+
+            {/* Section 4: Content and Classification */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" sx={{ color: '#3e4a21', fontWeight: 800, mb: 2, mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <GavelIcon fontSize="small" /> MƏZMUN VƏ TƏSNİFAT
+              </Typography>
+              <Divider sx={{ mb: 3, opacity: 0.1, bgcolor: '#3e4a21' }} />
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12 }}>
+                  <Typography sx={labelSx}>Müraciətin qısa məzmunu:</Typography>
+                  <Controller name="content" control={control} render={({ field }) => <TextField {...field} fullWidth multiline rows={3} size="small" sx={{ ...inputSx, '& .MuiInputBase-root': { borderRadius: 3 } }} placeholder="Müraciətin əsas mahiyyəti..." />} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Müraciətin növü:</Typography>
+                  <Controller name="content_type_id" control={control} render={({ field }) => (
+                    <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                      <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                      {contentTypes?.map((c: any) => <MenuItem key={c.id} value={c.id} sx={{ fontSize: '0.85rem' }}>{c.content_type}</MenuItem>)}
+                    </Select>
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Müraciətin indeksi:</Typography>
+                  <Controller name="ap_index_id" control={control} render={({ field }) => (
+                    <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                      <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                      {apIndexes?.map((i: any) => <MenuItem key={i.id} value={i.id} sx={{ fontSize: '0.85rem' }}>{i.ap_index}</MenuItem>)}
+                    </Select>
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Hesabat indeksi:</Typography>
+                  <Controller name="account_index_id" control={control} render={({ field }) => (
+                    <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                      <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                      {accountIndexes?.map((i: any) => <MenuItem key={i.id} value={i.id} sx={{ fontSize: '0.85rem' }}>{i.account_index}</MenuItem>)}
+                    </Select>
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>Vərəq sayı:</Typography>
+                  <Controller name="paper_count" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} />} />
+                </Grid>
+              </Grid>
+            </Grid>
+
+            {/* Section 5: Execution & Control */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" sx={{ color: '#3e4a21', fontWeight: 800, mb: 2, mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FormatListNumberedIcon fontSize="small" /> İCRA VƏ NƏZARƏT
+              </Typography>
+              <Divider sx={{ mb: 3, opacity: 0.1, bgcolor: '#3e4a21' }} />
+              <Grid container spacing={3}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography sx={labelSx}>Rəhbərin dərkənarı:</Typography>
+                      <Controller name="instructions_id" control={control} render={({ field }) => (
+                        <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                          <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                          {instructions?.map((i: any) => <MenuItem key={i.id} value={i.id} sx={{ fontSize: '0.85rem' }}>{i.instructions}</MenuItem>)}
+                        </Select>
+                      )} />
+                    </Box>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography sx={labelSx}>Kim baxımdır:</Typography>
+                      <Controller name="who_control_id" control={control} render={({ field }) => (
+                        <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                          <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                          {whoControls?.map((w: any) => <MenuItem key={w.id} value={w.id} sx={{ fontSize: '0.85rem' }}>{w.chief}</MenuItem>)}
+                        </Select>
+                      )} />
+                    </Box>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Typography sx={labelSx}>Status:</Typography>
+                  <Controller name="status" control={control} render={({ field }) => (
+                    <Select {...field} fullWidth size="small" sx={inputSx} displayEmpty>
+                      <MenuItem value=""><em>Seçilməyib</em></MenuItem>
+                      {statuses?.map((s: any) => <MenuItem key={s.id} value={s.id} sx={{ fontSize: '0.85rem' }}>{s.status}</MenuItem>)}
+                    </Select>
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>PC:</Typography>
+                  <Controller name="PC" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="PC nömrəsi" />} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Typography sx={labelSx}>PC Tarixi:</Typography>
+                  <Controller name="PC_Tarixi" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(62, 74, 33, 0.05)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(62, 74, 33, 0.1)' }}>
+                    <Typography sx={{ fontWeight: 700, color: '#3e4a21', fontSize: '0.85rem' }}>Təkrar müraciət:</Typography>
+                    <Controller name="repetition" control={control} render={({ field }) => (
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        style={{ width: 20, height: 20, cursor: 'pointer', accentColor: '#3e4a21' }}
+                      />
+                    )} />
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 12, md: 3 }}>
+                  <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(62, 74, 33, 0.05)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(62, 74, 33, 0.1)' }}>
+                    <Typography sx={{ fontWeight: 700, color: '#3e4a21', fontSize: '0.85rem' }}>Nəzarətdədir:</Typography>
+                    <Controller name="control" control={control} render={({ field }) => (
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        style={{ width: 20, height: 20, cursor: 'pointer', accentColor: '#3e4a21' }}
+                      />
+                    )} />
                   </Box>
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
-        )}
+            </Grid>
+          </Grid>
 
-        {/* Status (Yalnız Redaktə Rejimində) */}
-        {isEditMode && (
-          <Card sx={cardSx}>
-            <CardHeader title="Status" sx={sectionHeaderSx} />
-            <CardContent sx={{ p: 4 }}>
-              <Grid container spacing={4}>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      {...register('status')}
-                      value={watch('status') || 'pending'}
-                      label="Status"
-                      sx={{ bgcolor: 'white' }}
-                    >
-                      <MenuItem value="pending">Gözləyir</MenuItem>
-                      <MenuItem value="in_progress">İcradadır</MenuItem>
-                      <MenuItem value="completed">İcra olundu</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Düymələr */}
-        <Box sx={{ mt: 6, display: 'flex', gap: 2, pb: 4 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<SaveIcon />}
-            disabled={createMutation.isPending || updateMutation.isPending}
-            sx={{
-              bgcolor: '#2563eb',
-              color: 'white',
-              textTransform: 'none',
-              fontSize: '1rem',
-              fontWeight: 700,
-              py: 1.5,
-              px: 4,
-              borderRadius: 2,
-              boxShadow: '0 10px 15px -3px rgb(37 99 235 / 0.3)',
-              '&:hover': {
-                bgcolor: '#1d4ed8',
-                boxShadow: '0 20px 25px -5px rgb(37 99 235 / 0.4)',
-              },
-            }}
-          >
-            Yadda saxla
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<CancelIcon />}
-            onClick={() => navigate('/appeals')}
-            sx={{
-              textTransform: 'none',
-              fontSize: '1rem',
-              fontWeight: 600,
-              py: 1.5,
-              px: 4,
-              borderRadius: 2,
-              color: '#64748b',
-              borderColor: '#cbd5e1',
-              '&:hover': {
-                bgcolor: '#f1f5f9',
-                borderColor: '#94a3b8',
-              },
-            }}
-          >
-            Ləğv et
-          </Button>
-        </Box>
-      </form>
+          {/* Action Bar */}
+          <Divider sx={{ my: 5, opacity: 0.2 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<DeleteSweepIcon />}
+              onClick={handleClear}
+              sx={{
+                px: 4,
+                py: 1.5,
+                borderRadius: 2.5,
+                fontWeight: 700,
+                borderWidth: 2,
+                '&:hover': { borderWidth: 2 }
+              }}
+            >
+              FORMU TƏMİZLƏ
+            </Button>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<CancelIcon />}
+                onClick={() => navigate('/appeals')}
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 2.5,
+                  fontWeight: 700,
+                  borderWidth: 2,
+                  '&:hover': { borderWidth: 2 }
+                }}
+              >
+                İMTİNA ET
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={createMutation.isPending || updateMutation.isPending}
+                sx={{
+                  px: 6,
+                  py: 1.5,
+                  borderRadius: 2.5,
+                  fontWeight: 900,
+                  bgcolor: '#3e4a21',
+                  boxShadow: '0 4px 12px rgba(62, 74, 33, 0.3)',
+                  '&:hover': { bgcolor: '#2c3518', transform: 'translateY(-2px)' },
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isEditMode ? 'DƏYİŞİKLİKLƏRİ YADDA SAXLA' : 'MÜRACİƏTİ QEYDƏ AL'}
+              </Button>
+            </Box>
+          </Box>
+        </form>
+      </Paper>
     </Layout>
   );
 }

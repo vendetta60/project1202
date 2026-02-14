@@ -1,8 +1,8 @@
 APP_NAME=MuracietQeydiyyat
 ENV=dev
 
-# SQLite default (good for local dev)
-DATABASE_URL=sqlite:///./app.db
+# MSSQL Database
+DATABASE_URL=mssql+pyodbc://sa:199696Mq@555-PTSAKTB-Z\SQLEXPRESS/APPEALS?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
 
 # Auth (change in prod)
 JWT_SECRET=change-me

@@ -13,12 +13,14 @@ import {
   TableRow,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PeopleIcon from '@mui/icons-material/People';
 import BusinessIcon from '@mui/icons-material/Business';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import AddIcon from '@mui/icons-material/Add';
 import { getAppeals } from '../api/appeals';
-import { getOrgUnits } from '../api/orgUnits';
+import { getDepartments } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import { getUsers } from '../api/users';
 import StatCard from '../components/StatCard';
@@ -38,19 +40,18 @@ export default function Dashboard() {
     queryFn: () => getAppeals({ limit: 10, offset: 0 }),
   });
 
-  const { data: orgUnits, isLoading: orgUnitsLoading } = useQuery({
-    queryKey: ['orgUnits'],
-    queryFn: getOrgUnits,
-    enabled: user?.is_admin,
+  const { data: departments, isLoading: depsLoading } = useQuery({
+    queryKey: ['departments'],
+    queryFn: getDepartments,
   });
 
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users', 'stats'],
     queryFn: () => getUsers({ limit: 1, offset: 0 }),
-    enabled: user?.is_admin,
+    enabled: !!user?.is_admin,
   });
 
-  const isLoading = appealsLoading || orgUnitsLoading || usersLoading;
+  const isLoading = appealsLoading || depsLoading || usersLoading;
 
   if (isLoading) {
     return (
@@ -60,81 +61,115 @@ export default function Dashboard() {
     );
   }
 
+  // Helper to resolve Department Name
+  const getDepName = (id?: number) => {
+    return departments?.find(d => d.id === id)?.department || '-';
+  };
+
   return (
     <Layout>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" component="h1" gutterBottom fontWeight="bold" sx={{ color: '#1f2937' }}>
-          Ana Səhifə
+      <Box sx={{ mb: 6 }} className="animate-fade-in">
+        <Typography variant="h4" component="h1" gutterBottom color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <DashboardIcon fontSize="large" /> Ana Səhifə
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Müraciətlərin ümumi statistikasını izləyin
+        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
+          Hərbi hissə üzrə müraciətlərin statistikası və son fəaliyyətlər
         </Typography>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container spacing={4} sx={{ mb: 6 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard
-            title="Müraciətlər"
+            title="Ümumi Müraciətlər"
             value={appealsData?.total || 0}
-            icon={<DescriptionIcon />}
-            color="#1976d2"
+            icon={<DescriptionIcon fontSize="large" />}
+            color="#3e4a21"
           />
         </Grid>
         {user?.is_admin && (
           <>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
-                title="İdarələr"
-                value={orgUnits?.length || 0}
-                icon={<BusinessIcon />}
-                color="#ed6c02"
+                title="Qeydiyyatda olan İdarələr"
+                value={departments?.length || 0}
+                icon={<BusinessIcon fontSize="large" />}
+                color="#a68b44"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <StatCard
-                title="İstifadəçilər"
+                title="Sistem İstifadəçiləri"
                 value={usersData?.total || 0}
-                icon={<PeopleIcon />}
-                color="#9c27b0"
+                icon={<PeopleIcon fontSize="large" />}
+                color="#2c3e50"
               />
             </Grid>
           </>
         )}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard
+            title="Analitik Hesabatlar"
+            value="STATİSTİKA"
+            icon={<AssessmentIcon fontSize="large" />}
+            color="#5a6b32"
+            onClick={() => navigate('/reports')}
+          />
+        </Grid>
       </Grid>
 
-      <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+      <Box sx={{ mb: 4, display: 'flex', gap: 2 }} className="animate-fade-in">
         <Button
           variant="contained"
+          size="large"
           startIcon={<AddIcon />}
           onClick={() => navigate('/appeals/new')}
           sx={{
-            bgcolor: '#1976d2',
-            color: 'white',
-            textTransform: 'none',
-            fontWeight: 600,
+            py: 1.5,
+            px: 4,
+            bgcolor: '#3e4a21',
+            boxShadow: '0 8px 16px rgba(62, 74, 33, 0.3)',
             '&:hover': {
-              bgcolor: '#1565c0',
+              bgcolor: '#2c3518',
+              boxShadow: '0 12px 20px rgba(62, 74, 33, 0.4)',
             },
           }}
         >
-          Yeni Müraciət
+          Yeni Müraciət Daxil Et
         </Button>
       </Box>
 
-      <Paper elevation={0} sx={{ p: 3, bgcolor: 'white', border: '1px solid #e5e7eb' }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#1f2937' }}>
-          Son Müraciətlər
-        </Typography>
+      <Paper
+        className="animate-slide-up glass-card"
+        sx={{
+          p: 0,
+          overflow: 'hidden',
+          borderRadius: 4,
+        }}
+      >
+        <Box sx={{ p: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'rgba(62, 74, 33, 0.03)' }}>
+          <Typography variant="h6" sx={{ fontWeight: 900, color: '#2c3e50', letterSpacing: '0.5px' }}>
+            SON MÜRACİƏTLƏR
+          </Typography>
+          <Button
+            variant="text"
+            color="primary"
+            onClick={() => navigate('/appeals')}
+            sx={{ fontWeight: 800 }}
+          >
+            Hamısına bax →
+          </Button>
+        </Box>
+
         {appealsData?.items && appealsData.items.length > 0 ? (
-          <TableContainer sx={{ bgcolor: 'white' }}>
+          <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                  <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Qeydiyyat №</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Mövzu</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Vətəndaş</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İdarə</TableCell>
-                  <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Tarix</TableCell>
+                <TableRow>
+                  <TableCell className="military-table-header">Qeydiyyat №</TableCell>
+                  <TableCell className="military-table-header">Vətəndaş</TableCell>
+                  <TableCell className="military-table-header">İdarə</TableCell>
+                  <TableCell className="military-table-header">Məzmun</TableCell>
+                  <TableCell className="military-table-header">Tarix</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -145,22 +180,20 @@ export default function Dashboard() {
                     sx={{
                       cursor: 'pointer',
                       '&:hover': {
-                        bgcolor: '#f9fafb',
+                        bgcolor: 'rgba(62, 74, 33, 0.05)',
                       },
-                      borderBottom: '1px solid #e5e7eb',
+                      '& td': { py: 2.5, fontSize: '0.9rem', fontWeight: 500, color: '#374151' }
                     }}
                     onClick={() => navigate(`/appeals/${appeal.id}`)}
                   >
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{appeal.reg_no}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{appeal.subject}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                      {appeal.citizen
-                        ? `${appeal.citizen.first_name} ${appeal.citizen.last_name}`
-                        : '-'}
+                    <TableCell sx={{ fontWeight: 700, color: '#3e4a21 !important' }}>{appeal.reg_num || '-'}</TableCell>
+                    <TableCell>{appeal.person || '-'}</TableCell>
+                    <TableCell>{getDepName(appeal.dep_id)}</TableCell>
+                    <TableCell sx={{ maxWidth: 350, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {appeal.content || '-'}
                     </TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{appeal.org_unit?.name || '-'}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                      {new Date(appeal.created_at).toLocaleDateString('az-AZ')}
+                    <TableCell sx={{ fontWeight: 700 }}>
+                      {appeal.reg_date ? new Date(appeal.reg_date).toLocaleDateString('az-AZ') : '-'}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -168,9 +201,12 @@ export default function Dashboard() {
             </Table>
           </TableContainer>
         ) : (
-          <Typography color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-            Hələ müraciət yoxdur
-          </Typography>
+          <Box sx={{ py: 10, textAlign: 'center' }}>
+            <DescriptionIcon sx={{ fontSize: 60, color: 'divider', mb: 2 }} />
+            <Typography color="text.secondary" sx={{ fontWeight: 600 }}>
+              Sistemdə hələ heç bir müraciət qeydə alınmayıb
+            </Typography>
+          </Box>
         )}
       </Paper>
     </Layout>

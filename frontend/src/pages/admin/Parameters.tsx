@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Box,
     Paper,
@@ -12,7 +12,13 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Button,
+    TextField,
+    IconButton,
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import {
@@ -23,6 +29,24 @@ import {
     getChiefInstructions,
     getInSections,
     getWhoControls,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment,
+    createRegion,
+    updateRegion,
+    deleteRegion,
+    createChiefInstruction,
+    updateChiefInstruction,
+    deleteChiefInstruction,
+    createInSection,
+    updateInSection,
+    deleteInSection,
+    createWhoControl,
+    updateWhoControl,
+    deleteWhoControl,
+    createApStatus,
+    updateApStatus,
+    deleteApStatus,
 } from '../../api/lookups';
 
 interface TabPanelProps {
@@ -40,37 +64,162 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
-// Simple Read-Only Table
-function SimpleTable({ items, columns }: { items: any[] | undefined, columns: { id: string, label: string }[] }) {
+interface EditableTableProps {
+    items: any[] | undefined;
+    columns: { id: string; label: string }[];
+    onAdd: (data: any) => void;
+    onEdit: (id: number, data: any) => void;
+    onDelete: (id: number) => void;
+    isLoading?: boolean;
+}
+
+function EditableTable({ items, columns, onAdd, onEdit, onDelete, isLoading }: EditableTableProps) {
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editData, setEditData] = useState<any>({});
+    const [isAdding, setIsAdding] = useState(false);
+    const [newData, setNewData] = useState<any>({});
+
+    const handleStartEdit = (item: any) => {
+        setEditingId(item.id);
+        setEditData({ ...item });
+    };
+
+    const handleSaveEdit = () => {
+        if (editingId) {
+            onEdit(editingId, editData);
+            setEditingId(null);
+        }
+    };
+
+    const handleAdd = () => {
+        onAdd(newData);
+        setNewData({});
+        setIsAdding(false);
+    };
+
     if (!items || items.length === 0) {
-        return <Typography color="text.secondary" sx={{ py: 2 }}>Məlumat yoxdur</Typography>;
+        return (
+            <Box>
+                <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setIsAdding(true)}
+                    sx={{ mb: 2, bgcolor: '#3e4a21' }}
+                >
+                    Əlavə Et
+                </Button>
+                <Typography color="text.secondary" sx={{ py: 2 }}>Məlumat yoxdur</Typography>
+            </Box>
+        );
     }
+
     return (
-        <TableContainer sx={{ bgcolor: 'white', border: '1px solid #e5e7eb' }}>
-            <Table size="small">
-                <TableHead>
-                    <TableRow sx={{ bgcolor: '#f3f4f6' }}>
-                        {columns.map(col => (
-                            <TableCell key={col.id} sx={{ fontWeight: 600 }}>{col.label}</TableCell>
-                        ))}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {items.map((item, idx) => (
-                        <TableRow key={idx} hover>
-                            {columns.map(col => (
-                                <TableCell key={col.id}>{item[col.id]}</TableCell>
-                            ))}
-                        </TableRow>
+        <Box>
+            <Box sx={{ mb: 2 }}>
+                <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setIsAdding(true)}
+                    sx={{ bgcolor: '#3e4a21' }}
+                >
+                    Əlavə Et
+                </Button>
+            </Box>
+
+            {isAdding && (
+                <Paper sx={{ p: 2, mb: 2, bgcolor: '#f0f9ff', border: '1px solid #e0f2fe' }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>Yeni Məlumat</Typography>
+                    {columns.filter(c => c.id !== 'id').map(col => (
+                        <TextField
+                            key={col.id}
+                            label={col.label}
+                            value={newData[col.id] || ''}
+                            onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
+                            fullWidth
+                            size="small"
+                            sx={{ mb: 1 }}
+                        />
                     ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button variant="contained" onClick={handleAdd} sx={{ bgcolor: '#3e4a21' }}>
+                            Yadda Saxla
+                        </Button>
+                        <Button variant="outlined" onClick={() => setIsAdding(false)}>
+                            İmtina Et
+                        </Button>
+                    </Box>
+                </Paper>
+            )}
+
+            <TableContainer sx={{ bgcolor: 'white', border: '1px solid #e5e7eb' }}>
+                <Table size="small">
+                    <TableHead>
+                        <TableRow sx={{ bgcolor: '#f3f4f6' }}>
+                            {columns.map(col => (
+                                <TableCell key={col.id} sx={{ fontWeight: 600 }}>{col.label}</TableCell>
+                            ))}
+                            <TableCell align="right" sx={{ fontWeight: 600 }}>Əməliyyatlar</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {items.map((item) => (
+                            <TableRow key={item.id} hover>
+                                {editingId === item.id ? (
+                                    <>
+                                        {columns.filter(c => c.id !== 'id').map(col => (
+                                            <TableCell key={col.id}>
+                                                <TextField
+                                                    value={editData[col.id] || ''}
+                                                    onChange={(e) => setEditData({ ...editData, [col.id]: e.target.value })}
+                                                    size="small"
+                                                    fullWidth
+                                                />
+                                            </TableCell>
+                                        ))}
+                                        <TableCell align="right">
+                                            <Button size="small" variant="contained" onClick={handleSaveEdit} sx={{ bgcolor: '#3e4a21', mr: 1 }}>
+                                                Yadda Saxla
+                                            </Button>
+                                            <Button size="small" variant="outlined" onClick={() => setEditingId(null)}>
+                                                İmtina Et
+                                            </Button>
+                                        </TableCell>
+                                    </>
+                                ) : (
+                                    <>
+                                        {columns.map(col => (
+                                            <TableCell key={col.id}>{item[col.id]}</TableCell>
+                                        ))}
+                                        <TableCell align="right">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleStartEdit(item)}
+                                                sx={{ color: '#3e4a21', mr: 1 }}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => onDelete(item.id)}
+                                                color="error"
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </TableCell>
+                                    </>
+                                )}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Box>
     );
 }
 
 export default function Parameters() {
     const [tab, setTab] = useState(0);
+    const queryClient = useQueryClient();
 
     const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: getDepartments });
     const { data: regions } = useQuery({ queryKey: ['regions'], queryFn: getRegions });
@@ -80,6 +229,102 @@ export default function Parameters() {
     const { data: inSections } = useQuery({ queryKey: ['inSections'], queryFn: getInSections });
     const { data: whoControls } = useQuery({ queryKey: ['whoControls'], queryFn: getWhoControls });
 
+    // Department mutations
+    const createDeptMutation = useMutation({
+        mutationFn: createDepartment,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['departments'] }),
+    });
+
+    const updateDeptMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateDepartment(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['departments'] }),
+    });
+
+    const deleteDeptMutation = useMutation({
+        mutationFn: deleteDepartment,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['departments'] }),
+    });
+
+    // Region mutations
+    const createRegionMutation = useMutation({
+        mutationFn: createRegion,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['regions'] }),
+    });
+
+    const updateRegionMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateRegion(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['regions'] }),
+    });
+
+    const deleteRegionMutation = useMutation({
+        mutationFn: deleteRegion,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['regions'] }),
+    });
+
+    // Status mutations
+    const createStatusMutation = useMutation({
+        mutationFn: createApStatus,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apStatuses'] }),
+    });
+
+    const updateStatusMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateApStatus(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apStatuses'] }),
+    });
+
+    const deleteStatusMutation = useMutation({
+        mutationFn: deleteApStatus,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['apStatuses'] }),
+    });
+
+    // ChiefInstruction mutations
+    const createInstructionMutation = useMutation({
+        mutationFn: createChiefInstruction,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chiefInstructions'] }),
+    });
+
+    const updateInstructionMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateChiefInstruction(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chiefInstructions'] }),
+    });
+
+    const deleteInstructionMutation = useMutation({
+        mutationFn: deleteChiefInstruction,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chiefInstructions'] }),
+    });
+
+    // InSection mutations
+    const createInSectionMutation = useMutation({
+        mutationFn: createInSection,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inSections'] }),
+    });
+
+    const updateInSectionMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateInSection(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inSections'] }),
+    });
+
+    const deleteInSectionMutation = useMutation({
+        mutationFn: deleteInSection,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inSections'] }),
+    });
+
+    // WhoControl mutations
+    const createWhoControlMutation = useMutation({
+        mutationFn: createWhoControl,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['whoControls'] }),
+    });
+
+    const updateWhoControlMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateWhoControl(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['whoControls'] }),
+    });
+
+    const deleteWhoControlMutation = useMutation({
+        mutationFn: deleteWhoControl,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['whoControls'] }),
+    });
+
     return (
         <Layout>
             <Box sx={{ mb: 4 }}>
@@ -87,7 +332,7 @@ export default function Parameters() {
                     Parametrlər (Məlumat Kitabçaları)
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Sistemdəki soraqçaların siyahısı (Oxunur rejimdə)
+                    Sistemdəki soraqçaların siyahısını idarə edin
                 </Typography>
             </Box>
 
@@ -102,7 +347,6 @@ export default function Parameters() {
                     <Tab label="İdarələr" />
                     <Tab label="Regionlar" />
                     <Tab label="Statuslar" />
-                    <Tab label="İndekslər" />
                     <Tab label="Rəhbər Göstərişləri" />
                     <Tab label="Daxili Şöbələr" />
                     <Tab label="Nəzarətçilər" />
@@ -110,46 +354,76 @@ export default function Parameters() {
 
                 <Box sx={{ p: 3 }}>
                     <TabPanel value={tab} index={0}>
-                        <SimpleTable items={departments} columns={[
-                            { id: 'id', label: 'ID' },
-                            { id: 'department', label: 'İdarə Adı' }
-                        ]} />
+                        <EditableTable
+                            items={departments}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'department', label: 'İdarə Adı' }
+                            ]}
+                            onAdd={(data) => createDeptMutation.mutate(data)}
+                            onEdit={(id, data) => updateDeptMutation.mutate({ id, data })}
+                            onDelete={(id) => deleteDeptMutation.mutate(id)}
+                        />
                     </TabPanel>
                     <TabPanel value={tab} index={1}>
-                        <SimpleTable items={regions} columns={[
-                            { id: 'id', label: 'ID' },
-                            { id: 'region', label: 'Region Adı' }
-                        ]} />
+                        <EditableTable
+                            items={regions}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'region', label: 'Region Adı' }
+                            ]}
+                            onAdd={(data) => createRegionMutation.mutate(data)}
+                            onEdit={(id, data) => updateRegionMutation.mutate({ id, data })}
+                            onDelete={(id) => deleteRegionMutation.mutate(id)}
+                        />
                     </TabPanel>
                     <TabPanel value={tab} index={2}>
-                        <SimpleTable items={statuses} columns={[
-                            { id: 'id', label: 'ID' },
-                            { id: 'status', label: 'Status' }
-                        ]} />
+                        <EditableTable
+                            items={statuses}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'status', label: 'Status' }
+                            ]}
+                            onAdd={(data) => createStatusMutation.mutate(data)}
+                            onEdit={(id, data) => updateStatusMutation.mutate({ id, data })}
+                            onDelete={(id) => deleteStatusMutation.mutate(id)}
+                        />
                     </TabPanel>
                     <TabPanel value={tab} index={3}>
-                        <SimpleTable items={indexes} columns={[
-                            { id: 'id', label: 'ID' },
-                            { id: 'ap_index', label: 'İndeks' }
-                        ]} />
+                        <EditableTable
+                            items={instructions}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'instructions', label: 'Göstəriş' }
+                            ]}
+                            onAdd={(data) => createInstructionMutation.mutate(data)}
+                            onEdit={(id, data) => updateInstructionMutation.mutate({ id, data })}
+                            onDelete={(id) => deleteInstructionMutation.mutate(id)}
+                        />
                     </TabPanel>
                     <TabPanel value={tab} index={4}>
-                        <SimpleTable items={instructions} columns={[
-                            { id: 'id', label: 'ID' },
-                            { id: 'instructions', label: 'Göstəriş' }
-                        ]} />
+                        <EditableTable
+                            items={inSections}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'section', label: 'Şöbə' }
+                            ]}
+                            onAdd={(data) => createInSectionMutation.mutate(data)}
+                            onEdit={(id, data) => updateInSectionMutation.mutate({ id, data })}
+                            onDelete={(id) => deleteInSectionMutation.mutate(id)}
+                        />
                     </TabPanel>
                     <TabPanel value={tab} index={5}>
-                        <SimpleTable items={inSections} columns={[
-                            { id: 'id', label: 'ID' },
-                            { id: 'section', label: 'Şöbə' }
-                        ]} />
-                    </TabPanel>
-                    <TabPanel value={tab} index={6}>
-                        <SimpleTable items={whoControls} columns={[
-                            { id: 'id', label: 'ID' },
-                            { id: 'chief', label: 'Nəzarətçi' }
-                        ]} />
+                        <EditableTable
+                            items={whoControls}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'chief', label: 'Nəzarətçi' }
+                            ]}
+                            onAdd={(data) => createWhoControlMutation.mutate(data)}
+                            onEdit={(id, data) => updateWhoControlMutation.mutate({ id, data })}
+                            onDelete={(id) => deleteWhoControlMutation.mutate(id)}
+                        />
                     </TabPanel>
                 </Box>
             </Paper>

@@ -122,3 +122,97 @@ class ExecutorListOut(ORMBase):
 class MovzuOut(ORMBase):
     id: int
     Movzu: str | None = None
+
+
+# ============ CREATE/UPDATE SCHEMAS ============
+
+class DepartmentCreate(ORMBase):
+    department: str
+    sign: str | None = None
+
+
+class DepartmentUpdate(ORMBase):
+    department: str | None = None
+    sign: str | None = None
+
+
+class RegionCreate(ORMBase):
+    region: str
+
+
+class RegionUpdate(ORMBase):
+    region: str | None = None
+
+
+class DepOfficialCreate(ORMBase):
+    dep_id: int
+    official: str
+
+
+class DepOfficialUpdate(ORMBase):
+    official: str | None = None
+    dep_id: int | None = None
+
+
+class ChiefInstructionCreate(ORMBase):
+    instructions: str
+    section_id: int | None = None
+
+
+class ChiefInstructionUpdate(ORMBase):
+    instructions: str | None = None
+    section_id: int | None = None
+
+
+class InSectionCreate(ORMBase):
+    section: str
+
+
+class InSectionUpdate(ORMBase):
+    section: str | None = None
+
+
+class WhoControlCreate(ORMBase):
+    chief: str
+    section_id: int | None = None
+
+
+class WhoControlUpdate(ORMBase):
+    chief: str | None = None
+    section_id: int | None = None
+
+
+class ApStatusCreate(ORMBase):
+    status: str
+
+
+class ApStatusUpdate(ORMBase):
+    status: str | None = None
+
+
+class ApIndexCreate(ORMBase):
+    ap_index_id: int
+    ap_index: str
+
+
+class ApIndexUpdate(ORMBase):
+    ap_index_id: int | None = None
+    ap_index: str | None = None
+
+
+class ContentTypeCreate(ORMBase):
+    content_type: str
+
+
+class ContentTypeUpdate(ORMBase):
+    content_type: str | None = None
+
+
+class AccountIndexCreate(ORMBase):
+    account_index: str
+    account_order: int | None = None
+
+
+class AccountIndexUpdate(ORMBase):
+    account_index: str | None = None
+    account_order: int | None = None

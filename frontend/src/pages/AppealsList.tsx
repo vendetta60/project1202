@@ -120,9 +120,18 @@ export default function AppealsList() {
 
   return (
     <Layout>
-      <Box sx={{ mb: 4 }} className="animate-fade-in">
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h4" component="h1" fontWeight="900" color="primary">
+      <Box sx={{ mb: 6 }} className="animate-fade-in">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            fontWeight="900"
+            sx={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
             Müraciətlər
           </Typography>
           <Button
@@ -130,12 +139,20 @@ export default function AppealsList() {
             startIcon={<AddIcon />}
             onClick={() => navigate('/appeals/new')}
             sx={{
-              bgcolor: '#3e4a21',
-              px: 3,
-              '&:hover': { bgcolor: '#2c3518' },
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              borderRadius: '8px',
+              px: 4,
+              py: 1.2,
+              fontWeight: 700,
+              boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)',
+              transition: 'all 0.2s ease',
+              '&:hover': { 
+                boxShadow: '0 12px 32px rgba(99, 102, 241, 0.4)',
+                transform: 'translateY(-2px)',
+              },
             }}
           >
-            Yeni Müraciət Daxil Et
+            Yeni Müraciət
           </Button>
         </Box>
         <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
@@ -144,8 +161,15 @@ export default function AppealsList() {
       </Box>
 
       <Paper
-        className="animate-fade-in glass-card"
-        sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)' }}
+        className="animate-slide-up"
+        sx={{ 
+          p: 4, 
+          mb: 4, 
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.08)',
+        }}
       >
         <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField

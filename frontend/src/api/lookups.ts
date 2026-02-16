@@ -100,3 +100,40 @@ export const getOrgans = () => apiClient.get<Organ[]>('/lookups/organs').then(r 
 export const getDirections = () => apiClient.get<Direction[]>('/lookups/directions').then(r => r.data);
 export const getExecutorList = () => apiClient.get<ExecutorList[]>('/lookups/executor-list').then(r => r.data);
 export const getMovzular = () => apiClient.get<Movzu[]>('/lookups/movzular').then(r => r.data);
+
+// ============ CREATE/UPDATE/DELETE FUNCTIONS ============
+
+// Departments
+export const createDepartment = (data: Partial<Department>) => apiClient.post<Department>('/lookups/departments', data).then(r => r.data);
+export const updateDepartment = (id: number, data: Partial<Department>) => apiClient.put<Department>(`/lookups/departments/${id}`, data).then(r => r.data);
+export const deleteDepartment = (id: number) => apiClient.delete(`/lookups/departments/${id}`).then(r => r.data);
+
+// Regions
+export const createRegion = (data: Partial<Region>) => apiClient.post<Region>('/lookups/regions', data).then(r => r.data);
+export const updateRegion = (id: number, data: Partial<Region>) => apiClient.put<Region>(`/lookups/regions/${id}`, data).then(r => r.data);
+export const deleteRegion = (id: number) => apiClient.delete(`/lookups/regions/${id}`).then(r => r.data);
+
+// DepOfficials
+export const createDepOfficial = (data: Partial<DepOfficial>) => apiClient.post<DepOfficial>('/lookups/dep-officials', data).then(r => r.data);
+export const updateDepOfficial = (id: number, data: Partial<DepOfficial>) => apiClient.put<DepOfficial>(`/lookups/dep-officials/${id}`, data).then(r => r.data);
+export const deleteDepOfficial = (id: number) => apiClient.delete(`/lookups/dep-officials/${id}`).then(r => r.data);
+
+// ChiefInstructions
+export const createChiefInstruction = (data: Partial<ChiefInstruction>) => apiClient.post<ChiefInstruction>('/lookups/chief-instructions', data).then(r => r.data);
+export const updateChiefInstruction = (id: number, data: Partial<ChiefInstruction>) => apiClient.put<ChiefInstruction>(`/lookups/chief-instructions/${id}`, data).then(r => r.data);
+export const deleteChiefInstruction = (id: number) => apiClient.delete(`/lookups/chief-instructions/${id}`).then(r => r.data);
+
+// InSections
+export const createInSection = (data: Partial<InSection>) => apiClient.post<InSection>('/lookups/in-sections', data).then(r => r.data);
+export const updateInSection = (id: number, data: Partial<InSection>) => apiClient.put<InSection>(`/lookups/in-sections/${id}`, data).then(r => r.data);
+export const deleteInSection = (id: number) => apiClient.delete(`/lookups/in-sections/${id}`).then(r => r.data);
+
+// WhoControls
+export const createWhoControl = (data: Partial<WhoControl>) => apiClient.post<WhoControl>('/lookups/who-controls', data).then(r => r.data);
+export const updateWhoControl = (id: number, data: Partial<WhoControl>) => apiClient.put<WhoControl>(`/lookups/who-controls/${id}`, data).then(r => r.data);
+export const deleteWhoControl = (id: number) => apiClient.delete(`/lookups/who-controls/${id}`).then(r => r.data);
+
+// ApStatuses
+export const createApStatus = (data: Partial<ApStatus>) => apiClient.post<ApStatus>('/lookups/ap-statuses', data).then(r => r.data);
+export const updateApStatus = (id: number, data: Partial<ApStatus>) => apiClient.put<ApStatus>(`/lookups/ap-statuses/${id}`, data).then(r => r.data);
+export const deleteApStatus = (id: number) => apiClient.delete(`/lookups/ap-statuses/${id}`).then(r => r.data);

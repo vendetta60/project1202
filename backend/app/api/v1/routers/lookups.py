@@ -2,7 +2,7 @@
 Single router for ALL lookup/reference data tables.
 Each endpoint returns the full list (active records only where applicable).
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import get_lookup_repo
 from app.repositories.lookup import LookupRepository
@@ -20,6 +20,11 @@ from app.schemas.lookup import (
     ChiefInstructionOut, InSectionOut, SectionOut, UserSectionOut,
     WhoControlOut, DepartmentOut, DepOfficialOut, RegionOut,
     OrganOut, DirectionOut, ExecutorListOut, MovzuOut,
+    DepartmentCreate, DepartmentUpdate, RegionCreate, RegionUpdate,
+    DepOfficialCreate, DepOfficialUpdate, ChiefInstructionCreate, ChiefInstructionUpdate,
+    InSectionCreate, InSectionUpdate, WhoControlCreate, WhoControlUpdate,
+    ApStatusCreate, ApStatusUpdate, ApIndexCreate, ApIndexUpdate,
+    ContentTypeCreate, ContentTypeUpdate, AccountIndexCreate, AccountIndexUpdate,
 )
 
 router = APIRouter(prefix="/lookups", tags=["lookups"])
@@ -114,3 +119,188 @@ def get_executor_list(repo: LookupRepository = Depends(get_lookup_repo)):
 @router.get("/movzular", response_model=list[MovzuOut])
 def get_movzular(repo: LookupRepository = Depends(get_lookup_repo)):
     return repo.list_all(Movzu, active_only=False)
+
+
+# ============ CREATE/UPDATE/DELETE ENDPOINTS ============
+
+# ===== Departments =====
+@router.post("/departments", response_model=DepartmentOut)
+def create_department(data: DepartmentCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    dept = Department(department=data.department, sign=data.sign)
+    return repo.create(dept)
+
+
+@router.put("/departments/{dept_id}", response_model=DepartmentOut)
+def update_department(dept_id: int, data: DepartmentUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    dept = repo.get(Department, dept_id)
+    if not dept:
+        raise HTTPException(status_code=404, detail="Department not found")
+    if data.department:
+        dept.department = data.department
+    if data.sign is not None:
+        dept.sign = data.sign
+    return repo.update(dept)
+
+
+@router.delete("/departments/{dept_id}")
+def delete_department(dept_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(Department, dept_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Department not found")
+    return {"success": True}
+
+
+# ===== Regions =====
+@router.post("/regions", response_model=RegionOut)
+def create_region(data: RegionCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    region = Region(region=data.region)
+    return repo.create(region)
+
+
+@router.put("/regions/{region_id}", response_model=RegionOut)
+def update_region(region_id: int, data: RegionUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    region = repo.get(Region, region_id)
+    if not region:
+        raise HTTPException(status_code=404, detail="Region not found")
+    if data.region:
+        region.region = data.region
+    return repo.update(region)
+
+
+@router.delete("/regions/{region_id}")
+def delete_region(region_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(Region, region_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Region not found")
+    return {"success": True}
+
+
+# ===== DepOfficials =====
+@router.post("/dep-officials", response_model=DepOfficialOut)
+def create_dep_official(data: DepOfficialCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    official = DepOfficial(dep_id=data.dep_id, official=data.official)
+    return repo.create(official)
+
+
+@router.put("/dep-officials/{official_id}", response_model=DepOfficialOut)
+def update_dep_official(official_id: int, data: DepOfficialUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    official = repo.get(DepOfficial, official_id)
+    if not official:
+        raise HTTPException(status_code=404, detail="Official not found")
+    if data.official:
+        official.official = data.official
+    if data.dep_id is not None:
+        official.dep_id = data.dep_id
+    return repo.update(official)
+
+
+@router.delete("/dep-officials/{official_id}")
+def delete_dep_official(official_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(DepOfficial, official_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Official not found")
+    return {"success": True}
+
+
+# ===== ChiefInstructions =====
+@router.post("/chief-instructions", response_model=ChiefInstructionOut)
+def create_chief_instruction(data: ChiefInstructionCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    instruction = ChiefInstruction(instructions=data.instructions, section_id=data.section_id)
+    return repo.create(instruction)
+
+
+@router.put("/chief-instructions/{instruction_id}", response_model=ChiefInstructionOut)
+def update_chief_instruction(instruction_id: int, data: ChiefInstructionUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    instruction = repo.get(ChiefInstruction, instruction_id)
+    if not instruction:
+        raise HTTPException(status_code=404, detail="Instruction not found")
+    if data.instructions:
+        instruction.instructions = data.instructions
+    if data.section_id is not None:
+        instruction.section_id = data.section_id
+    return repo.update(instruction)
+
+
+@router.delete("/chief-instructions/{instruction_id}")
+def delete_chief_instruction(instruction_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(ChiefInstruction, instruction_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Instruction not found")
+    return {"success": True}
+
+
+# ===== InSections =====
+@router.post("/in-sections", response_model=InSectionOut)
+def create_in_section(data: InSectionCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    section = InSection(section=data.section)
+    return repo.create(section)
+
+
+@router.put("/in-sections/{section_id}", response_model=InSectionOut)
+def update_in_section(section_id: int, data: InSectionUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    section = repo.get(InSection, section_id)
+    if not section:
+        raise HTTPException(status_code=404, detail="Section not found")
+    if data.section:
+        section.section = data.section
+    return repo.update(section)
+
+
+@router.delete("/in-sections/{section_id}")
+def delete_in_section(section_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(InSection, section_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Section not found")
+    return {"success": True}
+
+
+# ===== WhoControls =====
+@router.post("/who-controls", response_model=WhoControlOut)
+def create_who_control(data: WhoControlCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    who_control = WhoControl(chief=data.chief, section_id=data.section_id)
+    return repo.create(who_control)
+
+
+@router.put("/who-controls/{who_control_id}", response_model=WhoControlOut)
+def update_who_control(who_control_id: int, data: WhoControlUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    who_control = repo.get(WhoControl, who_control_id)
+    if not who_control:
+        raise HTTPException(status_code=404, detail="Who control not found")
+    if data.chief:
+        who_control.chief = data.chief
+    if data.section_id is not None:
+        who_control.section_id = data.section_id
+    return repo.update(who_control)
+
+
+@router.delete("/who-controls/{who_control_id}")
+def delete_who_control(who_control_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(WhoControl, who_control_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Who control not found")
+    return {"success": True}
+
+
+# ===== ApStatuses =====
+@router.post("/ap-statuses", response_model=ApStatusOut)
+def create_ap_status(data: ApStatusCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    status = ApStatus(status=data.status)
+    return repo.create(status)
+
+
+@router.put("/ap-statuses/{status_id}", response_model=ApStatusOut)
+def update_ap_status(status_id: int, data: ApStatusUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    status = repo.get(ApStatus, status_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Status not found")
+    if data.status:
+        status.status = data.status
+    return repo.update(status)
+
+
+@router.delete("/ap-statuses/{status_id}")
+def delete_ap_status(status_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(ApStatus, status_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Status not found")
+    return {"success": True}

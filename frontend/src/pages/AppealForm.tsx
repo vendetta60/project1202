@@ -35,12 +35,19 @@ import {
   getInSections,
   getWhoControls,
   getDepOfficialsByDep,
-  getAccountIndexes
+  getAccountIndexes,
+  createDepartment,
+  createRegion,
+  createChiefInstruction,
+  createInSection,
+  createWhoControl,
 } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { CustomLookupDialog } from '../components/CustomLookupDialog';
 import { getErrorMessage } from '../utils/errors';
+import { formatDateToDDMMYYYY, convertDateForAPI, formatDateToISO } from '../utils/dateUtils';
 
 interface AppealFormData {
   num: number | undefined; // Hansı hərbi hissədən daxil olub
@@ -134,6 +141,13 @@ export default function AppealForm() {
   const isEditMode = !!id;
   const [error, setError] = useState<string>('');
 
+  // Dialog states for adding custom lookups
+  const [openDeptDialog, setOpenDeptDialog] = useState(false);
+  const [openRegionDialog, setOpenRegionDialog] = useState(false);
+  const [openInstructionDialog, setOpenInstructionDialog] = useState(false);
+  const [openInSectionDialog, setOpenInSectionDialog] = useState(false);
+  const [openWhoControlDialog, setOpenWhoControlDialog] = useState(false);
+
   const {
     handleSubmit,
     setValue,
@@ -182,12 +196,12 @@ export default function AppealForm() {
       reset({
         num: appeal.num,
         reg_num: appeal.reg_num || '',
-        reg_date: appeal.reg_date ? new Date(appeal.reg_date).toISOString().slice(0, 10) : undefined,
-        exp_date: appeal.exp_date ? new Date(appeal.exp_date).toISOString().slice(0, 10) : undefined,
+        reg_date: appeal.reg_date ? formatDateToDDMMYYYY(appeal.reg_date) : undefined,
+        exp_date: appeal.exp_date ? formatDateToDDMMYYYY(appeal.exp_date) : undefined,
         sec_in_ap_num: appeal.sec_in_ap_num || '',
-        sec_in_ap_date: appeal.sec_in_ap_date ? new Date(appeal.sec_in_ap_date).toISOString().slice(0, 10) : undefined,
+        sec_in_ap_date: appeal.sec_in_ap_date ? formatDateToDDMMYYYY(appeal.sec_in_ap_date) : undefined,
         in_ap_num: appeal.in_ap_num || '',
-        in_ap_date: appeal.in_ap_date ? new Date(appeal.in_ap_date).toISOString().slice(0, 10) : undefined,
+        in_ap_date: appeal.in_ap_date ? formatDateToDDMMYYYY(appeal.in_ap_date) : undefined,
         dep_id: appeal.dep_id,
         official_id: appeal.official_id,
         region_id: appeal.region_id,
@@ -203,6 +217,8 @@ export default function AppealForm() {
         status: appeal.status || undefined,
         repetition: appeal.repetition || false,
         control: appeal.control || false,
+        PC: appeal.PC || '',
+        PC_Tarixi: appeal.PC_Tarixi ? formatDateToDDMMYYYY(appeal.PC_Tarixi) : '',
       });
     }
   }, [appeal, reset]);
@@ -223,6 +239,52 @@ export default function AppealForm() {
       navigate('/appeals');
     },
     onError: (err) => setError(getErrorMessage(err)),
+  });
+
+  // Mutations for creating custom lookups
+  const addDepartmentMutation = useMutation({
+    mutationFn: (name: string) => createDepartment({ department: name }),
+    onSuccess: (newDept) => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+      setValue('dep_id', newDept.id);
+      setOpenDeptDialog(false);
+    },
+  });
+
+  const addRegionMutation = useMutation({
+    mutationFn: (name: string) => createRegion({ region: name }),
+    onSuccess: (newRegion) => {
+      queryClient.invalidateQueries({ queryKey: ['regions'] });
+      setValue('region_id', newRegion.id);
+      setOpenRegionDialog(false);
+    },
+  });
+
+  const addInstructionMutation = useMutation({
+    mutationFn: (name: string) => createChiefInstruction({ instructions: name }),
+    onSuccess: (newInstr) => {
+      queryClient.invalidateQueries({ queryKey: ['chiefInstructions'] });
+      setValue('instructions_id', newInstr.id);
+      setOpenInstructionDialog(false);
+    },
+  });
+
+  const addInSectionMutation = useMutation({
+    mutationFn: (name: string) => createInSection({ section: name }),
+    onSuccess: (newSection) => {
+      queryClient.invalidateQueries({ queryKey: ['inSections'] });
+      setValue('InSection', newSection.id);
+      setOpenInSectionDialog(false);
+    },
+  });
+
+  const addWhoControlMutation = useMutation({
+    mutationFn: (name: string) => createWhoControl({ chief: name }),
+    onSuccess: (newControl) => {
+      queryClient.invalidateQueries({ queryKey: ['whoControls'] });
+      setValue('who_control_id', newControl.id);
+      setOpenWhoControlDialog(false);
+    },
   });
 
   const onSubmit = (data: AppealFormData) => {
@@ -249,6 +311,9 @@ export default function AppealForm() {
     dateFields.forEach(field => {
       if (sanitizedData[field] === '') {
         (sanitizedData as any)[field] = undefined;
+      } else if (sanitizedData[field]) {
+        // Convert dd/mm/yyyy to YYYY-MM-DD for API
+        (sanitizedData as any)[field] = convertDateForAPI(sanitizedData[field] as string) || undefined;
       }
     });
 
@@ -292,11 +357,29 @@ export default function AppealForm() {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Typography sx={labelSx}>Qeydealınma tarixi:</Typography>
-                  <Controller name="reg_date" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                  <Controller name="reg_date" control={control} render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      size="small"
+                      sx={inputSx}
+                      placeholder="dd/mm/yyyy"
+                      inputProps={{ maxLength: 10 }}
+                    />
+                  )} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Typography sx={labelSx}>İcra müddəti:</Typography>
-                  <Controller name="exp_date" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                  <Controller name="exp_date" control={control} render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      size="small"
+                      sx={inputSx}
+                      placeholder="dd/mm/yyyy"
+                      inputProps={{ maxLength: 10 }}
+                    />
+                  )} />
                 </Grid>
               </Grid>
             </Grid>
@@ -317,7 +400,15 @@ export default function AppealForm() {
                 <Grid size={{ xs: 12, md: 3 }}>
                   <Typography sx={labelSx}>Digər HH üzrə tarix:</Typography>
                   <Controller name="sec_in_ap_date" control={control} render={({ field }) => (
-                    <TextField {...field} type="date" fullWidth size="small" sx={inputSx} disabled={!selectedInSection} />
+                    <TextField
+                      {...field}
+                      fullWidth
+                      size="small"
+                      sx={inputSx}
+                      disabled={!selectedInSection}
+                      placeholder="dd/mm/yyyy"
+                      inputProps={{ maxLength: 10 }}
+                    />
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
@@ -326,7 +417,16 @@ export default function AppealForm() {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <Typography sx={labelSx}>Daxil olan mür. tarixi:</Typography>
-                  <Controller name="in_ap_date" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                  <Controller name="in_ap_date" control={control} render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      size="small"
+                      sx={inputSx}
+                      placeholder="dd/mm/yyyy"
+                      inputProps={{ maxLength: 10 }}
+                    />
+                  )} />
                 </Grid>
               </Grid>
             </Grid>
@@ -349,7 +449,7 @@ export default function AppealForm() {
                         </Select>
                       )} />
                     </Box>
-                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }} onClick={() => setOpenDeptDialog(true)}><AddCircleOutlineIcon fontSize="small" /></IconButton>
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -377,7 +477,7 @@ export default function AppealForm() {
                         </Select>
                       )} />
                     </Box>
-                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }} onClick={() => setOpenInSectionDialog(true)}><AddCircleOutlineIcon fontSize="small" /></IconButton>
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -395,7 +495,7 @@ export default function AppealForm() {
                         </Select>
                       )} />
                     </Box>
-                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }} onClick={() => setOpenRegionDialog(true)}><AddCircleOutlineIcon fontSize="small" /></IconButton>
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -468,7 +568,7 @@ export default function AppealForm() {
                         </Select>
                       )} />
                     </Box>
-                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }} onClick={() => setOpenInstructionDialog(true)}><AddCircleOutlineIcon fontSize="small" /></IconButton>
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -482,7 +582,7 @@ export default function AppealForm() {
                         </Select>
                       )} />
                     </Box>
-                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }}><AddCircleOutlineIcon fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ p: '6px', color: '#3e4a21' }} onClick={() => setOpenWhoControlDialog(true)}><AddCircleOutlineIcon fontSize="small" /></IconButton>
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -500,7 +600,16 @@ export default function AppealForm() {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <Typography sx={labelSx}>PC Tarixi:</Typography>
-                  <Controller name="PC_Tarixi" control={control} render={({ field }) => <TextField {...field} type="date" fullWidth size="small" sx={inputSx} />} />
+                  <Controller name="PC_Tarixi" control={control} render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      size="small"
+                      sx={inputSx}
+                      placeholder="dd/mm/yyyy"
+                      inputProps={{ maxLength: 10 }}
+                    />
+                  )} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }}>
                   <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(62, 74, 33, 0.05)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(62, 74, 33, 0.1)' }}>
@@ -590,6 +699,43 @@ export default function AppealForm() {
           </Box>
         </form>
       </Paper>
+
+      {/* Custom Lookup Dialogs */}
+      <CustomLookupDialog
+        open={openDeptDialog}
+        title="Yeni İdarə Əlavə Et"
+        fieldLabel="İdarə Adı"
+        onAdd={(value) => addDepartmentMutation.mutateAsync(value)}
+        onClose={() => setOpenDeptDialog(false)}
+      />
+      <CustomLookupDialog
+        open={openRegionDialog}
+        title="Yeni Region Əlavə Et"
+        fieldLabel="Region Adı"
+        onAdd={(value) => addRegionMutation.mutateAsync(value)}
+        onClose={() => setOpenRegionDialog(false)}
+      />
+      <CustomLookupDialog
+        open={openInSectionDialog}
+        title="Yeni Hərbi Hissə Əlavə Et"
+        fieldLabel="Hərbi Hissə Adı"
+        onAdd={(value) => addInSectionMutation.mutateAsync(value)}
+        onClose={() => setOpenInSectionDialog(false)}
+      />
+      <CustomLookupDialog
+        open={openInstructionDialog}
+        title="Yeni Rəhbər Göstərişi Əlavə Et"
+        fieldLabel="Göstəriş Metni"
+        onAdd={(value) => addInstructionMutation.mutateAsync(value)}
+        onClose={() => setOpenInstructionDialog(false)}
+      />
+      <CustomLookupDialog
+        open={openWhoControlDialog}
+        title="Yeni Nəzarətçi Əlavə Et"
+        fieldLabel="Nəzarətçi Adı"
+        onAdd={(value) => addWhoControlMutation.mutateAsync(value)}
+        onClose={() => setOpenWhoControlDialog(false)}
+      />
     </Layout>
   );
 }

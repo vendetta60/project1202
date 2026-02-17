@@ -51,12 +51,6 @@ export default function CitizensList() {
     setPage(0);
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
   if (isLoading) {
     return (
       <Layout>
@@ -67,67 +61,93 @@ export default function CitizensList() {
 
   return (
     <Layout>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" component="h1" fontWeight="bold" sx={{ color: '#1f2937' }}>
+      <Box sx={{ mb: 6 }} className="animate-fade-in">
+        <Typography
+          variant="h4"
+          component="h1"
+          fontWeight="900"
+          color="primary"
+          sx={{ mb: 1 }}
+        >
           Vətəndaşlar
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
+          Sistemdə qeydiyyatda olan vətəndaşların siyahısı və məlumatları
         </Typography>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
+      <Paper
+        className="animate-slide-up glass-card"
+        sx={{
+          p: 4,
+          mb: 4,
+          borderRadius: 2,
+          bgcolor: 'rgba(255,255,255,0.7)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+        }}
+      >
         <TextField
           fullWidth
           placeholder="Ad, soyad və ya FIN ilə axtarın..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onKeyUp={(e) => e.key === 'Enter' && handleSearch()}
           size="small"
-          sx={{ bgcolor: 'white' }}
+          sx={{
+            bgcolor: 'white',
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
+                <SearchIcon sx={{ color: '#4a5d23' }} />
               </InputAdornment>
             ),
           }}
         />
-      </Box>
+      </Paper>
 
-      <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-        <TableContainer sx={{ bgcolor: 'white' }}>
-          <Table>
+      <Paper
+        className="animate-slide-up glass-card"
+        sx={{ borderRadius: 2, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
+      >
+        <TableContainer>
+          <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Ad</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Soyad</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>FIN</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Telefon</TableCell>
+              <TableRow sx={{ bgcolor: '#3e4a21' }}>
+                <TableCell sx={{ fontWeight: 700, color: 'white', py: 2 }}>Ad</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'white', py: 2 }}>Soyad</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'white', py: 2 }}>FIN</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'white', py: 2 }}>Telefon</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {citizensData?.items && citizensData.items.length > 0 ? (
-                citizensData.items.map((citizen) => (
+                citizensData.items.map((citizen: any) => (
                   <TableRow
                     key={citizen.id}
                     hover
                     sx={{
                       cursor: 'pointer',
                       '&:hover': {
-                        bgcolor: '#f9fafb',
+                        bgcolor: 'rgba(74, 93, 35, 0.04)',
                       },
-                      borderBottom: '1px solid #e5e7eb',
+                      '& td': { py: 2, fontSize: '0.875rem', fontWeight: 500 }
                     }}
                     onClick={() => navigate(`/citizens/${citizen.id}`)}
                   >
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{citizen.first_name}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{citizen.last_name}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{citizen.fin}</TableCell>
-                    <TableCell sx={{ fontSize: '0.875rem' }}>{citizen.phone || '-'}</TableCell>
+                    <TableCell sx={{ color: '#333' }}>{citizen.first_name}</TableCell>
+                    <TableCell sx={{ color: '#333' }}>{citizen.last_name}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#3e4a21' }}>{citizen.fin}</TableCell>
+                    <TableCell sx={{ color: '#666' }}>{citizen.phone || '-'}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    <Typography color="text.secondary" sx={{ py: 3 }}>
+                  <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                       Vətəndaş tapılmadı
                     </Typography>
                   </TableCell>
@@ -144,10 +164,14 @@ export default function CitizensList() {
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage="Səhifə başına:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
           sx={{
-            bgcolor: '#f9fafb',
-            borderTop: '1px solid #e5e7eb',
+            bgcolor: 'white',
+            borderTop: '1px solid rgba(0,0,0,0.05)',
+            '& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              color: '#333'
+            }
           }}
         />
       </Paper>

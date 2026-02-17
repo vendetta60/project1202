@@ -67,61 +67,90 @@ export default function UsersList() {
 
     return (
         <Layout>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h5" component="h1" gutterBottom fontWeight="bold" sx={{ color: '#1f2937' }}>
-                    İstifadəçi İdarəetməsi
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
+            <Box sx={{ mb: 4 }} className="animate-fade-in">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                    <Typography variant="h4" component="h1" fontWeight="900" color="primary">
+                        İstifadəçi İdarəetməsi
+                    </Typography>
+                </Box>
+                <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
                     Sistemdəki istifadəçiləri idarə edin
                 </Typography>
             </Box>
 
-            <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
-                <TextField
-                    placeholder="İstifadəçi axtar..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setPage(0);
-                    }}
-                    size="small"
-                    sx={{ flexGrow: 1, maxWidth: 400, bgcolor: 'white' }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon fontSize="small" />
-                            </InputAdornment>
-                        ),
-                    }}
-                />
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => navigate('/admin/users/new')}
-                    sx={{
-                        bgcolor: '#1976d2',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        '&:hover': {
-                            bgcolor: '#1565c0',
-                        },
-                    }}
-                >
-                    Yeni İstifadəçi
-                </Button>
-            </Box>
+            <Paper
+                className="animate-fade-in glass-card"
+                sx={{
+                    p: 3,
+                    mb: 4,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+                }}
+            >
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <TextField
+                        placeholder="İstifadəçi axtar..."
+                        value={searchQuery}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setPage(0);
+                        }}
+                        size="small"
+                        sx={{
+                            flexGrow: 1,
+                            maxWidth: 400,
+                            bgcolor: 'white',
+                            borderRadius: 1.5,
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(74, 93, 35, 0.2)' },
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(74, 93, 35, 0.4)' },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                        }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon fontSize="small" sx={{ color: '#4a5d23' }} />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => navigate('/admin/users/new')}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 700,
+                            bgcolor: '#4a5d23',
+                            '&:hover': { bgcolor: '#3a4a1b' },
+                            textTransform: 'none',
+                            px: 3
+                        }}
+                    >
+                        Yeni İstifadəçi
+                    </Button>
+                </Box>
+            </Paper>
 
-            <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+            <Paper
+                className="animate-slide-up glass-card"
+                sx={{
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    border: '1px solid rgba(0,0,0,0.05)'
+                }}
+            >
                 <TableContainer sx={{ bgcolor: 'white' }}>
                     <Table>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
-                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>İstifadəçi adı</TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Soyad</TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Ad</TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Section ID</TableCell>
-                                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Admin</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 600, color: '#374151' }}>Əməliyyatlar</TableCell>
+                            <TableRow sx={{ bgcolor: '#3e4a21' }}>
+                                <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>İstifadəçi adı</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Soyad</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Ad</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Department</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Status</TableCell>
+                                <TableCell align="right" sx={{ color: 'white', fontWeight: 700, py: 2 }}>Əməliyyatlar</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -130,24 +159,31 @@ export default function UsersList() {
                                     key={user.id}
                                     hover
                                     sx={{
-                                        '&:hover': {
-                                            bgcolor: '#f9fafb',
-                                        },
-                                        borderBottom: '1px solid #e5e7eb',
+                                        '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.04)' },
+                                        borderBottom: '1px solid rgba(0,0,0,0.05)'
                                     }}
                                 >
-                                    <TableCell sx={{ fontSize: '0.875rem' }}>
-                                        <Typography fontWeight="500">{user.username}</Typography>
+                                    <TableCell sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#2c3e50' }}>
+                                        {user.username}
                                     </TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.surname || '-'}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.name || '-'}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem' }}>{user.section_id || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', color: '#444' }}>{user.surname || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', color: '#444' }}>{user.name || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#4a5d23' }}>
+                                        {user.section_name || user.section_id || '-'}
+                                    </TableCell>
                                     <TableCell>
                                         <Chip
-                                            label={user.is_admin ? 'Admin' : 'User'}
-                                            color={user.is_admin ? 'primary' : 'default'}
+                                            label={user.is_admin ? 'ADMIN' : 'USER'}
                                             size="small"
-                                            variant="outlined"
+                                            sx={{
+                                                bgcolor: user.is_admin ? '#4a5d23' : 'rgba(0,0,0,0.08)',
+                                                color: user.is_admin ? 'white' : '#666',
+                                                fontWeight: 700,
+                                                fontSize: '0.7rem',
+                                                borderRadius: 1,
+                                                height: 24,
+                                                border: user.is_admin ? 'none' : '1px solid rgba(0,0,0,0.1)'
+                                            }}
                                         />
                                     </TableCell>
                                     <TableCell align="right">
@@ -155,6 +191,10 @@ export default function UsersList() {
                                             <IconButton
                                                 size="small"
                                                 onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                sx={{
+                                                    color: '#4a5d23',
+                                                    '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' }
+                                                }}
                                             >
                                                 <EditIcon fontSize="small" />
                                             </IconButton>
@@ -165,7 +205,7 @@ export default function UsersList() {
                             {usersData?.items.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} align="center">
-                                        <Typography color="text.secondary" sx={{ py: 3 }}>
+                                        <Typography color="text.secondary" sx={{ py: 4, fontWeight: 500 }}>
                                             İstifadəçi tapılmadı
                                         </Typography>
                                     </TableCell>
@@ -182,10 +222,14 @@ export default function UsersList() {
                     rowsPerPage={rowsPerPage}
                     onRowsPerPageChange={handleChangeRowsPerPage}
                     labelRowsPerPage="Səhifədə sətir:"
-                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
+                    labelDisplayedRows={({ from, to, count }) => `${from}–${to} / ${count}`}
                     sx={{
-                        bgcolor: '#f9fafb',
-                        borderTop: '1px solid #e5e7eb',
+                        bgcolor: 'white',
+                        borderTop: '1px solid rgba(0,0,0,0.05)',
+                        '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                            fontWeight: 600,
+                            color: '#555',
+                        }
                     }}
                 />
             </Paper>

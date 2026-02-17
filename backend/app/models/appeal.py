@@ -18,7 +18,18 @@ class AppealStatus(str, enum.Enum):
     completed = "completed"
 
 
-class Appeal(Base):
+class AuditMixin:
+    """Mixin for audit tracking fields"""
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_by: Mapped[int | None] = mapped_column(Integer)
+    created_by_name: Mapped[str | None] = mapped_column(String(100))
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.utcnow)
+    updated_by: Mapped[int | None] = mapped_column(Integer)
+    updated_by_name: Mapped[str | None] = mapped_column(String(100))
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Appeal(Base, AuditMixin):
     __tablename__ = "Appeals"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

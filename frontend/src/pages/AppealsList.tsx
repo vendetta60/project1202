@@ -122,15 +122,11 @@ export default function AppealsList() {
     <Layout>
       <Box sx={{ mb: 6 }} className="animate-fade-in">
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography 
-            variant="h4" 
-            component="h1" 
+          <Typography
+            variant="h4"
+            component="h1"
             fontWeight="900"
-            sx={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
+            color="primary"
           >
             Müraciətlər
           </Typography>
@@ -139,15 +135,16 @@ export default function AppealsList() {
             startIcon={<AddIcon />}
             onClick={() => navigate('/appeals/new')}
             sx={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              bgcolor: '#4a5d23',
               borderRadius: '8px',
               px: 4,
               py: 1.2,
               fontWeight: 700,
-              boxShadow: '0 8px 24px rgba(99, 102, 241, 0.3)',
+              boxShadow: '0 8px 16px rgba(74, 93, 35, 0.3)',
               transition: 'all 0.2s ease',
-              '&:hover': { 
-                boxShadow: '0 12px 32px rgba(99, 102, 241, 0.4)',
+              '&:hover': {
+                bgcolor: '#3a4a1b',
+                boxShadow: '0 12px 20px rgba(74, 93, 35, 0.4)',
                 transform: 'translateY(-2px)',
               },
             }}
@@ -161,14 +158,14 @@ export default function AppealsList() {
       </Box>
 
       <Paper
-        className="animate-slide-up"
-        sx={{ 
-          p: 4, 
-          mb: 4, 
-          borderRadius: '16px',
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)',
+        className="animate-slide-up glass-card"
+        sx={{
+          p: 4,
+          mb: 4,
+          borderRadius: 2,
+          bgcolor: 'rgba(255,255,255,0.7)',
           border: '1px solid rgba(255,255,255,0.6)',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
         }}
       >
         <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -180,14 +177,19 @@ export default function AppealsList() {
               setPage(0);
             }}
             size="small"
-            sx={{ flexGrow: 1, minWidth: 300 }}
+            sx={{
+              flexGrow: 1,
+              minWidth: 300,
+              '& .MuiOutlinedInput-root': { bgcolor: 'white' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon color="primary" />
+                  <SearchIcon sx={{ color: '#4a5d23' }} />
                 </InputAdornment>
               ),
-              sx: { bgcolor: 'white', borderRadius: 2 }
             }}
           />
 
@@ -255,19 +257,19 @@ export default function AppealsList() {
 
       <Paper
         className="animate-slide-up glass-card"
-        sx={{ borderRadius: 4, overflow: 'hidden' }}
+        sx={{ borderRadius: 2, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
       >
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell className="military-table-header">Qeydiyyat №</TableCell>
-                <TableCell className="military-table-header">Vətəndaş</TableCell>
-                <TableCell className="military-table-header">Region</TableCell>
-                <TableCell className="military-table-header">İdarə</TableCell>
-                <TableCell className="military-table-header" sx={{ maxWidth: 300 }}>Məzmun</TableCell>
-                <TableCell className="military-table-header">Status</TableCell>
-                <TableCell className="military-table-header">Tarix</TableCell>
+              <TableRow sx={{ bgcolor: '#3e4a21' }}>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Qeydiyyat №</TableCell>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Vətəndaş</TableCell>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Region</TableCell>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>İdarə</TableCell>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700, maxWidth: 300 }}>Məzmun</TableCell>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Status</TableCell>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Tarix</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -280,15 +282,15 @@ export default function AppealsList() {
                       hover
                       sx={{
                         cursor: 'pointer',
-                        '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.05)' },
-                        '& td': { py: 2.5, fontSize: '0.875rem', fontWeight: 500 }
+                        '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.04)' },
+                        '& td': { py: 2, fontSize: '0.875rem', fontWeight: 500 }
                       }}
                       onClick={() => navigate(`/appeals/${appeal.id}`)}
                     >
-                      <TableCell sx={{ fontWeight: 800, color: '#3e4a21' }}>{appeal.reg_num || '-'}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#3e4a21' }}>{appeal.reg_num || '-'}</TableCell>
                       <TableCell>{appeal.person || '-'}</TableCell>
-                      <TableCell>{getRegionName(appeal.region_id as any)}</TableCell>
-                      <TableCell>{getDepName(appeal.dep_id as any)}</TableCell>
+                      <TableCell>{getRegionName(appeal.region_id || undefined)}</TableCell>
+                      <TableCell>{getDepName(appeal.dep_id || undefined)}</TableCell>
                       <TableCell sx={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {appeal.content || '-'}
                       </TableCell>
@@ -296,13 +298,11 @@ export default function AppealsList() {
                         <Box
                           sx={{
                             display: 'inline-block',
-                            px: 2,
-                            py: 0.75,
-                            borderRadius: '20px',
-                            fontSize: '0.7rem',
-                            fontWeight: 800,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
                             bgcolor: statusColor.bg,
                             color: statusColor.text,
                             border: `1px solid ${statusColor.text}30`
@@ -311,7 +311,7 @@ export default function AppealsList() {
                           {getStatusName(appeal.status as any)}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>
+                      <TableCell sx={{ fontWeight: 600, color: '#666' }}>
                         {appeal.reg_date ? new Date(appeal.reg_date).toLocaleDateString('az-AZ') : '-'}
                       </TableCell>
                     </TableRow>
@@ -319,8 +319,8 @@ export default function AppealsList() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
-                    <Typography color="text.secondary" sx={{ fontWeight: 600 }}>Axtarışa uyğun müraciət tapılmadı</Typography>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>Axtarışa uyğun müraciət tapılmadı</Typography>
                   </TableCell>
                 </TableRow>
               )}
@@ -336,12 +336,12 @@ export default function AppealsList() {
           onRowsPerPageChange={handleChangeRowsPerPage}
           labelRowsPerPage="Səhifə başına:"
           sx={{
-            bgcolor: 'rgba(62, 74, 33, 0.03)',
+            bgcolor: 'white',
             borderTop: '1px solid rgba(0,0,0,0.05)',
             '& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              color: '#3e4a21'
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              color: '#333'
             }
           }}
         />

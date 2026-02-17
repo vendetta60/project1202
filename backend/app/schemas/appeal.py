@@ -94,3 +94,15 @@ class AppealOut(ORMBase):
     user_section_id: int | None = None
     PC: str | None = None
     PC_Tarixi: datetime | None = None
+    
+    # Audit fields
+    is_deleted: bool = False
+    created_at: datetime | None = None
+    created_by: int | None = None
+    created_by_name: str | None = None
+    updated_at: datetime | None = None
+    updated_by: int | None = None
+    updated_by_name: str | None = None
+
+    class Config:
+        from_attributes = True

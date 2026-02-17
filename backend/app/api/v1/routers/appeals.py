@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.deps import get_appeal_service, get_current_user
@@ -72,3 +72,13 @@ def update_appeal(
     service: AppealService = Depends(get_appeal_service),
 ):
     return service.update(current_user=current_user, appeal_id=appeal_id, payload=payload)
+
+
+@router.delete("/{appeal_id}")
+def delete_appeal(
+    appeal_id: int,
+    current_user: User = Depends(get_current_user),
+    service: AppealService = Depends(get_appeal_service),
+):
+    """Soft delete an appeal"""
+    return service.delete(appeal_id=appeal_id, current_user=current_user)

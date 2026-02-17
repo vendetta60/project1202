@@ -5,6 +5,7 @@ from app.schemas.lookup import (
     WhoControlOut, DepartmentOut, DepOfficialOut, RegionOut,
     OrganOut, DirectionOut, ExecutorListOut, MovzuOut,
 )
+from app.schemas.audit_log import AuditLogOut, AuditLogListResponse
 
 __all__ = [
     "ORMBase",
@@ -12,4 +13,5 @@ __all__ = [
     "ChiefInstructionOut", "InSectionOut", "SectionOut", "UserSectionOut",
     "WhoControlOut", "DepartmentOut", "DepOfficialOut", "RegionOut",
     "OrganOut", "DirectionOut", "ExecutorListOut", "MovzuOut",
+    "AuditLogOut", "AuditLogListResponse",
 ]

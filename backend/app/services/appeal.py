@@ -3,12 +3,14 @@ from fastapi import HTTPException
 from app.models.appeal import Appeal
 from app.models.user import User
 from app.repositories.appeal import AppealRepository
+from app.services.audit import AuditService
 from app.schemas.appeal import AppealCreate, AppealUpdate
 
 
 class AppealService:
-    def __init__(self, appeals: AppealRepository):
+    def __init__(self, appeals: AppealRepository, audit: AuditService | None = None):
         self.appeals = appeals
+        self.audit = audit
 
     def list(
         self,
@@ -57,7 +59,25 @@ class AppealService:
         obj = Appeal(**payload.model_dump())
         if current_user.section_id and not obj.user_section_id:
             obj.user_section_id = current_user.section_id
-        return self.appeals.create(obj)
+        
+        result = self.appeals.create(
+            obj,
+            user_id=current_user.id,
+            user_name=current_user.username
+        )
+        
+        # Log the creation
+        if self.audit:
+            self.audit.log_action(
+                entity_type="Appeal",
+                entity_id=result.id,
+                action="CREATE",
+                current_user=current_user,
+                description=f"Müraciət yaradıldı - {result.reg_num}",
+                new_values=payload.model_dump(),
+            )
+        
+        return result
 
     def get(self, appeal_id: int, current_user: User) -> Appeal:
         obj = self.appeals.get(appeal_id)
@@ -70,6 +90,56 @@ class AppealService:
         if not obj:
             raise HTTPException(status_code=404, detail="Müraciət tapılmadı")
 
-        for k, v in payload.model_dump(exclude_unset=True).items():
-            setattr(obj, k, v)
-        return self.appeals.save(obj)
+        # Capture old values for audit
+        old_values = {}
+        updates = payload.model_dump(exclude_unset=True)
+        for key in updates.keys():
+            if hasattr(obj, key):
+                old_values[key] = getattr(obj, key)
+
+        result = self.appeals.update(
+            obj,
+            updates=updates,
+            user_id=current_user.id,
+            user_name=current_user.username
+        )
+        
+        # Log the update
+        if self.audit:
+            self.audit.log_action(
+                entity_type="Appeal",
+                entity_id=result.id,
+                action="UPDATE",
+                current_user=current_user,
+                description=f"Müraciət dəyişdirildi - {result.reg_num}",
+                old_values=old_values,
+                new_values=updates,
+            )
+        
+        return result
+
+    def delete(self, appeal_id: int, current_user: User) -> dict:
+        """Soft delete an appeal"""
+        obj = self.appeals.get(appeal_id)
+        if not obj:
+            raise HTTPException(status_code=404, detail="Müraciət tapılmadı")
+        
+        # Log the deletion before soft-deleting
+        if self.audit:
+            self.audit.log_action(
+                entity_type="Appeal",
+                entity_id=obj.id,
+                action="DELETE",
+                current_user=current_user,
+                description=f"Müraciət silindi - {obj.reg_num}",
+                old_values={"is_deleted": obj.is_deleted},
+                new_values={"is_deleted": True},
+            )
+        
+        self.appeals.delete(
+            obj,
+            user_id=current_user.id,
+            user_name=current_user.username
+        )
+        
+        return {"message": "Müraciət silindi", "id": appeal_id}

@@ -1,0 +1,8 @@
+Creating user: audit_test_tpnwcmid...
+User created with ID: 14
+Verifying audit log...
+SUCCESS: Audit log found!
+  ID: 2
+  Action: CREATE
+  Entity: User #14
+  Description: Istifad?çi yaradildi - audit_test_tpnwcmid

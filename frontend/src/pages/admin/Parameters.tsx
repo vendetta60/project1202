@@ -20,12 +20,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import Layout from '../../components/Layout';
-import LoadingSpinner from '../../components/LoadingSpinner';
 import {
     getDepartments,
     getRegions,
     getApStatuses,
-    getApIndexes,
     getChiefInstructions,
     getInSections,
     getWhoControls,
@@ -70,10 +68,10 @@ interface EditableTableProps {
     onAdd: (data: any) => void;
     onEdit: (id: number, data: any) => void;
     onDelete: (id: number) => void;
-    isLoading?: boolean;
+
 }
 
-function EditableTable({ items, columns, onAdd, onEdit, onDelete, isLoading }: EditableTableProps) {
+function EditableTable({ items, columns, onAdd, onEdit, onDelete }: EditableTableProps) {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editData, setEditData] = useState<any>({});
     const [isAdding, setIsAdding] = useState(false);
@@ -104,31 +102,101 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, isLoading }: E
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={() => setIsAdding(true)}
-                    sx={{ mb: 2, bgcolor: '#3e4a21' }}
+                    sx={{
+                        mb: 2,
+                        bgcolor: '#4a5d23',
+                        '&:hover': { bgcolor: '#3a4a1b' },
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        borderRadius: 1.5
+                    }}
                 >
                     Əlavə Et
                 </Button>
                 <Typography color="text.secondary" sx={{ py: 2 }}>Məlumat yoxdur</Typography>
+
+                {isAdding && (
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: 3,
+                            mb: 2,
+                            bgcolor: '#fcfcfc',
+                            border: '1px solid rgba(74, 93, 35, 0.1)',
+                            borderRadius: 2
+                        }}
+                    >
+                        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#4a5d23' }}>Yeni Məlumat</Typography>
+                        {columns.filter(c => c.id !== 'id').map(col => (
+                            <TextField
+                                key={col.id}
+                                label={col.label}
+                                value={newData[col.id] || ''}
+                                onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
+                                fullWidth
+                                size="small"
+                                sx={{
+                                    mb: 2,
+                                    bgcolor: 'white',
+                                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
+                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                }}
+                            />
+                        ))}
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                                variant="contained"
+                                onClick={handleAdd}
+                                sx={{ bgcolor: '#4a5d23', '&:hover': { bgcolor: '#3a4a1b' }, fontWeight: 600, textTransform: 'none' }}
+                            >
+                                Yadda Saxla
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={() => setIsAdding(false)}
+                                sx={{ color: '#666', borderColor: '#ccc', textTransform: 'none' }}
+                            >
+                                İmtina Et
+                            </Button>
+                        </Box>
+                    </Paper>
+                )}
             </Box>
         );
     }
 
     return (
-        <Box>
+        <Box className="animate-fade-in">
             <Box sx={{ mb: 2 }}>
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
                     onClick={() => setIsAdding(true)}
-                    sx={{ bgcolor: '#3e4a21' }}
+                    sx={{
+                        bgcolor: '#4a5d23',
+                        '&:hover': { bgcolor: '#3a4a1b' },
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        borderRadius: 1.5
+                    }}
                 >
                     Əlavə Et
                 </Button>
             </Box>
 
             {isAdding && (
-                <Paper sx={{ p: 2, mb: 2, bgcolor: '#f0f9ff', border: '1px solid #e0f2fe' }}>
-                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>Yeni Məlumat</Typography>
+                <Paper
+                    className="animate-slide-up"
+                    elevation={0}
+                    sx={{
+                        p: 3,
+                        mb: 3,
+                        bgcolor: '#fcfcfc',
+                        border: '1px solid rgba(74, 93, 35, 0.1)',
+                        borderRadius: 2
+                    }}
+                >
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#4a5d23' }}>Yeni Məlumat</Typography>
                     {columns.filter(c => c.id !== 'id').map(col => (
                         <TextField
                             key={col.id}
@@ -137,33 +205,46 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, isLoading }: E
                             onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
                             fullWidth
                             size="small"
-                            sx={{ mb: 1 }}
+                            sx={{
+                                mb: 2,
+                                bgcolor: 'white',
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                            }}
                         />
                     ))}
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button variant="contained" onClick={handleAdd} sx={{ bgcolor: '#3e4a21' }}>
+                        <Button
+                            variant="contained"
+                            onClick={handleAdd}
+                            sx={{ bgcolor: '#4a5d23', '&:hover': { bgcolor: '#3a4a1b' }, fontWeight: 600, textTransform: 'none' }}
+                        >
                             Yadda Saxla
                         </Button>
-                        <Button variant="outlined" onClick={() => setIsAdding(false)}>
+                        <Button
+                            variant="outlined"
+                            onClick={() => setIsAdding(false)}
+                            sx={{ color: '#666', borderColor: '#ccc', textTransform: 'none' }}
+                        >
                             İmtina Et
                         </Button>
                     </Box>
                 </Paper>
             )}
 
-            <TableContainer sx={{ bgcolor: 'white', border: '1px solid #e5e7eb' }}>
+            <TableContainer sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                 <Table size="small">
                     <TableHead>
-                        <TableRow sx={{ bgcolor: '#f3f4f6' }}>
+                        <TableRow sx={{ bgcolor: '#3e4a21' }}>
                             {columns.map(col => (
-                                <TableCell key={col.id} sx={{ fontWeight: 600 }}>{col.label}</TableCell>
+                                <TableCell key={col.id} sx={{ fontWeight: 700, color: 'white', py: 1.5 }}>{col.label}</TableCell>
                             ))}
-                            <TableCell align="right" sx={{ fontWeight: 600 }}>Əməliyyatlar</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 700, color: 'white', py: 1.5 }}>Əməliyyatlar</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {items.map((item) => (
-                            <TableRow key={item.id} hover>
+                            <TableRow key={item.id} hover sx={{ '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.04)' } }}>
                                 {editingId === item.id ? (
                                     <>
                                         {columns.filter(c => c.id !== 'id').map(col => (
@@ -173,14 +254,22 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, isLoading }: E
                                                     onChange={(e) => setEditData({ ...editData, [col.id]: e.target.value })}
                                                     size="small"
                                                     fullWidth
+                                                    sx={{
+                                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                                    }}
                                                 />
                                             </TableCell>
                                         ))}
                                         <TableCell align="right">
-                                            <Button size="small" variant="contained" onClick={handleSaveEdit} sx={{ bgcolor: '#3e4a21', mr: 1 }}>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                onClick={handleSaveEdit}
+                                                sx={{ bgcolor: '#4a5d23', mr: 1, '&:hover': { bgcolor: '#3a4a1b' } }}
+                                            >
                                                 Yadda Saxla
                                             </Button>
-                                            <Button size="small" variant="outlined" onClick={() => setEditingId(null)}>
+                                            <Button size="small" variant="outlined" onClick={() => setEditingId(null)} sx={{ color: '#666', borderColor: '#ccc' }}>
                                                 İmtina Et
                                             </Button>
                                         </TableCell>
@@ -188,20 +277,20 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, isLoading }: E
                                 ) : (
                                     <>
                                         {columns.map(col => (
-                                            <TableCell key={col.id}>{item[col.id]}</TableCell>
+                                            <TableCell key={col.id} sx={{ color: '#333' }}>{item[col.id]}</TableCell>
                                         ))}
                                         <TableCell align="right">
                                             <IconButton
                                                 size="small"
                                                 onClick={() => handleStartEdit(item)}
-                                                sx={{ color: '#3e4a21', mr: 1 }}
+                                                sx={{ color: '#4a5d23', mr: 1, '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' } }}
                                             >
                                                 <EditIcon fontSize="small" />
                                             </IconButton>
                                             <IconButton
                                                 size="small"
                                                 onClick={() => onDelete(item.id)}
-                                                color="error"
+                                                sx={{ color: '#d32f2f', '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.1)' } }}
                                             >
                                                 <DeleteIcon fontSize="small" />
                                             </IconButton>
@@ -224,7 +313,7 @@ export default function Parameters() {
     const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: getDepartments });
     const { data: regions } = useQuery({ queryKey: ['regions'], queryFn: getRegions });
     const { data: statuses } = useQuery({ queryKey: ['apStatuses'], queryFn: getApStatuses });
-    const { data: indexes } = useQuery({ queryKey: ['apIndexes'], queryFn: getApIndexes });
+
     const { data: instructions } = useQuery({ queryKey: ['chiefInstructions'], queryFn: getChiefInstructions });
     const { data: inSections } = useQuery({ queryKey: ['inSections'], queryFn: getInSections });
     const { data: whoControls } = useQuery({ queryKey: ['whoControls'], queryFn: getWhoControls });
@@ -327,22 +416,44 @@ export default function Parameters() {
 
     return (
         <Layout>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h5" component="h1" gutterBottom fontWeight="bold" sx={{ color: '#1f2937' }}>
-                    Parametrlər (Məlumat Kitabçaları)
+            <Box sx={{ mb: 4 }} className="animate-fade-in">
+                <Typography variant="h4" component="h1" gutterBottom fontWeight="900" color="primary">
+                    Parametrlər
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
                     Sistemdəki soraqçaların siyahısını idarə edin
                 </Typography>
             </Box>
 
-            <Paper elevation={0} sx={{ border: '1px solid #e5e7eb', bgcolor: 'white' }}>
+            <Paper
+                className="animate-slide-up glass-card"
+                sx={{
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    borderRadius: 2,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    overflow: 'hidden'
+                }}
+            >
                 <Tabs
                     value={tab}
                     onChange={(_, v) => setTab(v)}
                     variant="scrollable"
                     scrollButtons="auto"
-                    sx={{ borderBottom: '1px solid #e5e7eb' }}
+                    sx={{
+                        borderBottom: '1px solid rgba(0,0,0,0.05)',
+                        '& .MuiTab-root': {
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            color: '#666',
+                            '&.Mui-selected': { color: '#4a5d23' }
+                        },
+                        '& .MuiTabs-indicator': {
+                            backgroundColor: '#4a5d23',
+                            height: 3,
+                            borderRadius: '3px 3px 0 0'
+                        }
+                    }}
                 >
                     <Tab label="İdarələr" />
                     <Tab label="Regionlar" />

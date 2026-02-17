@@ -94,58 +94,70 @@ export default function CitizenForm() {
 
   return (
     <Layout>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" component="h1" fontWeight="bold" sx={{ color: '#1f2937' }}>
+      <Box sx={{ mb: 4 }} className="animate-fade-in">
+        <Typography variant="h4" component="h1" fontWeight="900" color="primary" sx={{ mb: 1 }}>
           Vətəndaşı Redaktə Et
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
+          Vətəndaş məlumatlarının sistemdə yenilənməsi
         </Typography>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
           {error}
         </Alert>
       )}
 
-      <Paper elevation={1} sx={{ p: 4, bgcolor: '#f9fafb' }}>
+      <Paper
+        className="animate-slide-up glass-card"
+        sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)' }}
+      >
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: '#1f2937' }}>
-            Şəxsi Məlumatlar
+          <Typography variant="subtitle2" sx={{ color: '#3e4a21', fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            ŞƏXSİ MƏLUMATLAR
           </Typography>
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ mb: 4, opacity: 0.1, bgcolor: '#3e4a21' }} />
 
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Ad:</Typography>
               <TextField
                 fullWidth
-                label="Ad"
                 size="small"
                 {...register('first_name', {
                   required: 'Ad tələb olunur',
                 })}
                 error={!!errors.first_name}
                 helperText={errors.first_name?.message}
-                sx={{ bgcolor: 'white' }}
+                sx={{
+                  '& .MuiInputBase-root': { bgcolor: 'white', borderRadius: 2 },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Soyad:</Typography>
               <TextField
                 fullWidth
-                label="Soyad"
                 size="small"
                 {...register('last_name', {
                   required: 'Soyad tələb olunur',
                 })}
                 error={!!errors.last_name}
                 helperText={errors.last_name?.message}
-                sx={{ bgcolor: 'white' }}
+                sx={{
+                  '& .MuiInputBase-root': { bgcolor: 'white', borderRadius: 2 },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>FIN:</Typography>
               <TextField
                 fullWidth
-                label="FIN"
                 size="small"
                 {...register('fin', {
                   required: 'FIN tələb olunur',
@@ -167,67 +179,81 @@ export default function CitizenForm() {
                 })}
                 error={!!errors.fin}
                 helperText={errors.fin?.message}
-                inputProps={{ maxLength: 7, style: { textTransform: 'uppercase' } }}
-                sx={{ bgcolor: 'white' }}
+                inputProps={{ maxLength: 7, style: { textTransform: 'uppercase', fontWeight: 700, color: '#3e4a21' } }}
+                sx={{
+                  '& .MuiInputBase-root': { bgcolor: 'white', borderRadius: 2 },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Telefon:</Typography>
               <TextField
                 fullWidth
-                label="Telefon"
                 size="small"
                 {...register('phone')}
-                placeholder="+994501234567"
-                sx={{ bgcolor: 'white' }}
+                placeholder="+994"
+                sx={{
+                  '& .MuiInputBase-root': { bgcolor: 'white', borderRadius: 2 },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' }
+                }}
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Ünvan:</Typography>
               <TextField
                 fullWidth
-                label="Ünvan"
                 multiline
                 rows={3}
                 size="small"
                 {...register('address')}
-                sx={{ bgcolor: 'white' }}
+                sx={{
+                  '& .MuiInputBase-root': { bgcolor: 'white', borderRadius: 3 },
+                  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' }
+                }}
               />
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+          <Box sx={{ mt: 5, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<CancelIcon />}
+              onClick={() => navigate('/citizens')}
+              sx={{
+                px: 4,
+                py: 1.2,
+                borderRadius: 2,
+                fontWeight: 700,
+                borderWidth: 2,
+                '&:hover': { borderWidth: 2 }
+              }}
+            >
+              Ləğv et
+            </Button>
             <Button
               type="submit"
               variant="contained"
               startIcon={<SaveIcon />}
               disabled={updateMutation.isPending}
               sx={{
-                bgcolor: '#1976d2',
-                color: 'white',
-                textTransform: 'none',
-                fontWeight: 600,
+                px: 4,
                 py: 1.2,
-                px: 3,
+                borderRadius: 2,
+                fontWeight: 800,
+                bgcolor: '#4a5d23',
+                boxShadow: '0 4px 12px rgba(74, 93, 35, 0.3)',
                 '&:hover': {
-                  bgcolor: '#1565c0',
+                  bgcolor: '#3a4a1b',
+                  transform: 'translateY(-2px)'
                 },
+                transition: 'all 0.2s'
               }}
             >
               Yadda saxla
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<CancelIcon />}
-              onClick={() => navigate('/citizens')}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                py: 1.2,
-                px: 3,
-              }}
-            >
-              Ləğv et
             </Button>
           </Box>
         </form>

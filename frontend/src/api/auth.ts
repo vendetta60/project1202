@@ -17,6 +17,7 @@ export interface User {
   name?: string;
   full_name?: string; // computed
   section_id?: number;
+  section_name?: string;
   is_admin: boolean;
   is_active: boolean;
 

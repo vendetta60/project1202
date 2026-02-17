@@ -11,10 +11,12 @@ from app.repositories.user import UserRepository
 from app.repositories.executor import ExecutorRepository
 from app.repositories.lookup import LookupRepository
 from app.repositories.report import ReportRepository
+from app.repositories.audit_log import AuditLogRepository
 from app.services.appeal import AppealService
 from app.services.auth import AuthService
 from app.services.user import UserService
 from app.services.report import ReportService
+from app.services.audit import AuditService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -67,6 +69,10 @@ def get_report_repo(db: Session = Depends(get_db)) -> ReportRepository:
     return ReportRepository(db)
 
 
+def get_audit_log_repo(db: Session = Depends(get_db)) -> AuditLogRepository:
+    return AuditLogRepository(db)
+
+
 # Service factories
 def get_user_service(repo: UserRepository = Depends(get_user_repo)) -> UserService:
     return UserService(repo)
@@ -76,10 +82,15 @@ def get_auth_service(users: UserRepository = Depends(get_user_repo)) -> AuthServ
     return AuthService(users)
 
 
+def get_audit_service(repo: AuditLogRepository = Depends(get_audit_log_repo)) -> AuditService:
+    return AuditService(repo)
+
+
 def get_appeal_service(
     appeals: AppealRepository = Depends(get_appeal_repo),
+    audit: AuditService = Depends(get_audit_service),
 ) -> AppealService:
-    return AppealService(appeals)
+    return AppealService(appeals, audit)
 
 
 def get_report_service(

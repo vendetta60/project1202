@@ -10,6 +10,7 @@ from app.models.lookup import (
 from app.models.region import Region
 from app.models.organ import Organ
 from app.models.contact import Contact
+from app.models.audit_log import AuditLog
 
 __all__ = [
     "User", "Appeal",
@@ -19,4 +20,5 @@ __all__ = [
     "ChiefInstruction", "InSection", "Section", "UserSection",
     "WhoControl", "Movzu", "Holiday",
     "Region", "Organ", "Contact",
+    "AuditLog",
 ]

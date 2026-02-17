@@ -37,4 +37,4 @@ def create_user(
     current_user: User = Depends(require_admin),
     service: UserService = Depends(get_user_service),
 ):
-    return service.create(payload)
+    return service.create(payload, current_user)

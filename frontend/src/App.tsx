@@ -10,6 +10,7 @@ import UsersList from './pages/admin/UsersList';
 import UserForm from './pages/admin/UserForm';
 import Parameters from './pages/admin/Parameters';
 import Reports from './pages/Reports';
+import Logs from './pages/Logs';
 import ProtectedRoute from './components/ProtectedRoute';
 import { isAuthenticated } from './utils/auth';
 
@@ -156,6 +157,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/logs"
+              element={
+                <ProtectedRoute>
+                  <Logs />
                 </ProtectedRoute>
               }
             />

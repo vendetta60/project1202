@@ -10,6 +10,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 interface LayoutProps {
@@ -130,6 +131,28 @@ export default function Layout({ children }: LayoutProps) {
                     }}
                   >
                     İSTİFADƏÇİLƏR
+                  </Button>
+                  <Button
+                    color="inherit"
+                    startIcon={<HistoryIcon fontSize="small" />}
+                    onClick={() => navigate('/admin/logs')}
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      fontSize: '0.8rem',
+                      letterSpacing: '0.5px',
+                      fontWeight: 700,
+                      opacity: 0.85,
+                      borderBottom: '2px solid transparent',
+                      borderRadius: 0,
+                      '&:hover': {
+                        opacity: 1,
+                        bgcolor: 'rgba(255,255,255,0.08)',
+                        borderBottom: '2px solid #a68b44',
+                      },
+                    }}
+                  >
+                    LOGLAR
                   </Button>
                   <Button
                     color="inherit"

@@ -17,6 +17,7 @@ class UserOut(ORMBase):
     username: str | None = None
     full_name: str | None = None
     section_id: int | None = None
+    section_name: str | None = None
     is_admin: bool = False
     is_active: bool = True
     # Tab permissions

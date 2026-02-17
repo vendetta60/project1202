@@ -7,6 +7,7 @@ from app.api.v1.routers import (
     users,
     lookups,
     reports,
+    audit,
 )
 
 api_router = APIRouter()
@@ -16,3 +17,4 @@ api_router.include_router(users.router)
 api_router.include_router(appeals.router)
 api_router.include_router(lookups.router)
 api_router.include_router(reports.router)
+api_router.include_router(audit.router)

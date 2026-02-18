@@ -25,6 +25,7 @@ from app.schemas.lookup import (
     InSectionCreate, InSectionUpdate, WhoControlCreate, WhoControlUpdate,
     ApStatusCreate, ApStatusUpdate, ApIndexCreate, ApIndexUpdate,
     ContentTypeCreate, ContentTypeUpdate, AccountIndexCreate, AccountIndexUpdate,
+    ExecutorListCreate, ExecutorListUpdate,
 )
 
 router = APIRouter(prefix="/lookups", tags=["lookups"])
@@ -111,9 +112,19 @@ def get_directions(repo: LookupRepository = Depends(get_lookup_repo)):
     return repo.list_all(Direction)
 
 
+@router.get("/directions/by-section/{section_id}", response_model=list[DirectionOut])
+def get_directions_by_section(section_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    return repo.get_by_field(Direction, "section_id", section_id)
+
+
 @router.get("/executor-list", response_model=list[ExecutorListOut])
 def get_executor_list(repo: LookupRepository = Depends(get_lookup_repo)):
     return repo.list_all(ExecutorList)
+
+
+@router.get("/executor-list/by-direction/{direction_id}", response_model=list[ExecutorListOut])
+def get_executor_list_by_direction(direction_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    return repo.get_by_field(ExecutorList, "direction_id", direction_id)
 
 
 @router.get("/movzular", response_model=list[MovzuOut])
@@ -144,10 +155,10 @@ def update_department(dept_id: int, data: DepartmentUpdate, repo: LookupReposito
 
 @router.delete("/departments/{dept_id}")
 def delete_department(dept_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
-    success = repo.delete(Department, dept_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Department not found")
-    return {"success": True}
+    raise HTTPException(
+        status_code=403,
+        detail="İdarələr silinə bilməz. Bu məlumatlar sistem tərəfindən qorunur."
+    )
 
 
 # ===== Regions =====
@@ -169,10 +180,10 @@ def update_region(region_id: int, data: RegionUpdate, repo: LookupRepository = D
 
 @router.delete("/regions/{region_id}")
 def delete_region(region_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
-    success = repo.delete(Region, region_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Region not found")
-    return {"success": True}
+    raise HTTPException(
+        status_code=403,
+        detail="Regionlar silinə bilməz. Bu məlumatlar sistem tərəfindən qorunur."
+    )
 
 
 # ===== DepOfficials =====
@@ -223,10 +234,10 @@ def update_chief_instruction(instruction_id: int, data: ChiefInstructionUpdate, 
 
 @router.delete("/chief-instructions/{instruction_id}")
 def delete_chief_instruction(instruction_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
-    success = repo.delete(ChiefInstruction, instruction_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Instruction not found")
-    return {"success": True}
+    raise HTTPException(
+        status_code=403,
+        detail="Rəhbər göstərişləri silinə bilməz. Bu məlumatlar sistem tərəfindən qorunur."
+    )
 
 
 # ===== InSections =====
@@ -248,10 +259,10 @@ def update_in_section(section_id: int, data: InSectionUpdate, repo: LookupReposi
 
 @router.delete("/in-sections/{section_id}")
 def delete_in_section(section_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
-    success = repo.delete(InSection, section_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Section not found")
-    return {"success": True}
+    raise HTTPException(
+        status_code=403,
+        detail="Daxili şöbələr silinə bilməz. Bu məlumatlar sistem tərəfindən qorunur."
+    )
 
 
 # ===== WhoControls =====
@@ -275,10 +286,10 @@ def update_who_control(who_control_id: int, data: WhoControlUpdate, repo: Lookup
 
 @router.delete("/who-controls/{who_control_id}")
 def delete_who_control(who_control_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
-    success = repo.delete(WhoControl, who_control_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Who control not found")
-    return {"success": True}
+    raise HTTPException(
+        status_code=403,
+        detail="Nəzarətçilər silinə bilməz. Bu məlumatlar sistem tərəfindən qorunur."
+    )
 
 
 # ===== ApStatuses =====
@@ -300,7 +311,34 @@ def update_ap_status(status_id: int, data: ApStatusUpdate, repo: LookupRepositor
 
 @router.delete("/ap-statuses/{status_id}")
 def delete_ap_status(status_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
-    success = repo.delete(ApStatus, status_id)
+    raise HTTPException(
+        status_code=403,
+        detail="Statuslar silinə bilməz. Bu məlumatlar sistem tərəfindən qorunur."
+    )
+
+
+# ===== ExecutorList =====
+@router.post("/executor-list", response_model=ExecutorListOut)
+def create_executor(data: ExecutorListCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    executor = ExecutorList(direction_id=data.direction_id, executor=data.executor)
+    return repo.create(executor)
+
+
+@router.put("/executor-list/{executor_id}", response_model=ExecutorListOut)
+def update_executor(executor_id: int, data: ExecutorListUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    executor = repo.get(ExecutorList, executor_id)
+    if not executor:
+        raise HTTPException(status_code=404, detail="Executor not found")
+    if data.executor:
+        executor.executor = data.executor
+    if data.direction_id is not None:
+        executor.direction_id = data.direction_id
+    return repo.update(executor)
+
+
+@router.delete("/executor-list/{executor_id}")
+def delete_executor(executor_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(ExecutorList, executor_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Status not found")
+        raise HTTPException(status_code=404, detail="Executor not found")
     return {"success": True}

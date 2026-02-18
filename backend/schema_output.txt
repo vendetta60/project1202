@@ -1,0 +1,17 @@
+ALL COLUMNS in 'Executors' table:
+| id | INTEGER | False |
+| appeal_id | INTEGER | True |
+| direction_id | INTEGER | True |
+| executor_id | INTEGER | True |
+| out_num | NVARCHAR(50) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
+| out_date | DATETIME | True |
+| attach_num | NVARCHAR(50) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
+| attach_paper_num | NVARCHAR(50) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
+| r_prefix | SMALLINT | True |
+| r_num | INTEGER | True |
+| r_date | DATETIME | True |
+| posted_sec | NVARCHAR(300) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
+| active | BIT | True |
+| PC | VARCHAR(35) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
+| PC_Tarixi | DATETIME | True |
+| is_primary | BIT | True |

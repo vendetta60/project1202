@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import Select from 'react-select';
 import {
   Box,
   Paper,
@@ -13,10 +14,6 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   TextField,
   InputAdornment,
 } from '@mui/material';
@@ -27,6 +24,7 @@ import { getDepartments, getApStatuses, getRegions } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { selectStylesLight } from '../utils/formStyles';
 
 export default function AppealsList() {
   const navigate = useNavigate();
@@ -193,65 +191,42 @@ export default function AppealsList() {
             }}
           />
 
-          <FormControl sx={{ minWidth: 200 }} size="small">
-            <InputLabel>İdarə</InputLabel>
+          {/* Replace MUI Selects with react-select for consistent styling */}
+          <div style={{ minWidth: 200 }}>
+            {/* İdarə */}
             <Select
-              value={depFilter}
-              label="İdarə"
-              onChange={(e) => {
-                setDepFilter(e.target.value as number | '');
-                setPage(0);
-              }}
-              sx={{ bgcolor: 'white', borderRadius: 2 }}
-            >
-              <MenuItem value="">Hamısı</MenuItem>
-              {departments?.map((dep) => (
-                <MenuItem key={dep.id} value={dep.id}>
-                  {dep.department}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              // @ts-ignore
+              options={(departments || []).map(d => ({ value: d.id, label: d.department }))}
+              value={(departments || []).map(d => ({ value: d.id, label: d.department })).find(o => o.value === depFilter) || null}
+              onChange={(e: any) => { setDepFilter(e?.value || ''); setPage(0); }}
+              styles={selectStylesLight}
+              isClearable
+            />
+          </div>
 
-          <FormControl sx={{ minWidth: 150 }} size="small">
-            <InputLabel>Region</InputLabel>
+          <div style={{ minWidth: 150 }}>
+            {/* Region */}
             <Select
-              value={regionFilter}
-              label="Region"
-              onChange={(e) => {
-                setRegionFilter(e.target.value as number | '');
-                setPage(0);
-              }}
-              sx={{ bgcolor: 'white', borderRadius: 2 }}
-            >
-              <MenuItem value="">Hamısı</MenuItem>
-              {regions?.map((reg) => (
-                <MenuItem key={reg.id} value={reg.id}>
-                  {reg.region}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              // @ts-ignore
+              options={(regions || []).map(r => ({ value: r.id, label: r.region }))}
+              value={(regions || []).map(r => ({ value: r.id, label: r.region })).find(o => o.value === regionFilter) || null}
+              onChange={(e: any) => { setRegionFilter(e?.value || ''); setPage(0); }}
+              styles={selectStylesLight}
+              isClearable
+            />
+          </div>
 
-          <FormControl sx={{ minWidth: 150 }} size="small">
-            <InputLabel>Status</InputLabel>
+          <div style={{ minWidth: 150 }}>
+            {/* Status */}
             <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => {
-                setStatusFilter(e.target.value as number | '');
-                setPage(0);
-              }}
-              sx={{ bgcolor: 'white', borderRadius: 2 }}
-            >
-              <MenuItem value="">Hamısı</MenuItem>
-              {statuses?.map((st) => (
-                <MenuItem key={st.id} value={st.id}>
-                  {st.status}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              // @ts-ignore
+              options={(statuses || []).map(s => ({ value: s.id, label: s.status }))}
+              value={(statuses || []).map(s => ({ value: s.id, label: s.status })).find(o => o.value === statusFilter) || null}
+              onChange={(e: any) => { setStatusFilter(e?.value || ''); setPage(0); }}
+              styles={selectStylesLight}
+              isClearable
+            />
+          </div>
         </Box>
       </Paper>
 
@@ -263,6 +238,7 @@ export default function AppealsList() {
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: '#3e4a21' }}>
+                <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700, width: 60 }}>Sıra №</TableCell>
                 <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Qeydiyyat №</TableCell>
                 <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Vətəndaş</TableCell>
                 <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Region</TableCell>
@@ -274,7 +250,7 @@ export default function AppealsList() {
             </TableHead>
             <TableBody>
               {appealsData?.items && appealsData.items.length > 0 ? (
-                appealsData.items.map((appeal) => {
+                appealsData.items.map((appeal, index) => {
                   const statusColor = getStatusColor(appeal.status);
                   return (
                     <TableRow
@@ -287,6 +263,7 @@ export default function AppealsList() {
                       }}
                       onClick={() => navigate(`/appeals/${appeal.id}`)}
                     >
+                      <TableCell sx={{ fontWeight: 700, color: '#3e4a21', textAlign: 'center' }}>{page * rowsPerPage + index + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: '#3e4a21' }}>{appeal.reg_num || '-'}</TableCell>
                       <TableCell>{appeal.person || '-'}</TableCell>
                       <TableCell>{getRegionName(appeal.region_id || undefined)}</TableCell>
@@ -319,7 +296,7 @@ export default function AppealsList() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                     <Typography color="text.secondary" sx={{ fontWeight: 500 }}>Axtarışa uyğun müraciət tapılmadı</Typography>
                   </TableCell>
                 </TableRow>

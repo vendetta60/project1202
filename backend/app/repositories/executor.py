@@ -8,7 +8,24 @@ class ExecutorRepository:
         self.db = db
 
     def list_by_appeal(self, appeal_id: int) -> list[Executor]:
-        return self.db.query(Executor).filter(Executor.appeal_id == appeal_id).all()
+        from app.models.executor import ExecutorList, Direction
+        query = self.db.query(
+            Executor,
+            ExecutorList.executor.label("executor_name"),
+            Direction.direction.label("direction_name")
+        ).outerjoin(
+            ExecutorList, Executor.executor_id == ExecutorList.id
+        ).outerjoin(
+            Direction, Executor.direction_id == Direction.id
+        ).filter(Executor.appeal_id == appeal_id)
+        
+        results = query.all()
+        executors = []
+        for executor, exec_name, dir_name in results:
+            executor.executor_name = exec_name
+            executor.direction_name = dir_name
+            executors.append(executor)
+        return executors
 
     def get(self, executor_id: int) -> Executor | None:
         return self.db.get(Executor, executor_id)

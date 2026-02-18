@@ -42,9 +42,10 @@ class Executor(Base):
     attach_num: Mapped[str | None] = mapped_column(String(50))
     attach_paper_num: Mapped[str | None] = mapped_column(String(50))
     r_prefix: Mapped[int | None] = mapped_column(SmallInteger)
-    r_num: Mapped[int | None] = mapped_column(Integer)
+    r_num: Mapped[str | None] = mapped_column(String(50))
     r_date: Mapped[datetime | None] = mapped_column(DateTime)
     posted_sec: Mapped[str | None] = mapped_column(String(300))
     active: Mapped[bool | None] = mapped_column(Boolean)
+    is_primary: Mapped[bool | None] = mapped_column(Boolean, default=False)  # Əsas icraçı işarəsi
     PC: Mapped[str | None] = mapped_column(String(35))
     PC_Tarixi: Mapped[datetime | None] = mapped_column(DateTime)

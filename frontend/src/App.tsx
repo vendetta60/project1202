@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AppealsList from './pages/AppealsList';
 import AppealForm from './pages/AppealForm';
+import CitizensList from './pages/CitizensList';
+import CitizenForm from './pages/CitizenForm';
 import UsersList from './pages/admin/UsersList';
 import UserForm from './pages/admin/UserForm';
 import Parameters from './pages/admin/Parameters';
@@ -125,6 +127,30 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AppealForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/citizens"
+              element={
+                <ProtectedRoute>
+                  <CitizensList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/citizens/new"
+              element={
+                <ProtectedRoute>
+                  <CitizenForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/citizens/:id"
+              element={
+                <ProtectedRoute>
+                  <CitizenForm />
                 </ProtectedRoute>
               }
             />

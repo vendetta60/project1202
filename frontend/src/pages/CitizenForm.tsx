@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { getCitizen, updateCitizen, CreateCitizenRequest } from '../api/citizens';
+import { getCitizen, updateCitizen, createCitizen, CreateCitizenRequest } from '../api/citizens';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getErrorMessage } from '../utils/errors';
@@ -25,8 +25,8 @@ export default function CitizenForm() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string>('');
 
-  // Yalnız mövcud vətəndaşı redaktə etməyə icazə veririk
-  const isEditMode = !!id;
+  // Vətəndaşı redaktə və ya yeni yaratmaq
+  const isEditMode = !!id && id !== 'new';
 
   const { data: citizen, isLoading: citizenLoading } = useQuery({
     queryKey: ['citizen', id],
@@ -51,8 +51,7 @@ export default function CitizenForm() {
 
   useEffect(() => {
     if (!isEditMode) {
-      // Yeni vətəndaş yaratmağa icazə verilmir
-      navigate('/citizens');
+      // Yeni vətəndaş rejimi
       return;
     }
 
@@ -64,6 +63,17 @@ export default function CitizenForm() {
       setValue('address', citizen.address || '');
     }
   }, [citizen, setValue, isEditMode, navigate]);
+
+  const createMutation = useMutation({
+    mutationFn: (data: CreateCitizenRequest) => createCitizen(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['citizens'] });
+      navigate('/citizens');
+    },
+    onError: (err) => {
+      setError(getErrorMessage(err));
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: (data: CreateCitizenRequest) => updateCitizen(Number(id), data),
@@ -81,6 +91,8 @@ export default function CitizenForm() {
     setError('');
     if (isEditMode) {
       updateMutation.mutate(data);
+    } else {
+      createMutation.mutate(data);
     }
   };
 
@@ -96,10 +108,10 @@ export default function CitizenForm() {
     <Layout>
       <Box sx={{ mb: 4 }} className="animate-fade-in">
         <Typography variant="h4" component="h1" fontWeight="900" color="primary" sx={{ mb: 1 }}>
-          Vətəndaşı Redaktə Et
+          {isEditMode ? 'Vətəndaşı Redaktə Et' : 'Yeni Vətəndaş'}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
-          Vətəndaş məlumatlarının sistemdə yenilənməsi
+          {isEditMode ? 'Vətəndaş məlumatlarının sistemdə yenilənməsi' : 'Sistemə yeni vətəndaşın əlavə edilməsi'}
         </Typography>
       </Box>
 
@@ -238,7 +250,7 @@ export default function CitizenForm() {
               type="submit"
               variant="contained"
               startIcon={<SaveIcon />}
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || createMutation.isPending}
               sx={{
                 px: 4,
                 py: 1.2,
@@ -253,7 +265,7 @@ export default function CitizenForm() {
                 transition: 'all 0.2s'
               }}
             >
-              Yadda saxla
+              {isEditMode ? 'Yadda saxla' : 'Əlavə et'}
             </Button>
           </Box>
         </form>

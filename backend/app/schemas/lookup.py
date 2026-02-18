@@ -1,6 +1,5 @@
-"""
-Schemas for all lookup/reference tables
-"""
+from datetime import datetime
+from pydantic import BaseModel
 from app.schemas.common import ORMBase
 
 
@@ -32,6 +31,27 @@ class ContentTypeOut(ORMBase):
     id: int
     content_type: str | None = None
     IsDeleted: bool | None = None
+
+
+# --- ExecutorAssignment ---
+class ExecutorAssignment(BaseModel):
+    id: int | None = None
+    executor: str | None = None
+    executor_name: str | None = None
+    executor_id: int | None = None
+    direction_id: int | None = None
+    direction_name: str | None = None  # Added for display
+    is_primary: bool = False
+    active: bool = True
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    r_num: str | None = None
+    r_date: datetime | None = None
+    out_num: str | None = None
+    out_date: datetime | None = None
+    attach_num: str | None = None          # Tikdiyi isin nomresi
+    attach_paper_num: str | None = None    # Isdeki vereq nomresi
+    posted_sec: str | None = None          # Hara (kime) gonderilib
 
 
 # --- ChiefInstruction ---
@@ -116,6 +136,16 @@ class ExecutorListOut(ORMBase):
     direction_id: int | None = None
     executor: str | None = None
     IsDeleted: bool | None = None
+
+
+class ExecutorListCreate(ORMBase):
+    direction_id: int
+    executor: str
+
+
+class ExecutorListUpdate(ORMBase):
+    executor: str | None = None
+    direction_id: int | None = None
 
 
 # --- Movzu ---

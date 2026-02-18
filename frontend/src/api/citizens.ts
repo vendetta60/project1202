@@ -31,3 +31,8 @@ export const updateCitizen = async (id: number, data: CreateCitizenRequest) => {
     const response = await client.patch(`/citizens/${id}`, data);
     return response.data;
 };
+
+export const createCitizen = async (data: CreateCitizenRequest) => {
+    const response = await client.post('/citizens', data);
+    return response.data;
+};

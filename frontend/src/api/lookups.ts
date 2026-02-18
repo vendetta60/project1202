@@ -98,7 +98,9 @@ export const getDepOfficialsByDep = (depId: number) => apiClient.get<DepOfficial
 export const getRegions = () => apiClient.get<Region[]>('/lookups/regions').then(r => r.data);
 export const getOrgans = () => apiClient.get<Organ[]>('/lookups/organs').then(r => r.data);
 export const getDirections = () => apiClient.get<Direction[]>('/lookups/directions').then(r => r.data);
+export const getDirectionsBySection = (sectionId: number) => apiClient.get<Direction[]>(`/lookups/directions/by-section/${sectionId}`).then(r => r.data);
 export const getExecutorList = () => apiClient.get<ExecutorList[]>('/lookups/executor-list').then(r => r.data);
+export const getExecutorListByDirection = (directionId: number) => apiClient.get<ExecutorList[]>(`/lookups/executor-list/by-direction/${directionId}`).then(r => r.data);
 export const getMovzular = () => apiClient.get<Movzu[]>('/lookups/movzular').then(r => r.data);
 
 // ============ CREATE/UPDATE/DELETE FUNCTIONS ============
@@ -137,3 +139,42 @@ export const deleteWhoControl = (id: number) => apiClient.delete(`/lookups/who-c
 export const createApStatus = (data: Partial<ApStatus>) => apiClient.post<ApStatus>('/lookups/ap-statuses', data).then(r => r.data);
 export const updateApStatus = (id: number, data: Partial<ApStatus>) => apiClient.put<ApStatus>(`/lookups/ap-statuses/${id}`, data).then(r => r.data);
 export const deleteApStatus = (id: number) => apiClient.delete(`/lookups/ap-statuses/${id}`).then(r => r.data);
+
+// ExecutorList
+export const createExecutor = (data: Partial<ExecutorList>) => apiClient.post<ExecutorList>('/lookups/executor-list', data).then(r => r.data);
+export const updateExecutor = (id: number, data: Partial<ExecutorList>) => apiClient.put<ExecutorList>(`/lookups/executor-list/${id}`, data).then(r => r.data);
+export const deleteExecutor = (id: number) => apiClient.delete(`/lookups/executor-list/${id}`).then(r => r.data);
+
+// Executor assignments for appeals (from appeals endpoint)
+export interface ExecutorAssignment extends LookupItem {
+    appeal_id?: number;
+    direction_id?: number;
+    executor_id?: number;
+    out_num?: string;
+    out_date?: string;
+    attach_num?: string;
+    attach_paper_num?: string;
+    r_prefix?: number;
+    r_num?: string;
+    r_date?: string;
+    posted_sec?: string;
+    active?: boolean;
+    is_primary?: boolean;  // Əsas icraçı işarəsi
+    PC?: string;
+    PC_Tarixi?: string;
+}
+
+export const getAppealExecutors = (appealId: number) =>
+    apiClient.get<ExecutorAssignment[]>(`/appeals/${appealId}/executors`).then(r => r.data);
+
+export const addAppealExecutor = (appealId: number, data: Partial<ExecutorAssignment>) =>
+    apiClient.post<ExecutorAssignment>(`/appeals/${appealId}/executors`, {
+        ...data,
+        appeal_id: appealId,
+    }).then(r => r.data);
+
+export const updateAppealExecutor = (appealId: number, executorId: number, data: Partial<ExecutorAssignment>) =>
+    apiClient.put<ExecutorAssignment>(`/appeals/${appealId}/executors/${executorId}`, data).then(r => r.data);
+
+export const removeAppealExecutor = (appealId: number, executorId: number) =>
+    apiClient.delete(`/appeals/${appealId}/executors/${executorId}`).then(r => r.data);

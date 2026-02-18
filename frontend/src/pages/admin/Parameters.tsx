@@ -20,6 +20,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import Layout from '../../components/Layout';
+import ConfirmDialog, { useConfirmDialog } from '../../components/ConfirmDialog';
 import {
     getDepartments,
     getRegions,
@@ -68,10 +69,10 @@ interface EditableTableProps {
     onAdd: (data: any) => void;
     onEdit: (id: number, data: any) => void;
     onDelete: (id: number) => void;
-
+    hideDelete?: boolean;
 }
 
-function EditableTable({ items, columns, onAdd, onEdit, onDelete }: EditableTableProps) {
+function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: EditableTableProps) {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editData, setEditData] = useState<any>({});
     const [isAdding, setIsAdding] = useState(false);
@@ -287,13 +288,15 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete }: EditableTabl
                                             >
                                                 <EditIcon fontSize="small" />
                                             </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => onDelete(item.id)}
-                                                sx={{ color: '#d32f2f', '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.1)' } }}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
+                                            {!hideDelete && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => onDelete(item.id)}
+                                                    sx={{ color: '#d32f2f', '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.1)' } }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            )}
                                         </TableCell>
                                     </>
                                 )}
@@ -309,6 +312,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete }: EditableTabl
 export default function Parameters() {
     const [tab, setTab] = useState(0);
     const queryClient = useQueryClient();
+    const { dialogState, showConfirm, hideConfirm, handleConfirm } = useConfirmDialog();
 
     const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: getDepartments });
     const { data: regions } = useQuery({ queryKey: ['regions'], queryFn: getRegions });
@@ -473,7 +477,8 @@ export default function Parameters() {
                             ]}
                             onAdd={(data) => createDeptMutation.mutate(data)}
                             onEdit={(id, data) => updateDeptMutation.mutate({ id, data })}
-                            onDelete={(id) => deleteDeptMutation.mutate(id)}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu idarəni silmək istədiyinizə əminsinizmi? Bu əməliyyat geri qaytarıla bilməz.', () => deleteDeptMutation.mutate(id), 'error')}
+                            hideDelete
                         />
                     </TabPanel>
                     <TabPanel value={tab} index={1}>
@@ -485,7 +490,8 @@ export default function Parameters() {
                             ]}
                             onAdd={(data) => createRegionMutation.mutate(data)}
                             onEdit={(id, data) => updateRegionMutation.mutate({ id, data })}
-                            onDelete={(id) => deleteRegionMutation.mutate(id)}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu regionu silmək istədiyinizə əminsinizmi? Bu əməliyyat geri qaytarıla bilməz.', () => deleteRegionMutation.mutate(id), 'error')}
+                            hideDelete
                         />
                     </TabPanel>
                     <TabPanel value={tab} index={2}>
@@ -497,7 +503,8 @@ export default function Parameters() {
                             ]}
                             onAdd={(data) => createStatusMutation.mutate(data)}
                             onEdit={(id, data) => updateStatusMutation.mutate({ id, data })}
-                            onDelete={(id) => deleteStatusMutation.mutate(id)}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu statusu silmək istədiyinizə əminsinizmi? Bu əməliyyat geri qaytarıla bilməz.', () => deleteStatusMutation.mutate(id), 'error')}
+                            hideDelete
                         />
                     </TabPanel>
                     <TabPanel value={tab} index={3}>
@@ -509,7 +516,8 @@ export default function Parameters() {
                             ]}
                             onAdd={(data) => createInstructionMutation.mutate(data)}
                             onEdit={(id, data) => updateInstructionMutation.mutate({ id, data })}
-                            onDelete={(id) => deleteInstructionMutation.mutate(id)}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu rəhbər göstərişini silmək istədiyinizə əminsinizmi? Bu əməliyyat geri qaytarıla bilməz.', () => deleteInstructionMutation.mutate(id), 'error')}
+                            hideDelete
                         />
                     </TabPanel>
                     <TabPanel value={tab} index={4}>
@@ -521,7 +529,8 @@ export default function Parameters() {
                             ]}
                             onAdd={(data) => createInSectionMutation.mutate(data)}
                             onEdit={(id, data) => updateInSectionMutation.mutate({ id, data })}
-                            onDelete={(id) => deleteInSectionMutation.mutate(id)}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu daxili şöbəni silmək istədiyinizə əminsinizmi? Bu əməliyyat geri qaytarıla bilməz.', () => deleteInSectionMutation.mutate(id), 'error')}
+                            hideDelete
                         />
                     </TabPanel>
                     <TabPanel value={tab} index={5}>
@@ -533,11 +542,22 @@ export default function Parameters() {
                             ]}
                             onAdd={(data) => createWhoControlMutation.mutate(data)}
                             onEdit={(id, data) => updateWhoControlMutation.mutate({ id, data })}
-                            onDelete={(id) => deleteWhoControlMutation.mutate(id)}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu nəzarətçini silmək istədiyinizə əminsinizmi? Bu əməliyyat geri qaytarıla bilməz.', () => deleteWhoControlMutation.mutate(id), 'error')}
+                            hideDelete
                         />
                     </TabPanel>
                 </Box>
             </Paper>
+            <ConfirmDialog
+                open={dialogState.open}
+                title={dialogState.title}
+                message={dialogState.message}
+                confirmText="Bəli, Sil"
+                cancelText="Xeyr, İmtina Et"
+                onConfirm={handleConfirm}
+                onCancel={hideConfirm}
+                severity={dialogState.severity === 'error' ? 'error' : 'warning'}
+            />
         </Layout>
     );
 }

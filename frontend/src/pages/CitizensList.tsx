@@ -16,6 +16,8 @@ import {
   InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { Button } from '@mui/material';
 import { getCitizens } from '../api/citizens';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -74,6 +76,23 @@ export default function CitizensList() {
         <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
           Sistemdə qeydiyyatda olan vətəndaşların siyahısı və məlumatları
         </Typography>
+      </Box>
+
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddIcon />}
+          onClick={() => navigate('/citizens/new')}
+          sx={{
+            bgcolor: '#3e4a21',
+            fontWeight: 700,
+            px: 3,
+            borderRadius: 2,
+            '&:hover': { bgcolor: '#2c3518' }
+          }}
+        >
+          YENİ VƏTƏNDAŞ
+        </Button>
       </Box>
 
       <Paper

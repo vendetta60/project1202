@@ -56,7 +56,9 @@ class AppealService:
         )
 
     def create(self, current_user: User, payload: AppealCreate) -> Appeal:
-        obj = Appeal(**payload.model_dump())
+        data = payload.model_dump()
+        phone = data.pop("phone", None)
+        obj = Appeal(**data)
         if current_user.section_id and not obj.user_section_id:
             obj.user_section_id = current_user.section_id
         
@@ -65,8 +67,14 @@ class AppealService:
             user_id=current_user.id,
             user_name=current_user.username
         )
+
+        if phone:
+            from app.models.contact import Contact
+            contact_obj = Contact(appeal_id=result.id, contact=phone)
+            self.appeals.db.add(contact_obj)
+            self.appeals.db.commit()
         
-        # Log the creation
+        # Log the creation ... (omitted for brevity in this tool call, will maintain original logic)
         if self.audit:
             self.audit.log_action(
                 entity_type="Appeal",
@@ -77,12 +85,20 @@ class AppealService:
                 new_values=payload.model_dump(),
             )
         
+        result.phone = phone
         return result
 
     def get(self, appeal_id: int, current_user: User) -> Appeal:
         obj = self.appeals.get(appeal_id)
         if not obj:
             raise HTTPException(status_code=404, detail="Müraciət tapılmadı")
+        
+        # Populate phone from Contacts table
+        from app.models.contact import Contact
+        contact = self.appeals.db.query(Contact).filter(Contact.appeal_id == appeal_id).first()
+        if contact:
+            obj.phone = contact.contact
+            
         return obj
 
     def update(self, current_user: User, appeal_id: int, payload: AppealUpdate) -> Appeal:
@@ -93,6 +109,8 @@ class AppealService:
         # Capture old values for audit
         old_values = {}
         updates = payload.model_dump(exclude_unset=True)
+        phone = updates.pop("phone", None) if "phone" in updates else None
+        
         for key in updates.keys():
             if hasattr(obj, key):
                 old_values[key] = getattr(obj, key)
@@ -103,7 +121,22 @@ class AppealService:
             user_id=current_user.id,
             user_name=current_user.username
         )
+
+        if phone is not None:
+            from app.models.contact import Contact
+            contact = self.appeals.db.query(Contact).filter(Contact.appeal_id == appeal_id).first()
+            if contact:
+                contact.contact = phone
+            else:
+                contact = Contact(appeal_id=appeal_id, contact=phone)
+            self.appeals.db.add(contact)
+            self.appeals.db.commit()
         
+        # Populate phone for the returned object
+        from app.models.contact import Contact
+        contact = self.appeals.db.query(Contact).filter(Contact.appeal_id == appeal_id).first()
+        result.phone = contact.contact if contact else None
+
         # Log the update
         if self.audit:
             self.audit.log_action(
@@ -113,7 +146,7 @@ class AppealService:
                 current_user=current_user,
                 description=f"Müraciət dəyişdirildi - {result.reg_num}",
                 old_values=old_values,
-                new_values=updates,
+                new_values=payload.model_dump(exclude_unset=True),
             )
         
         return result

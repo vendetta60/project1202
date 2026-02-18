@@ -10,6 +10,7 @@ from app.models.lookup import (
 from app.models.region import Region
 from app.models.organ import Organ
 from app.models.contact import Contact
+from app.models.citizen import Citizen
 from app.models.audit_log import AuditLog
 
 __all__ = [

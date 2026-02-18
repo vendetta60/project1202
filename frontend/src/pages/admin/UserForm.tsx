@@ -8,12 +8,6 @@ import {
     Paper,
     Typography,
     TextField,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    FormControlLabel,
-    Switch,
     Grid,
     Divider,
 } from '@mui/material';
@@ -261,28 +255,16 @@ export default function UserForm() {
                                 name="section_id"
                                 control={control}
                                 render={({ field }) => (
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel sx={{ color: '#666', '&.Mui-focused': { color: '#4a5d23' } }}>User Section</InputLabel>
+                                    <div>
+                                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Hissə</Typography>
                                         <Select
-                                            {...field}
-                                            label="User Section"
-                                            sx={{
-                                                bgcolor: 'white',
-                                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' },
-                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
-                                            }}
-                                        >
-                                            <MenuItem value="">
-                                                <em>Seçilməyib</em>
-                                            </MenuItem>
-                                            {userSections?.map((us) => (
-                                                <MenuItem key={us.id} value={us.id}>
-                                                    {us.user_section}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
+                                            value={toSelectOptions(userSections || [], 'section').find(o => o.value === field.value) || null}
+                                            onChange={(e: any) => field.onChange(e?.value || '')}
+                                            options={toSelectOptions(userSections || [], 'section')}
+                                            styles={selectStylesLight}
+                                            isClearable
+                                        />
+                                    </div>
                                 )}
                             />
                         </Grid>

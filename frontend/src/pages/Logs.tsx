@@ -5,10 +5,6 @@ import {
     Paper,
     Typography,
     Grid,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
     Button,
     Table,
     TableBody,
@@ -19,11 +15,13 @@ import {
     TablePagination,
     Chip,
 } from '@mui/material';
+import Select from 'react-select';
 import HistoryIcon from '@mui/icons-material/History';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { getLogs } from '../api/logs';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { selectStylesLight } from '../utils/formStyles';
 
 const ACTION_COLORS: Record<string, string> = {
     CREATE: '#4caf50',
@@ -38,6 +36,23 @@ const ACTION_LABELS: Record<string, string> = {
     DELETE: 'SİLDİ',
     READ: 'OXUDU',
 };
+
+const ENTITY_TYPE_OPTIONS = [
+    { value: '', label: 'Hamısı' },
+    { value: 'Appeal', label: 'Müraciət' },
+    { value: 'User', label: 'İstifadəçi' },
+    { value: 'Contact', label: 'Əlaqə' },
+    { value: 'Department', label: 'İdarə' },
+    { value: 'Region', label: 'Region' },
+];
+
+const ACTION_OPTIONS = [
+    { value: '', label: 'Hamısı' },
+    { value: 'CREATE', label: 'Yaratma' },
+    { value: 'UPDATE', label: 'Yenilənmə' },
+    { value: 'DELETE', label: 'Silmə' },
+    { value: 'READ', label: 'Oxuma' },
+];
 
 export default function Logs() {
     const [filters, setFilters] = useState({
@@ -106,47 +121,32 @@ export default function Logs() {
                 className="animate-fade-in glass-card"
                 sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)' }}
             >
-                <Grid container spacing={3} alignItems="flex-end">
+                <Grid container spacing={3} alignItems="flex-start">
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Entity Növü</InputLabel>
-                            <Select
-                                value={filters.entity_type}
-                                label="Entity Növü"
-                                onChange={(e) => {
-                                    setFilters({ ...filters, entity_type: e.target.value });
-                                    setPage(0);
-                                }}
-                                sx={{ bgcolor: 'white', borderRadius: 2 }}
-                            >
-                                <MenuItem value="">Hamısı</MenuItem>
-                                <MenuItem value="Appeal">Müraciət</MenuItem>
-                                <MenuItem value="User">İstifadəçi</MenuItem>
-                                <MenuItem value="Contact">Əlaqə</MenuItem>
-                                <MenuItem value="Department">İdarə</MenuItem>
-                                <MenuItem value="Region">Region</MenuItem>
-                            </Select>
-                        </FormControl>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Entity Növü</Typography>
+                        <Select
+                            value={ENTITY_TYPE_OPTIONS.find(o => o.value === filters.entity_type) || null}
+                            onChange={(e) => {
+                                setFilters({ ...filters, entity_type: e?.value || '' });
+                                setPage(0);
+                            }}
+                            options={ENTITY_TYPE_OPTIONS}
+                            styles={selectStylesLight}
+                            isSearchable={false}
+                        />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Əməliyyat Növü</InputLabel>
-                            <Select
-                                value={filters.action}
-                                label="Əməliyyat Növü"
-                                onChange={(e) => {
-                                    setFilters({ ...filters, action: e.target.value });
-                                    setPage(0);
-                                }}
-                                sx={{ bgcolor: 'white', borderRadius: 2 }}
-                            >
-                                <MenuItem value="">Hamısı</MenuItem>
-                                <MenuItem value="CREATE">Yaratma</MenuItem>
-                                <MenuItem value="UPDATE">Yenilənmə</MenuItem>
-                                <MenuItem value="DELETE">Silmə</MenuItem>
-                                <MenuItem value="READ">Oxuma</MenuItem>
-                            </Select>
-                        </FormControl>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Əməliyyat Növü</Typography>
+                        <Select
+                            value={ACTION_OPTIONS.find(o => o.value === filters.action) || null}
+                            onChange={(e) => {
+                                setFilters({ ...filters, action: e?.value || '' });
+                                setPage(0);
+                            }}
+                            options={ACTION_OPTIONS}
+                            styles={selectStylesLight}
+                            isSearchable={false}
+                        />
                     </Grid>
                     <Grid item xs={12} md={6}>
                         <Box sx={{ display: 'flex', gap: 2 }}>

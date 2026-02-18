@@ -1,15 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Box,
     Paper,
     Typography,
     Grid,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    TextField,
     Button,
     Table,
     TableBody,
@@ -19,10 +14,22 @@ import {
     TableRow,
     LinearProgress,
 } from '@mui/material';
+import Select from 'react-select';
+import Flatpickr from 'react-flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { getAppealReport, ReportParams } from '../api/reports';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { selectStylesLight, toSelectOptions } from '../utils/formStyles';
+
+const groupByOptions = [
+    { value: 'department', label: 'İdarə üzrə' },
+    { value: 'region', label: 'Region üzrə' },
+    { value: 'status', label: 'Status üzrə' },
+    { value: 'index', label: 'İndeks üzrə' },
+    { value: 'insection', label: 'Hərbi hissə üzrə' },
+];
 
 export default function Reports() {
     const [params, setParams] = useState<ReportParams>({
@@ -30,6 +37,8 @@ export default function Reports() {
         start_date: '',
         end_date: '',
     });
+    const startDateRef = useRef<any>(null);
+    const endDateRef = useRef<any>(null);
 
     const { data: reportData, isLoading } = useQuery({
         queryKey: ['report', params],
@@ -83,55 +92,100 @@ export default function Reports() {
                 </Typography>
             </Box>
 
-            {/* Filters Section */}
             <Paper
                 className="animate-fade-in glass-card"
-                sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)' }}
+                sx={{
+                    p: 4,
+                    mb: 4,
+                    borderRadius: 4,
+                    bgcolor: 'rgba(255,255,255,0.7)',
+                    '& .flatpickr-input': {
+                        borderRadius: '8px',
+                        border: '1px solid rgba(0, 0, 0, 0.23)',
+                        padding: '8px 12px',
+                        backgroundColor: 'white',
+                        fontSize: '14px',
+                        '&:focus': {
+                            outline: 'none',
+                            borderColor: '#3e4a21',
+                            boxShadow: '0 0 0 1px #3e4a21',
+                        },
+                    },
+                    '& .flatpickr-calendar': {
+                        borderRadius: '8px',
+                        backgroundColor: '#fff',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    },
+                    '& .flatpickr-day.selected': {
+                        backgroundColor: '#3e4a21',
+                        borderColor: '#3e4a21',
+                    },
+                    '& .flatpickr-day:hover': {
+                        backgroundColor: '#e8e8e8',
+                    },
+                    '& .flatpickr-current-month': {
+                        color: '#3e4a21',
+                        fontWeight: 700,
+                    },
+                }}
             >
-                <Grid container spacing={3} alignItems="flex-end">
+                <Grid container spacing={3} alignItems="flex-start">
                     <Grid size={{ xs: 12, md: 3 }}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Qruplaşdırma</InputLabel>
-                            <Select
-                                value={params.group_by}
-                                label="Qruplaşdırma"
-                                onChange={(e) => setParams({ ...params, group_by: e.target.value })}
-                                sx={{ bgcolor: 'white', borderRadius: 2 }}
-                            >
-                                <MenuItem value="department">İdarə üzrə</MenuItem>
-                                <MenuItem value="region">Region üzrə</MenuItem>
-                                <MenuItem value="status">Status üzrə</MenuItem>
-                                <MenuItem value="index">İndeks üzrə</MenuItem>
-                                <MenuItem value="insection">Hərbi hissə üzrə</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 2.5 }}>
-                        <TextField
-                            label="Başlanğıc Tarix"
-                            type="date"
-                            fullWidth
-                            size="small"
-                            value={params.start_date}
-                            onChange={(e) => setParams({ ...params, start_date: e.target.value })}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: 2 } }}
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Qruplaşdırma</Typography>
+                        <Select
+                            value={groupByOptions.find(o => o.value === params.group_by) || null}
+                            onChange={(e) => setParams({ ...params, group_by: e?.value || 'department' })}
+                            options={groupByOptions}
+                            styles={selectStylesLight}
+                            isSearchable={false}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, md: 2.5 }}>
-                        <TextField
-                            label="Son Tarix"
-                            type="date"
-                            fullWidth
-                            size="small"
-                            value={params.end_date}
-                            onChange={(e) => setParams({ ...params, end_date: e.target.value })}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'white', borderRadius: 2 } }}
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Başlanğıc Tarix</Typography>
+                        <Flatpickr
+                            ref={startDateRef}
+                            value={params.start_date ? new Date(params.start_date) : null}
+                            onChange={(dates) => setParams({ ...params, start_date: dates[0]?.toISOString().split('T')[0] || '' })}
+                            options={{
+                                mode: 'single',
+                                dateFormat: 'Y-m-d',
+                            }}
+                            placeholder="Tarix seçin"
+                            className="w-full"
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(0, 0, 0, 0.23)',
+                                backgroundColor: 'white',
+                                fontSize: '14px',
+                            }}
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 2.5 }}>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Son Tarix</Typography>
+                        <Flatpickr
+                            ref={endDateRef}
+                            value={params.end_date ? new Date(params.end_date) : null}
+                            onChange={(dates) => setParams({ ...params, end_date: dates[0]?.toISOString().split('T')[0] || '' })}
+                            options={{
+                                mode: 'single',
+                                dateFormat: 'Y-m-d',
+                            }}
+                            placeholder="Tarix seçin"
+                            className="w-full"
+                            style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(0, 0, 0, 0.23)',
+                                backgroundColor: 'white',
+                                fontSize: '14px',
+                            }}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                             {['Həftə', 'Ay', 'İl'].map((label, idx) => (
                                 <Button
                                     key={label}

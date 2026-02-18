@@ -15,6 +15,7 @@ class AppealCreate(ORMBase):
     region_id: int | None = None
     person: str | None = None
     email: str | None = None
+    phone: str | None = None
     content: str | None = None
     content_type_id: int | None = None
     account_index_id: int | None = None
@@ -46,6 +47,7 @@ class AppealUpdate(ORMBase):
     region_id: int | None = None
     person: str | None = None
     email: str | None = None
+    phone: str | None = None
     content: str | None = None
     content_type_id: int | None = None
     account_index_id: int | None = None
@@ -78,6 +80,7 @@ class AppealOut(ORMBase):
     region_id: int | None = None
     person: str | None = None
     email: str | None = None
+    phone: str | None = None
     content: str | None = None
     content_type_id: int | None = None
     account_index_id: int | None = None

@@ -13,7 +13,9 @@ import UserForm from './pages/admin/UserForm';
 import Parameters from './pages/admin/Parameters';
 import Reports from './pages/Reports';
 import Logs from './pages/Logs';
+import SystemAdmin from './pages/admin/SystemAdmin';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import { isAuthenticated } from './utils/auth';
 
 const queryClient = new QueryClient({
@@ -89,125 +91,135 @@ const theme = createTheme({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path="/login"
-              element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/appeals"
-              element={
-                <ProtectedRoute>
-                  <AppealsList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/appeals/new"
-              element={
-                <ProtectedRoute>
-                  <AppealForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/appeals/:id"
-              element={
-                <ProtectedRoute>
-                  <AppealForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/citizens"
-              element={
-                <ProtectedRoute>
-                  <CitizensList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/citizens/new"
-              element={
-                <ProtectedRoute>
-                  <CitizenForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/citizens/:id"
-              element={
-                <ProtectedRoute>
-                  <CitizenForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute>
-                  <UsersList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users/new"
-              element={
-                <ProtectedRoute>
-                  <UserForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users/:id"
-              element={
-                <ProtectedRoute>
-                  <UserForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/logs"
-              element={
-                <ProtectedRoute>
-                  <Logs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/parameters"
-              element={
-                <ProtectedRoute>
-                  <Parameters />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <BrowserRouter>
+            <Routes>
+              <Route
+                path="/login"
+                element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/appeals"
+                element={
+                  <ProtectedRoute>
+                    <AppealsList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/appeals/new"
+                element={
+                  <ProtectedRoute>
+                    <AppealForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/appeals/:id"
+                element={
+                  <ProtectedRoute>
+                    <AppealForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/citizens"
+                element={
+                  <ProtectedRoute>
+                    <CitizensList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/citizens/new"
+                element={
+                  <ProtectedRoute>
+                    <CitizenForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/citizens/:id"
+                element={
+                  <ProtectedRoute>
+                    <CitizenForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <SystemAdmin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute>
+                    <UsersList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users/new"
+                element={
+                  <ProtectedRoute>
+                    <UserForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users/:id"
+                element={
+                  <ProtectedRoute>
+                    <UserForm />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <Reports />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/logs"
+                element={
+                  <ProtectedRoute>
+                    <Logs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/parameters"
+                element={
+                  <ProtectedRoute>
+                    <Parameters />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

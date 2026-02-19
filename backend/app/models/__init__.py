@@ -12,6 +12,10 @@ from app.models.organ import Organ
 from app.models.contact import Contact
 from app.models.citizen import Citizen
 from app.models.audit_log import AuditLog
+from app.models.permission import (
+    Permission, Role, RolePermission, UserRole, UserPermission,
+    PermissionGroup, PermissionGroupItem
+)
 
 __all__ = [
     "User", "Appeal",
@@ -22,4 +26,6 @@ __all__ = [
     "WhoControl", "Movzu", "Holiday",
     "Region", "Organ", "Contact",
     "AuditLog",
+    "Permission", "Role", "RolePermission", "UserRole", "UserPermission",
+    "PermissionGroup", "PermissionGroupItem",
 ]

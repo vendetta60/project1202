@@ -10,6 +10,8 @@ export interface UserCreate {
     surname?: string;
     name?: string;
     section_id?: number;
+    role_ids?: number[];
+    group_ids?: number[];
 }
 
 export interface UserListResponse {

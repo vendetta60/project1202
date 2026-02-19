@@ -4,6 +4,7 @@ from fastapi import HTTPException
 
 from app.models.user import User
 from app.repositories.user import UserRepository
+from app.repositories.permission import UserRoleRepository, PermissionGroupRepository
 from app.schemas.user import UserCreate
 from app.services.audit import AuditService
 
@@ -30,6 +31,17 @@ class UserService:
             section_id=payload.section_id,
         )
         user = self.repo.create(obj)
+
+        # Assign roles if provided
+        if payload.role_ids:
+            role_repo = UserRoleRepository(self.repo.db)
+            role_repo.set_user_roles(user.id, payload.role_ids)
+        
+        # Apply permission groups if provided
+        if payload.group_ids:
+            group_repo = PermissionGroupRepository(self.repo.db)
+            for group_id in payload.group_ids:
+                group_repo.apply_to_user(user.id, group_id)
 
         # Log creation if audit service and current_user are available
         if self.audit and current_user:

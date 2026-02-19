@@ -55,6 +55,7 @@ export default function Layout({ children }: LayoutProps) {
   ];
 
   const adminItems = [
+    { label: 'MERKEZİ İDARƏETMƏ', path: '/admin', icon: <SettingsIcon /> },
     { label: 'İSTİFADƏÇİLƏR', path: '/admin/users', icon: <PeopleIcon /> },
     { label: 'LOGLAR', path: '/admin/logs', icon: <HistoryIcon /> },
     { label: 'PARAMETRLƏR', path: '/admin/parameters', icon: <SettingsIcon /> },

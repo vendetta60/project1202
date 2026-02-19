@@ -1,0 +1,361 @@
+/* Military Theme Admin Panel Design System */
+:root {
+  --military-olive: #3e4a21;
+  --military-olive-light: #4e5d2a;
+  --military-olive-dark: #2d3618;
+  --military-charcoal: #1a1f16;
+  --military-gold: #c5a059;
+  --military-steel: #718096;
+  --military-bone: #f4f6f0;
+  --military-red: #8b0000;
+  --military-green: #2d5a27;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(62, 74, 33, 0.1);
+  --military-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+.admin-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--military-shadow);
+  animation: slideUp 0.5s ease-out;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--military-olive);
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--military-olive);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.form-card {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--military-olive-dark);
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--military-olive);
+  box-shadow: 0 0 0 3px rgba(62, 74, 33, 0.1);
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--military-olive) 0%, var(--military-olive-dark) 100%);
+  color: white;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--military-green) 0%, #1a3a17 100%);
+  color: white;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--military-red) 0%, #600000 100%);
+  color: white;
+}
+
+.btn-secondary {
+  background: var(--military-steel);
+  color: white;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--military-olive);
+  color: var(--military-olive);
+}
+
+.btn-outline:hover {
+  background: var(--military-olive);
+  color: white;
+}
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  font-size: 14px;
+}
+
+.data-table thead th {
+  background: linear-gradient(180deg, var(--military-olive) 0%, var(--military-olive-dark) 100%);
+  color: white;
+  padding: 16px;
+  text-align: left;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.data-table thead th:first-child { border-radius: 8px 0 0 8px; }
+.data-table thead th:last-child { border-radius: 0 8px 8px 0; }
+
+.data-table tbody td {
+  background: white;
+  padding: 16px;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.data-table tbody td:first-child {
+  border-left: 1px solid var(--glass-border);
+  border-radius: 8px 0 0 8px;
+}
+
+.data-table tbody td:last-child {
+  border-right: 1px solid var(--glass-border);
+  border-radius: 0 8px 8px 0;
+}
+
+.data-table tbody tr:hover td {
+  background: #fdfdfd;
+  border-color: var(--military-olive);
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--military-bone);
+  color: var(--military-olive);
+  border: 1px solid var(--military-olive);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.badge-system {
+  background: var(--military-gold);
+  color: var(--military-charcoal);
+  border: none;
+}
+
+/* Alerts */
+.alert {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: var(--military-red);
+  border: 1px solid #fecaca;
+}
+
+.alert-success {
+  background: #dcfce7;
+  color: var(--military-green);
+  border: 1px solid #bbf7d0;
+}
+
+/* Permissions Layout */
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.permission-checkbox {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: white;
+  border: 1.5px solid var(--glass-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.permission-checkbox:hover {
+  border-color: var(--military-olive);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.permission-checkbox input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--military-olive);
+  margin-right: 12px;
+}
+
+.permission-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.permission-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--military-charcoal);
+}
+
+.permission-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--military-steel);
+}
+
+/* User Management */
+.user-management-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 32px;
+}
+
+.users-list {
+  background: var(--glass-bg);
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  max-height: 800px;
+  overflow-y: auto;
+}
+
+.user-item {
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-item:hover {
+  border-color: var(--military-olive);
+  background: var(--military-bone);
+}
+
+.user-item.active {
+  background: var(--military-olive);
+  border-color: var(--military-olive);
+  color: white;
+}
+
+.user-item.active small {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Modal Styling */
+.modal-overlay {
+  background: rgba(26, 31, 22, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--military-bone);
+  border-radius: 12px;
+  border: 2px solid var(--military-olive);
+  overflow: hidden;
+}
+
+.modal-header {
+  background: var(--military-olive);
+  color: white;
+  padding: 20px 24px;
+}
+
+.modal-body {
+  padding: 32px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  background: white;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1024px) {
+  .user-management-layout {
+    grid-template-columns: 1fr;
+  }
+}

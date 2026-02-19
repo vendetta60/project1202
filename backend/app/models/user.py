@@ -3,7 +3,7 @@ Maps to MSSQL table: Users
 """
 from datetime import datetime
 from sqlalchemy import Boolean, Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -63,6 +63,10 @@ class User(Base, AuditMixin):
     but24: Mapped[bool | None] = mapped_column(Boolean)
     but25: Mapped[bool | None] = mapped_column(Boolean)
 
+    # Relationships for RBAC
+    user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+    user_permissions = relationship("UserPermission", back_populates="user", cascade="all, delete-orphan")
+
     @property
     def full_name(self) -> str | None:
         parts = [self.surname, self.name]
@@ -76,6 +80,41 @@ class User(Base, AuditMixin):
     @property
     def is_active(self) -> bool:
         return True
+
+    def get_permissions(self) -> set[str]:
+        """
+        Get all permissions for this user (both from roles and individual permissions)
+        Returns set of permission codes
+        """
+        permissions = set()
+
+        # Collect permissions from all roles
+        for user_role in self.user_roles:
+            for role_permission in user_role.role.role_permissions:
+                permissions.add(role_permission.permission.code)
+
+        # Add/remove individual permissions
+        for user_perm in self.user_permissions:
+            if user_perm.grant_type == "grant":
+                permissions.add(user_perm.permission.code)
+            elif user_perm.grant_type == "deny":
+                permissions.discard(user_perm.permission.code)
+
+        return permissions
+
+    def has_permission(self, permission_code: str) -> bool:
+        """Check if user has a specific permission"""
+        return permission_code in self.get_permissions()
+
+    def has_any_permission(self, permission_codes: list[str]) -> bool:
+        """Check if user has any of the given permissions"""
+        user_perms = self.get_permissions()
+        return any(code in user_perms for code in permission_codes)
+
+    def has_all_permissions(self, permission_codes: list[str]) -> bool:
+        """Check if user has all of the given permissions"""
+        user_perms = self.get_permissions()
+        return all(code in user_perms for code in permission_codes)
 
     @property
     def password_hash(self) -> str | None:

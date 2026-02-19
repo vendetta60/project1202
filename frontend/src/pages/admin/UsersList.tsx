@@ -18,6 +18,7 @@ import {
     InputAdornment,
     TablePagination,
     Tooltip,
+    Alert,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -38,7 +39,7 @@ export default function UsersList() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     // Fetch users
-    const { data: usersData, isLoading: usersLoading } = useQuery({
+    const { data: usersData, isLoading: usersLoading, isError, error } = useQuery({
         queryKey: ['users', searchQuery, page, rowsPerPage],
         queryFn: () =>
             getUsers({
@@ -61,6 +62,28 @@ export default function UsersList() {
         return (
             <Layout>
                 <LoadingSpinner />
+            </Layout>
+        );
+    }
+
+    if (isError) {
+        return (
+            <Layout>
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="h5" color="error" sx={{ mb: 2 }}>
+                        Xəta baş verdi
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                        {error instanceof Error ? error.message : 'İstifadəçiləri yükləməkdə xəta baş verdi. Lütfən admin sələhiyyətlərə sahib olduğunuzdan əmin olun.'}
+                    </Typography>
+                    <Button 
+                        variant="contained"
+                        onClick={() => window.location.reload()}
+                        sx={{ bgcolor: '#4a5d23' }}
+                    >
+                        Yenidən yüklə
+                    </Button>
+                </Box>
             </Layout>
         );
     }

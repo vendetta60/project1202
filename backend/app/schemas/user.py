@@ -8,6 +8,8 @@ class UserCreate(ORMBase):
     username: str
     password: str
     section_id: int | None = None
+    role_ids: list[int] | None = None
+    group_ids: list[int] | None = None
 
 
 class UserOut(ORMBase):

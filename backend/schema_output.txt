@@ -8,7 +8,7 @@ ALL COLUMNS in 'Executors' table:
 | attach_num | NVARCHAR(50) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
 | attach_paper_num | NVARCHAR(50) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
 | r_prefix | SMALLINT | True |
-| r_num | INTEGER | True |
+| r_num | NVARCHAR(50) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
 | r_date | DATETIME | True |
 | posted_sec | NVARCHAR(300) COLLATE "SQL_Latin1_General_CP1_CI_AS" | True |
 | active | BIT | True |

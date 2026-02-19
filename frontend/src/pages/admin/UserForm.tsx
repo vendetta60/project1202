@@ -10,13 +10,17 @@ import {
     TextField,
     Grid,
     Divider,
+    FormControlLabel,
+    Switch,
 } from '@mui/material';
+import Select from 'react-select';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useToast } from '../../components/Toast';
 import { getUser, createUser } from '../../api/users';
 import { getUserSections } from '../../api/lookups';
+import { selectStylesLight, toSelectOptions } from '../../utils/formStyles';
 import type { UserCreate } from '../../api/users';
 
 interface FormData {
@@ -51,13 +55,13 @@ export default function UserForm() {
         },
     });
 
-    const { data: user, isLoading: userLoading } = useQuery({
+    const { data: user, isLoading: userLoading, isError: userError, error: userErrorObj } = useQuery({
         queryKey: ['user', id],
         queryFn: () => getUser(Number(id)),
         enabled: isEdit,
     });
 
-    const { data: userSections } = useQuery({
+    const { data: userSections, isError: sectionsError } = useQuery({
         queryKey: ['userSections'],
         queryFn: getUserSections,
     });
@@ -113,6 +117,28 @@ export default function UserForm() {
         );
     }
 
+    if (userError) {
+        return (
+            <Layout>
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="h5" color="error" sx={{ mb: 2 }}>
+                        Xəta baş verdi
+                    </Typography>
+                    <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                        {userErrorObj instanceof Error ? userErrorObj.message : 'İstifadəçini yükləməkdə xəta baş verdi. Lütfən admin sələhiyyətlərə sahib olduğunuzdan əmin olun.'}
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        onClick={() => navigate('/admin/users')}
+                        sx={{ bgcolor: '#4a5d23' }}
+                    >
+                        Geri qayıt
+                    </Button>
+                </Box>
+            </Layout>
+        );
+    }
+
     return (
         <Layout>
             <Box sx={{ mb: 4 }} className="animate-fade-in">
@@ -140,20 +166,21 @@ export default function UserForm() {
                 sx={{
                     p: 4,
                     borderRadius: 2,
-                    bgcolor: 'rgba(255,255,255,0.9)',
-                    maxWidth: 800,
+                    bgcolor: 'rgba(255,255,255,0.95)',
+                    maxWidth: 700,
                     boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
                     border: '1px solid rgba(255,255,255,0.2)'
                 }}
             >
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#2c3e50' }}>
-                        {isEdit ? 'İstifadəçi Məlumatları' : 'Yeni İstifadəçi'}
+                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+                        {isEdit ? 'İstifadəçi Məlumatları' : 'Yeni İstifadəçi Yaradın'}
                     </Typography>
                     <Divider sx={{ mb: 3, borderColor: 'rgba(0,0,0,0.06)' }} />
 
-                    <Grid container spacing={3}>
-                        <Grid item xs={12} md={6}>
+                    <Grid container spacing={2.5} sx={{ mb: 3 }}>
+                        {/* Row 1: Username & Password */}
+                        <Grid item xs={12} sm={6}>
                             <Controller
                                 name="username"
                                 control={control}
@@ -161,17 +188,20 @@ export default function UserForm() {
                                 render={({ field }) => (
                                     <TextField
                                         {...field}
-                                        label="İstifadəçi adı"
+                                        label="İstifadəçi Adı"
                                         fullWidth
                                         size="small"
                                         disabled={isEdit}
                                         error={Boolean(errors.username)}
                                         helperText={errors.username?.message}
                                         sx={{
-                                            bgcolor: 'white',
-                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' },
-                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                            '& .MuiOutlinedInput-root': {
+                                                bgcolor: 'white',
+                                                '&:hover fieldset': { borderColor: '#4a5d23' },
+                                                '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                            },
+                                            '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
+                                            '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
                                         }}
                                     />
                                 )}
@@ -179,7 +209,7 @@ export default function UserForm() {
                         </Grid>
 
                         {!isEdit && (
-                            <Grid item xs={12} md={6}>
+                            <Grid item xs={12} sm={6}>
                                 <Controller
                                     name="password"
                                     control={control}
@@ -197,10 +227,13 @@ export default function UserForm() {
                                             error={Boolean(errors.password)}
                                             helperText={errors.password?.message}
                                             sx={{
-                                                bgcolor: 'white',
-                                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' },
-                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                                '& .MuiOutlinedInput-root': {
+                                                    bgcolor: 'white',
+                                                    '&:hover fieldset': { borderColor: '#4a5d23' },
+                                                    '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                                },
+                                                '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
+                                                '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
                                             }}
                                         />
                                     )}
@@ -208,7 +241,12 @@ export default function UserForm() {
                             </Grid>
                         )}
 
-                        <Grid item xs={12} md={6}>
+                        {isEdit && (
+                            <Grid item xs={12} sm={6} />
+                        )}
+
+                        {/* Row 2: Surname & Name */}
+                        <Grid item xs={12} sm={6}>
                             <Controller
                                 name="surname"
                                 control={control}
@@ -219,17 +257,20 @@ export default function UserForm() {
                                         fullWidth
                                         size="small"
                                         sx={{
-                                            bgcolor: 'white',
-                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' },
-                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                            '& .MuiOutlinedInput-root': {
+                                                bgcolor: 'white',
+                                                '&:hover fieldset': { borderColor: '#4a5d23' },
+                                                '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                            },
+                                            '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
+                                            '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
                                         }}
                                     />
                                 )}
                             />
                         </Grid>
 
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} sm={6}>
                             <Controller
                                 name="name"
                                 control={control}
@@ -240,35 +281,59 @@ export default function UserForm() {
                                         fullWidth
                                         size="small"
                                         sx={{
-                                            bgcolor: 'white',
-                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' },
-                                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                            '& .MuiOutlinedInput-root': {
+                                                bgcolor: 'white',
+                                                '&:hover fieldset': { borderColor: '#4a5d23' },
+                                                '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                            },
+                                            '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
+                                            '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
                                         }}
                                     />
                                 )}
                             />
                         </Grid>
 
-                        <Grid item xs={12} md={6}>
+                        {/* Row 3: Section */}
+                        <Grid item xs={12}>
                             <Controller
                                 name="section_id"
                                 control={control}
                                 render={({ field }) => (
-                                    <div>
-                                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Hissə</Typography>
+                                    <Box>
+                                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#555', mb: 0.8 }}>Hissə</Typography>
                                         <Select
-                                            value={toSelectOptions(userSections || [], 'section').find(o => o.value === field.value) || null}
+                                            {...field}
+                                            value={toSelectOptions(userSections || [], 'section').find(o => o.value === field.value) || undefined}
                                             onChange={(e: any) => field.onChange(e?.value || '')}
                                             options={toSelectOptions(userSections || [], 'section')}
-                                            styles={selectStylesLight}
+                                            styles={{
+                                                control: (base: any) => ({
+                                                    ...base,
+                                                    borderColor: 'rgba(0,0,0,0.15)',
+                                                    backgroundColor: 'white',
+                                                    minHeight: '36px',
+                                                    fontSize: '0.875rem',
+                                                    borderRadius: '4px',
+                                                    '&:hover': { borderColor: '#4a5d23' },
+                                                    '&:focus': { borderColor: '#4a5d23' }
+                                                }),
+                                                option: (base: any, state: any) => ({
+                                                    ...base,
+                                                    backgroundColor: state.isSelected ? '#4a5d23' : state.isFocused ? 'rgba(74,93,35,0.1)' : 'white',
+                                                    color: state.isSelected ? 'white' : '#333',
+                                                    cursor: 'pointer'
+                                                })
+                                            }}
                                             isClearable
+                                            placeholder="Seçin..."
                                         />
-                                    </div>
+                                    </Box>
                                 )}
                             />
                         </Grid>
 
+                        {/* Row 4: Admin Checkbox */}
                         <Grid item xs={12}>
                             <Controller
                                 name="is_admin"
@@ -286,63 +351,63 @@ export default function UserForm() {
                                                             backgroundColor: '#4a5d23',
                                                         },
                                                     },
+                                                    '& .MuiSwitch-track': {
+                                                        backgroundColor: 'rgba(0,0,0,0.2)',
+                                                    }
                                                 }}
                                             />
                                         }
-                                        label="Admin hüquqları?"
-                                        sx={{ color: '#374151', fontWeight: 500 }}
+                                        label={
+                                            <Typography sx={{ fontWeight: 600, color: '#555' }}>
+                                                Admin hüquqları?
+                                            </Typography>
+                                        }
                                     />
                                 )}
                             />
                         </Grid>
-
-                        <Grid item xs={12}>
-                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-start', mt: 2 }}>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    startIcon={<SaveIcon />}
-                                    disabled={createMutation.isPending}
-                                    sx={{
-                                        bgcolor: '#4a5d23',
-                                        color: 'white',
-                                        textTransform: 'none',
-                                        fontWeight: 700,
-                                        py: 1.2,
-                                        px: 4,
-                                        borderRadius: 1.5,
-                                        '&:hover': {
-                                            bgcolor: '#3a4a1b',
-                                        },
-                                    }}
-                                >
-                                    Yadda saxla
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => navigate('/admin/users')}
-                                    sx={{
-                                        textTransform: 'none',
-                                        fontWeight: 600,
-                                        py: 1.2,
-                                        px: 3,
-                                        color: '#666',
-                                        borderColor: '#ccc',
-                                        borderRadius: 1.5,
-                                        '&:hover': {
-                                            borderColor: '#999',
-                                            bgcolor: 'rgba(0,0,0,0.02)'
-                                        }
-                                    }}
-                                >
-                                    Ləğv et
-                                </Button>
-                            </Box>
-                        </Grid>
                     </Grid>
+
+                    {/* Divider */}
+                    <Divider sx={{ my: 3, borderColor: 'rgba(0,0,0,0.06)' }} />
+
+                    {/* Action Buttons */}
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                        <Button
+                            type="button"
+                            variant="outlined"
+                            onClick={() => navigate('/admin/users')}
+                            sx={{
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                color: '#4a5d23',
+                                borderColor: '#4a5d23',
+                                '&:hover': {
+                                    borderColor: '#3a4a1b',
+                                    bgcolor: 'rgba(74,93,35,0.05)'
+                                }
+                            }}
+                        >
+                            Ləğv Et
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            startIcon={<SaveIcon />}
+                            disabled={createMutation.isPending}
+                            sx={{
+                                textTransform: 'none',
+                                fontWeight: 700,
+                                bgcolor: '#4a5d23',
+                                '&:hover': { bgcolor: '#3a4a1b' },
+                                minWidth: 150
+                            }}
+                        >
+                            {createMutation.isPending ? 'Saxlanılır...' : 'Yadda Saxla'}
+                        </Button>
+                    </Box>
                 </form>
             </Paper>
-
             <ToastComponent />
         </Layout>
     );

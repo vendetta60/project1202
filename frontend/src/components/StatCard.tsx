@@ -7,9 +7,10 @@ interface StatCardProps {
   icon: ReactNode;
   color?: string;
   onClick?: () => void;
+  trend?: string;
 }
 
-export default function StatCard({ title, value, icon, color = '#1976d2', onClick }: StatCardProps) {
+export default function StatCard({ title, value, icon, color = '#1976d2', onClick, trend }: StatCardProps) {
   return (
     <Card
       onClick={onClick}
@@ -20,11 +21,19 @@ export default function StatCard({ title, value, icon, color = '#1976d2', onClic
         transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
         overflow: 'hidden',
+        border: '1px solid',
+        borderColor: 'divider',
         '&:hover': {
           transform: onClick ? 'translateY(-8px)' : 'none',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.12) !important',
+          boxShadow: `0 20px 40px ${color}15 !important`,
+          borderColor: color,
           '& .stat-icon-bg': {
             transform: 'scale(1.1) rotate(5deg)',
+            bgcolor: `${color}25`,
+          },
+          '& .stat-bg-decoration': {
+            opacity: 0.1,
+            transform: 'scale(1.2)',
           }
         },
         '&::before': {
@@ -32,38 +41,83 @@ export default function StatCard({ title, value, icon, color = '#1976d2', onClic
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '4px',
+          width: '6px',
           height: '100%',
-          bgcolor: color,
+          background: `linear-gradient(to bottom, ${color}, ${color}dd)`,
+          zIndex: 2,
         }
       }}
     >
-      <CardContent sx={{ p: 4 }}>
+      {/* Decorative background element */}
+      <Box
+        className="stat-bg-decoration"
+        sx={{
+          position: 'absolute',
+          right: -20,
+          bottom: -20,
+          fontSize: '120px',
+          opacity: 0.03,
+          transition: 'all 0.5s ease',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      >
+        {icon}
+      </Box>
+
+      <CardContent sx={{ p: 4, position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
           <Box>
-            <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: '1px' }}>
+            <Typography
+              variant="overline"
+              sx={{
+                fontWeight: 800,
+                color: 'text.secondary',
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+                opacity: 0.7
+              }}
+            >
               {title}
             </Typography>
-            <Typography variant="h3" sx={{ fontWeight: 900, color: 'text.primary', mt: 1 }}>
+            <Typography variant="h3" sx={{ fontWeight: 900, color: 'text.primary', mt: 1, letterSpacing: '-1px' }}>
               {value}
             </Typography>
+            {trend && (
+              <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, mt: 1, display: 'block' }}>
+                {trend}
+              </Typography>
+            )}
           </Box>
           <Box
             className="stat-icon-bg"
             sx={{
-              bgcolor: `${color}15`,
+              background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
               color: color,
-              p: 2,
-              borderRadius: '16px',
+              p: 2.5,
+              borderRadius: '20px',
               display: 'flex',
-              transition: 'transform 0.3s ease',
+              transition: 'all 0.3s ease',
+              boxShadow: `0 10px 20px ${color}10`,
             }}
           >
             {icon}
           </Box>
         </Box>
-        <Box sx={{ height: '4px', bgcolor: `${color}10`, borderRadius: 1, mt: 'auto' }}>
-          <Box sx={{ width: '40%', height: '100%', bgcolor: color, borderRadius: 1, opacity: 0.5 }} />
+
+        <Box sx={{ mt: 'auto' }}>
+          <Box sx={{ height: '6px', bgcolor: 'action.hover', borderRadius: 3, overflow: 'hidden' }}>
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                background: `linear-gradient(to right, ${color}30, ${color})`,
+                borderRadius: 3,
+                opacity: 0.6,
+                transform: 'translateX(-60%)', // Just for visual flair
+              }}
+            />
+          </Box>
         </Box>
       </CardContent>
     </Card>

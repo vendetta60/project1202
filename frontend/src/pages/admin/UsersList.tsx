@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -18,25 +18,96 @@ import {
     InputAdornment,
     TablePagination,
     Tooltip,
-    Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from '@mui/material';
 import {
     Add as AddIcon,
     Edit as EditIcon,
     Search as SearchIcon,
+    LockReset as LockResetIcon,
 } from '@mui/icons-material';
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { getUsers } from '../../api/users';
+import { getUsers, resetUserPassword } from '../../api/users';
+import { getCurrentUser } from '../../api/auth';
 import { useToast } from '../../components/Toast';
+
+interface PasswordResetDialogProps {
+    open: boolean;
+    onClose: () => void;
+    userId: number;
+    username: string;
+}
+
+function PasswordResetDialog({ open, onClose, userId, username }: PasswordResetDialogProps) {
+    const [password, setPassword] = useState('');
+    const { showToast } = useToast();
+    const queryClient = useQueryClient();
+
+    const mutation = useMutation({
+        mutationFn: () => resetUserPassword(userId, password),
+        onSuccess: () => {
+            showToast('Parol müvəffəqiyyətlə sıfırlandı', 'success');
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            onClose();
+        },
+        onError: (error: any) => {
+            showToast(error.response?.data?.detail || 'Parolu sıfırlayarkən xəta baş verdi', 'error');
+        }
+    });
+
+    return (
+        <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle sx={{ fontWeight: 800 }}>Parolu Sıfırla</DialogTitle>
+            <DialogContent>
+                <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                    <strong>{username}</strong> istifadəçisi üçün yeni parolu daxil edin:
+                </Typography>
+                <TextField
+                    autoFocus
+                    margin="dense"
+                    label="Yeni Parol"
+                    type="password"
+                    fullWidth
+                    variant="outlined"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+            </DialogContent>
+            <DialogActions sx={{ p: 3 }}>
+                <Button onClick={onClose} sx={{ color: 'text.secondary', fontWeight: 700 }}>Ləğv et</Button>
+                <Button
+                    onClick={() => mutation.mutate()}
+                    variant="contained"
+                    disabled={!password || mutation.isPending}
+                    sx={{ bgcolor: '#4a5d23', '&:hover': { bgcolor: '#3a4a1b' }, fontWeight: 700 }}
+                >
+                    {mutation.isPending ? 'Sıfırlanır...' : 'Sıfırla'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
 
 export default function UsersList() {
     const navigate = useNavigate();
-    const { ToastComponent } = useToast();
+    const { ToastComponent, showToast } = useToast();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<{ id: number, username: string } | null>(null);
+
+    // Fetch current user for permissions
+    const { data: currentUser } = useQuery({
+        queryKey: ['currentUser'],
+        queryFn: getCurrentUser,
+    });
 
     // Fetch users
     const { data: usersData, isLoading: usersLoading, isError, error } = useQuery({
@@ -48,6 +119,13 @@ export default function UsersList() {
                 offset: page * rowsPerPage,
             }),
     });
+
+    const canResetPassword = currentUser?.is_admin; // Simplified for now, or use complex logic if needed
+
+    const handleOpenResetDialog = (id: number, username: string) => {
+        setSelectedUser({ id, username });
+        setResetDialogOpen(true);
+    };
 
     const handleChangePage = (_event: unknown, newPage: number) => {
         setPage(newPage);
@@ -210,18 +288,34 @@ export default function UsersList() {
                                         />
                                     </TableCell>
                                     <TableCell align="right">
-                                        <Tooltip title="Redaktə et">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => navigate(`/admin/users/${user.id}`)}
-                                                sx={{
-                                                    color: '#4a5d23',
-                                                    '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' }
-                                                }}
-                                            >
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
+                                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                            {canResetPassword && (
+                                                <Tooltip title="Parolu sıfırla">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleOpenResetDialog(user.id, user.username || '')}
+                                                        sx={{
+                                                            color: '#e67e22',
+                                                            '&:hover': { bgcolor: 'rgba(230, 126, 34, 0.1)' }
+                                                        }}
+                                                    >
+                                                        <LockResetIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                            <Tooltip title="Redaktə et">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                    sx={{
+                                                        color: '#4a5d23',
+                                                        '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' }
+                                                    }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -256,6 +350,19 @@ export default function UsersList() {
                     }}
                 />
             </Paper>
+
+            {selectedUser && (
+                <PasswordResetDialog
+                    open={resetDialogOpen}
+                    onClose={() => {
+                        setResetDialogOpen(false);
+                        setSelectedUser(null);
+                    }}
+                    userId={selectedUser.id}
+                    username={selectedUser.username}
+                />
+            )}
+
             <ToastComponent />
         </Layout>
     );

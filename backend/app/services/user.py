@@ -64,3 +64,23 @@ class UserService:
 
     def count(self) -> int:
         return self.repo.count()
+
+    def reset_password(self, user_id: int, new_password: str, current_user: User) -> User:
+        user = self.get(user_id)
+        
+        hashed_password = hashlib.sha256(new_password.encode("utf-8")).hexdigest()
+        user.password = hashed_password
+        
+        updated_user = self.repo.save(user)
+        
+        if self.audit:
+            self.audit.log_action(
+                entity_type="User",
+                entity_id=user.id,
+                action="UPDATE",
+                current_user=current_user,
+                description=f"İstifadəçinin parolu sıfırlandı - {user.username}",
+                new_values={"password": "[HIDDEN]"}
+            )
+            
+        return updated_user

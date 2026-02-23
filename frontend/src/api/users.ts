@@ -41,3 +41,8 @@ export const createUser = async (data: UserCreate): Promise<User> => {
     const response = await apiClient.post('/users', data);
     return response.data;
 };
+
+export const resetUserPassword = async (userId: number, password: string): Promise<User> => {
+    const response = await apiClient.post(`/users/${userId}/reset-password`, { new_password: password });
+    return response.data;
+};

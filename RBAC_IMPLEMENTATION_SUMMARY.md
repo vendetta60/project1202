@@ -256,10 +256,10 @@ if (user.permissions.includes("edit_appeal")) {
 │          Frontend (React/TS)            │
 ├─────────────────────────────────────────┤
 │        Admin Panel Components           │
-│  - Permissions Management              │
-│  - Roles Management                    │
-│  - Permission Groups                   │
-│  - User Permissions                    │
+│  - Permissions Management               │
+│  - Roles Management                     │
+│  - Permission Groups                    │
+│  - User Permissions                     │
 └──────────┬──────────────────────────────┘
            │
        API Calls

@@ -14,6 +14,7 @@ import {
     TableRow,
     TablePagination,
     Chip,
+    useTheme,
 } from '@mui/material';
 import Select from 'react-select';
 import HistoryIcon from '@mui/icons-material/History';
@@ -21,7 +22,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { getLogs } from '../api/logs';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { selectStylesLight } from '../utils/formStyles';
+import { getSelectStyles } from '../utils/formStyles';
 
 const ACTION_COLORS: Record<string, string> = {
     CREATE: '#4caf50',
@@ -55,6 +56,7 @@ const ACTION_OPTIONS = [
 ];
 
 export default function Logs() {
+    const theme = useTheme();
     const [filters, setFilters] = useState({
         entity_type: '',
         action: '',
@@ -123,7 +125,7 @@ export default function Logs() {
             >
                 <Grid container spacing={3} alignItems="flex-start">
                     <Grid item xs={12} sm={6} md={3}>
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Entity Növü</Typography>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Entity Növü</Typography>
                         <Select
                             value={ENTITY_TYPE_OPTIONS.find(o => o.value === filters.entity_type) || null}
                             onChange={(e) => {
@@ -131,12 +133,13 @@ export default function Logs() {
                                 setPage(0);
                             }}
                             options={ENTITY_TYPE_OPTIONS}
-                            styles={selectStylesLight}
+                            styles={getSelectStyles(theme.palette.primary.main)}
+                            menuPortalTarget={document.body}
                             isSearchable={false}
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Əməliyyat Növü</Typography>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Əməliyyat Növü</Typography>
                         <Select
                             value={ACTION_OPTIONS.find(o => o.value === filters.action) || null}
                             onChange={(e) => {
@@ -144,7 +147,8 @@ export default function Logs() {
                                 setPage(0);
                             }}
                             options={ACTION_OPTIONS}
-                            styles={selectStylesLight}
+                            styles={getSelectStyles(theme.palette.primary.main)}
+                            menuPortalTarget={document.body}
                             isSearchable={false}
                         />
                     </Grid>
@@ -187,7 +191,7 @@ export default function Logs() {
                     <TableContainer>
                         <Table size="medium">
                             <TableHead>
-                                <TableRow sx={{ bgcolor: 'rgba(62, 74, 33, 0.08)' }}>
+                                <TableRow sx={{ bgcolor: 'action.hover' }}>
                                     <TableCell className="military-table-header">Tarix/Saat</TableCell>
                                     <TableCell className="military-table-header">Entity</TableCell>
                                     <TableCell className="military-table-header">Entity ID</TableCell>
@@ -203,7 +207,7 @@ export default function Logs() {
                                             <TableCell sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
                                                 {formatDate(log.created_at)}
                                             </TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: '#3e4a21' }}>
+                                            <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>
                                                 {log.entity_type}
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 600 }}>#{log.entity_id}</TableCell>
@@ -250,10 +254,10 @@ export default function Logs() {
                         labelRowsPerPage="Səhifə başına satır:"
                         labelDisplayedRows={({ from, to, count }) => `${from}–${to} / ${count}`}
                         sx={{
-                            bgcolor: 'rgba(62, 74, 33, 0.04)',
+                            bgcolor: 'action.hover',
                             '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
                                 fontWeight: 700,
-                                color: '#3e4a21',
+                                color: 'primary.main',
                             }
                         }}
                     />

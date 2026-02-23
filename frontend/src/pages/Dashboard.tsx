@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -29,6 +30,7 @@ import Layout from '../components/Layout';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -83,7 +85,7 @@ export default function Dashboard() {
             title="Ümumi Müraciətlər"
             value={appealsData?.total || 0}
             icon={<DescriptionIcon fontSize="large" />}
-            color="#3e4a21"
+            color={theme.palette.primary.main}
           />
         </Grid>
         {user?.is_admin && (
@@ -93,7 +95,7 @@ export default function Dashboard() {
                 title="Qeydiyyatda olan İdarələr"
                 value={departments?.length || 0}
                 icon={<BusinessIcon fontSize="large" />}
-                color="#a68b44"
+                color={theme.palette.secondary.main}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -101,7 +103,7 @@ export default function Dashboard() {
                 title="Sistem İstifadəçiləri"
                 value={usersData?.total || 0}
                 icon={<PeopleIcon fontSize="large" />}
-                color="#2c3e50"
+                color={theme.palette.primary.dark}
               />
             </Grid>
           </>
@@ -111,7 +113,7 @@ export default function Dashboard() {
             title="Analitik Hesabatlar"
             value="STATİSTİKA"
             icon={<AssessmentIcon fontSize="large" />}
-            color="#5a6b32"
+            color={theme.palette.primary.light}
             onClick={() => navigate('/reports')}
           />
         </Grid>
@@ -126,12 +128,9 @@ export default function Dashboard() {
           sx={{
             py: 1.5,
             px: 4,
-            bgcolor: '#3e4a21',
-            boxShadow: '0 8px 16px rgba(62, 74, 33, 0.3)',
-            '&:hover': {
-              bgcolor: '#2c3518',
-              boxShadow: '0 12px 20px rgba(62, 74, 33, 0.4)',
-            },
+            borderRadius: 2,
+            boxShadow: 2,
+            '&:hover': { boxShadow: 4 },
           }}
         >
           Yeni Müraciət Daxil Et
@@ -146,8 +145,8 @@ export default function Dashboard() {
           borderRadius: 4,
         }}
       >
-        <Box sx={{ p: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'rgba(62, 74, 33, 0.03)' }}>
-          <Typography variant="h6" sx={{ fontWeight: 900, color: '#2c3e50', letterSpacing: '0.5px' }}>
+        <Box sx={{ p: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'action.hover' }}>
+          <Typography variant="h6" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '0.5px' }}>
             SON MÜRACİƏTLƏR
           </Typography>
           <Button
@@ -179,14 +178,12 @@ export default function Dashboard() {
                     hover
                     sx={{
                       cursor: 'pointer',
-                      '&:hover': {
-                        bgcolor: 'rgba(62, 74, 33, 0.05)',
-                      },
-                      '& td': { py: 2.5, fontSize: '0.9rem', fontWeight: 500, color: '#374151' }
+                      '&:hover': { bgcolor: 'action.hover' },
+                      '& td': { py: 2.5, fontSize: '0.9rem', fontWeight: 500 }
                     }}
                     onClick={() => navigate(`/appeals/${appeal.id}`)}
                   >
-                    <TableCell sx={{ fontWeight: 700, color: '#3e4a21 !important' }}>{appeal.reg_num || '-'}</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{appeal.reg_num || '-'}</TableCell>
                     <TableCell>{appeal.person || '-'}</TableCell>
                     <TableCell>{getDepName(appeal.dep_id)}</TableCell>
                     <TableCell sx={{ maxWidth: 350, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

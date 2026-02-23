@@ -20,6 +20,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  useTheme,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -79,6 +80,7 @@ import { ExecutorDialog } from '../components/ExecutorDialog';
 import { ExecutorDetailsDialog } from '../components/ExecutorDetailsDialog';
 import { getErrorMessage } from '../utils/errors';
 import { formatDateToDDMMYYYY, formatDateToISO } from '../utils/dateUtils';
+import { getSelectStyles } from '../utils/formStyles';
 
 interface AppealFormData {
   num: number | undefined; // Hansı hərbi hissədən daxil olub
@@ -142,86 +144,40 @@ const defaultValues: Partial<AppealFormData> = {
   PC_Tarixi: '',
 };
 
-const labelSx = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 0.4,
-  fontSize: '0.72rem',
-  fontWeight: 600,
-  color: '#334155',
-  mb: 0.1,
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  '& svg': {
-    fontSize: '0.85rem',
-    color: '#3e4a21',
-  }
-};
 
-const inputSx = {
-  '& .MuiInputBase-root': {
-    backgroundColor: '#fff',
-    fontSize: '0.82rem',
-    borderRadius: '4px',
-    height: '30px',
-  },
-  '& .MuiOutlinedInput-input': {
-    padding: '4px 6px',
-  },
-  '& .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#cbd5e1',
-  },
-  '&:hover .MuiOutlinedInput-notchedOutline': {
-    borderColor: '#94a3b8',
-  },
-};
-
-const selectStylesLight = {
-  control: (base: any, state: any) => ({
-    ...base,
-    fontSize: '0.82rem',
-    minHeight: '30px',
-    height: '30px',
-    backgroundColor: '#fff',
-    borderColor: state.isFocused ? '#3e4a21' : '#cbd5e1',
-    borderRadius: '4px',
-    boxShadow: state.isFocused ? '0 0 0 1px #3e4a21' : 'none',
-    '&:hover': {
-      borderColor: '#94a3b8',
-    },
-  }),
-  option: (base: any, state: any) => ({
-    ...base,
-    fontSize: '0.82rem',
-    backgroundColor: state.isSelected ? '#3e4a21' : state.isFocused ? '#f0f0f0' : '#fff',
-    color: state.isSelected ? '#fff' : '#333',
-    cursor: 'pointer',
-    '&:hover': {
-      backgroundColor: state.isSelected ? '#3e4a21' : '#e8e8e8',
-    },
-  }),
-  input: (base: any) => ({
-    ...base,
-    padding: '2px 4px',
-    fontSize: '0.82rem',
-  }),
-  singleValue: (base: any) => ({
-    ...base,
-    fontSize: '0.82rem',
-  }),
-  menuList: (base: any) => ({
-    ...base,
-    fontSize: '0.82rem',
-  }),
-};
 
 export default function AppealForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const theme = useTheme();
   const isEditMode = !!id;
   const [error, setError] = useState<string>('');
+  const selectStyles = getSelectStyles(theme.palette.primary.main);
+  const labelSx = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 0.4,
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    color: 'text.secondary',
+    mb: 0.1,
+    whiteSpace: 'nowrap' as const,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    '& svg': { fontSize: '0.85rem', color: 'primary.main' },
+  };
+  const inputSx = {
+    '& .MuiInputBase-root': {
+      backgroundColor: 'background.paper',
+      fontSize: '0.82rem',
+      borderRadius: '4px',
+      height: '30px',
+    },
+    '& .MuiOutlinedInput-input': { padding: '4px 6px' },
+    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'text.secondary' },
+  };
 
   // Helper to convert array data to react-select format
   const toSelectOptions = (data: any[] | undefined, labelKey: string, valueKey: string = 'id') => {
@@ -255,6 +211,7 @@ export default function AppealForm() {
   });
 
   const selectedDepId = watch('dep_id');
+  const inSectionFilled = watch('InSection'); // "Hansı hərbi hissədən daxil olub" – doldurulmadan Digər hərbi hissə/Digər qurum sahələri deaktiv
 
   // Lookups
   const { data: inSections } = useQuery({ queryKey: ['inSections'], queryFn: getInSections });
@@ -513,7 +470,7 @@ export default function AppealForm() {
 
       <Paper
         className="animate-slide-up glass-card"
-        sx={{ p: 2.5, borderRadius: 3, bgcolor: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', width: '100%' }}
+        sx={{ p: 2.5, borderRadius: 3, bgcolor: 'background.paper', boxShadow: 2, width: '100%' }}
       >
         {/* Flatpickr Global Styles */}
         <style>{`
@@ -529,8 +486,8 @@ export default function AppealForm() {
             font-family: inherit !important;
           }
           .flatpickr-input:focus {
-            border-color: #3e4a21 !important;
-            box-shadow: 0 0 0 1px #3e4a21 !important;
+            border-color: var(--app-primary) !important;
+            box-shadow: 0 0 0 1px var(--app-primary) !important;
             outline: none !important;
           }
           .flatpickr-calendar {
@@ -541,13 +498,13 @@ export default function AppealForm() {
           .flatpickr-day.selected,
           .flatpickr-day.startRange,
           .flatpickr-day.endRange {
-            background: #3e4a21 !important;
+            background: var(--app-primary) !important;
           }
           .flatpickr-day:hover {
             background: #f0f0f0 !important;
           }
           .flatpickr-current-month {
-            color: #3e4a21 !important;
+            color: var(--app-primary) !important;
             font-weight: 700 !important;
           }
         `}</style>
@@ -602,11 +559,12 @@ export default function AppealForm() {
                               isClearable
                               isSearchable
                               placeholder="MN Katibliyi"
-                              styles={selectStylesLight}
+                              styles={selectStyles}
+                              menuPortalTarget={document.body}
                             />
                           )} />
                         </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: '#3e4a21', minWidth: 28 }} onClick={() => setOpenInSectionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenInSectionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
                     </Box>
                     <Box>
@@ -622,21 +580,22 @@ export default function AppealForm() {
                               isClearable
                               isSearchable
                               placeholder="Seçin..."
-                              styles={selectStylesLight}
+                              styles={selectStyles}
+                              menuPortalTarget={document.body}
                             />
                           )} />
                         </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: '#3e4a21', minWidth: 28 }} onClick={() => setOpenInstructionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenInstructionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'rgba(62, 74, 33, 0.03)', borderRadius: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
                       <Typography sx={labelSx}><HistoryIcon /> Təkrar müraciət:</Typography>
                       <Controller name="repetition" control={control} render={({ field }) => (
                         <input
                           type="checkbox"
                           checked={field.value}
                           onChange={field.onChange}
-                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#3e4a21' }}
+                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: theme.palette.primary.main }}
                         />
                       )} />
                     </Box>
@@ -646,11 +605,11 @@ export default function AppealForm() {
                 {/* Column 2 */}
                 <Grid size={{ xs: 12, md: 3 }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box>
+                    <Box sx={{ opacity: inSectionFilled ? 1 : 0.65, pointerEvents: inSectionFilled ? 'auto' : 'none' }}>
                       <Typography sx={labelSx}><DescriptionIcon /> Digər hərbi hissə üzrə nömrəsi:</Typography>
-                      <Controller name="sec_in_ap_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Nömrə" />} />
+                      <Controller name="sec_in_ap_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Nömrə" disabled={!inSectionFilled} />} />
                     </Box>
-                    <Box>
+                    <Box sx={{ opacity: inSectionFilled ? 1 : 0.65, pointerEvents: inSectionFilled ? 'auto' : 'none' }}>
                       <Typography sx={labelSx}><CalendarMonthIcon /> Digər qurum üzrə tarix:</Typography>
                       <Controller name="sec_in_ap_date" control={control} render={({ field }) => (
                         <Flatpickr
@@ -699,11 +658,12 @@ export default function AppealForm() {
                               isClearable
                               isSearchable
                               placeholder="Seçin..."
-                              styles={selectStylesLight}
+                              styles={selectStyles}
+                              menuPortalTarget={document.body}
                             />
                           )} />
                         </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: '#3e4a21', minWidth: 28 }} onClick={() => setOpenDeptDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenDeptDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
                     </Box>
                     <Box>
@@ -720,11 +680,12 @@ export default function AppealForm() {
                               isSearchable
                               placeholder={selectedDepId ? 'Seçin...' : 'Öncə qurum seçin'}
                               isDisabled={!selectedDepId || officialsLoading}
-                              styles={selectStylesLight}
+                              styles={selectStyles}
+                              menuPortalTarget={document.body}
                             />
                           )} />
                         </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: '#3e4a21', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
                     </Box>
                     <Box>
@@ -744,11 +705,12 @@ export default function AppealForm() {
                               isClearable
                               isSearchable
                               placeholder="Seçin..."
-                              styles={selectStylesLight}
+                              styles={selectStyles}
+                              menuPortalTarget={document.body}
                             />
                           )} />
                         </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: '#3e4a21', minWidth: 28 }} onClick={() => setOpenRegionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenRegionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
                     </Box>
                     <Box>
@@ -764,21 +726,22 @@ export default function AppealForm() {
                               isClearable
                               isSearchable
                               placeholder="Seçin..."
-                              styles={selectStylesLight}
+                              styles={selectStyles}
+                              menuPortalTarget={document.body}
                             />
                           )} />
                         </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: '#3e4a21', minWidth: 28 }} onClick={() => setOpenWhoControlDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenWhoControlDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'rgba(62, 74, 33, 0.03)', borderRadius: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
                       <Typography sx={labelSx}><VisibilityIcon /> Nəzarətdədir:</Typography>
                       <Controller name="control" control={control} render={({ field }) => (
                         <input
                           type="checkbox"
                           checked={field.value}
                           onChange={field.onChange}
-                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#3e4a21' }}
+                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: theme.palette.primary.main }}
                         />
                       )} />
                     </Box>
@@ -801,11 +764,12 @@ export default function AppealForm() {
                               isClearable
                               isSearchable
                               placeholder="Seçin..."
-                              styles={selectStylesLight}
+                              styles={selectStyles}
+                              menuPortalTarget={document.body}
                             />
                           )} />
                         </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: '#3e4a21', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
                     </Box>
                     <Box>
@@ -843,7 +807,8 @@ export default function AppealForm() {
                       isClearable
                       isSearchable
                       placeholder="Seçin..."
-                      styles={selectStylesLight}
+                      styles={selectStyles}
+                              menuPortalTarget={document.body}
                     />
                   )} />
                 </Box>
@@ -858,7 +823,8 @@ export default function AppealForm() {
                       isClearable
                       isSearchable
                       placeholder="Seçin..."
-                      styles={selectStylesLight}
+                      styles={selectStyles}
+                              menuPortalTarget={document.body}
                     />
                   )} />
                 </Box>
@@ -873,7 +839,8 @@ export default function AppealForm() {
                       isClearable
                       isSearchable
                       placeholder="1. Sovlet qullugu ve kadr meseleleri"
-                      styles={selectStylesLight}
+                      styles={selectStyles}
+                              menuPortalTarget={document.body}
                     />
                   )} />
                 </Box>
@@ -883,7 +850,7 @@ export default function AppealForm() {
             {/* Executor Section */}
             <Grid size={{ xs: 12 }}>
               <Box sx={{ mt: 1 }}>
-                <Typography variant="subtitle2" sx={{ color: '#3e4a21', fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.82rem' }}>
+                <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.82rem' }}>
                   İcraçıların təfsilatları
                 </Typography>
 
@@ -895,13 +862,13 @@ export default function AppealForm() {
                     startIcon={<AddCircleOutlineIcon />}
                     onClick={() => setOpenExecutorDialog(true)}
                     sx={{
-                      color: '#3e4a21',
-                      borderColor: 'rgba(62, 74, 33, 0.3)',
-                      bgcolor: 'rgba(62, 74, 33, 0.05)',
+                      color: 'primary.main',
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover',
                       textTransform: 'none',
                       fontWeight: 700,
                       fontSize: '0.72rem',
-                      '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.1)', borderColor: '#3e4a21' }
+                      '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
                     }}
                   >
                     Əlavə et
@@ -913,13 +880,13 @@ export default function AppealForm() {
                     disabled={!selectedExecutorForEdit}
                     onClick={() => setExecutorDetailsDialogOpen(true)}
                     sx={{
-                      color: '#3e4a21',
-                      borderColor: 'rgba(62, 74, 33, 0.3)',
-                      bgcolor: 'rgba(62, 74, 33, 0.05)',
+                      color: 'primary.main',
+                      borderColor: 'primary.main',
+                      bgcolor: 'action.hover',
                       textTransform: 'none',
                       fontWeight: 700,
                       fontSize: '0.72rem',
-                      '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.1)', borderColor: '#3e4a21' }
+                      '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
                     }}
                   >
                     Redaktə et
@@ -950,26 +917,37 @@ export default function AppealForm() {
                   </Button>
                 </Box>
 
-                <Box sx={{ border: '1px solid rgba(62, 74, 33, 0.2)', borderRadius: 1, overflow: 'hidden' }}>
+                <Box sx={{ border: '1px solid',
+            borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
                   <Table size="small" sx={{ minWidth: 800 }}>
-                    <TableHead sx={{ bgcolor: 'rgba(62, 74, 33, 0.08)' }}>
+                    <TableHead sx={{ bgcolor: 'action.hover' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>İcraçının struktur bölməsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Soyadı, adı</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Hansı sənədlə icra edilib</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Sənədin tarixi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Tikdiyi işin nömrəsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>İşdəki vərəq nömrəsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Göndərilmə nömrəsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Göndərilmə tarixi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Hara (kimə) göndərilib</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid rgba(62, 74, 33, 0.2)' }}>Əsas icraçı</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>İcraçının struktur bölməsi</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Soyadı, adı</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Hansı sənədlə icra edilib</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Sənədin tarixi</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Tikdiyi işin nömrəsi</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>İşdəki vərəq nömrəsi</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Göndərilmə nömrəsi</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Göndərilmə tarixi</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Hara (kimə) göndərilib</TableCell>
+                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                        borderColor: 'divider' }}>Əsas icraçı</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {selectedExecutors.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={10} align="center" sx={{ py: 2, color: '#64748b', fontSize: '0.7rem' }}>Hələ icraçı təyin edilməyib</TableCell>
+                          <TableCell colSpan={10} align="center" sx={{ py: 2, color: 'text.secondary', fontSize: '0.7rem' }}>Hələ icraçı təyin edilməyib</TableCell>
                         </TableRow>
                       ) : (
                         selectedExecutors.map((executor) => (
@@ -977,10 +955,11 @@ export default function AppealForm() {
                             key={executor.id || executor.executor_id}
                             onClick={() => setSelectedExecutorForEdit(executor)}
                             sx={{
-                              '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.04)' },
-                              bgcolor: (selectedExecutorForEdit?.id && selectedExecutorForEdit?.id === executor.id) || (selectedExecutorForEdit?.executor_id === executor.executor_id) ? 'rgba(62, 74, 33, 0.12)' : 'inherit',
+                              '&:hover': { bgcolor: 'action.hover' },
+                              bgcolor: (selectedExecutorForEdit?.id && selectedExecutorForEdit?.id === executor.id) || (selectedExecutorForEdit?.executor_id === executor.executor_id) ? 'action.selected' : 'inherit',
                               cursor: 'pointer',
-                              borderBottom: '1px solid rgba(62, 74, 33, 0.1)'
+                              borderBottom: '1px solid',
+                              borderColor: 'divider'
                             }}
                           >
                             <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.direction_name || '-'}</TableCell>
@@ -1021,9 +1000,9 @@ export default function AppealForm() {
                 borderRadius: 1.5,
                 fontWeight: 700,
                 fontSize: '0.8rem',
-                color: '#3e4a21',
-                borderColor: '#3e4a21',
-                '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.05)', borderColor: '#2c3518' }
+                color: 'primary.main',
+                borderColor: 'primary.main',
+                '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.dark' }
               }}
             >
               TƏMİZLƏ
@@ -1040,8 +1019,7 @@ export default function AppealForm() {
                   borderRadius: 1.5,
                   fontWeight: 700,
                   fontSize: '0.8rem',
-                  bgcolor: '#3e4a21',
-                  '&:hover': { bgcolor: '#2c3518' }
+                  '&:hover': { filter: 'brightness(1.05)' }
                 }}
               >
                 {isEditMode ? 'REDAKTƏ ET' : 'YADDA SAXLA'}
@@ -1055,9 +1033,9 @@ export default function AppealForm() {
                   borderRadius: 1.5,
                   fontWeight: 700,
                   fontSize: '0.8rem',
-                  color: '#555',
-                  borderColor: '#999',
-                  '&:hover': { bgcolor: '#f0f0f0', borderColor: '#777' }
+                  color: 'text.secondary',
+                  borderColor: 'divider',
+                  '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' }
                 }}
               >
                 ÇIXIŞ

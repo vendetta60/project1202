@@ -44,12 +44,12 @@ export function PermissionsManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await permissionApi.create(
-        formData.code,
-        formData.name,
-        formData.description,
-        formData.category
-      );
+      await permissionApi.create({
+        code: formData.code,
+        name: formData.name,
+        description: formData.description,
+        category: formData.category
+      });
       setFormData({ code: '', name: '', description: '', category: '' });
       setShowForm(false);
       setSuccess('Yeni icazə uğurla yaradıldı');

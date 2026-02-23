@@ -10,8 +10,8 @@ import {
     TextField,
     Grid,
     Divider,
-    FormControlLabel,
-    Switch,
+    useTheme,
+    alpha,
 } from '@mui/material';
 import Select from 'react-select';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
@@ -19,8 +19,9 @@ import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useToast } from '../../components/Toast';
 import { getUser, createUser } from '../../api/users';
-import { getUserSections } from '../../api/lookups';
-import { selectStylesLight, toSelectOptions } from '../../utils/formStyles';
+import { getInSections } from '../../api/lookups';
+import { roleApi, permissionGroupApi } from '../../api/permissions';
+import { getSelectStyles, toSelectOptions } from '../../utils/formStyles';
 import type { UserCreate } from '../../api/users';
 
 interface FormData {
@@ -29,15 +30,18 @@ interface FormData {
     surname?: string;
     name?: string;
     section_id?: number | '';
-    is_admin: boolean;
+    role_ids: number[];
+    group_ids: number[];
 }
 
 export default function UserForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const theme = useTheme();
     const queryClient = useQueryClient();
     const { showToast, ToastComponent } = useToast();
     const isEdit = Boolean(id);
+    const primary = theme.palette.primary.main;
 
     const {
         control,
@@ -51,7 +55,8 @@ export default function UserForm() {
             surname: '',
             name: '',
             section_id: '',
-            is_admin: false,
+            role_ids: [],
+            group_ids: [],
         },
     });
 
@@ -61,9 +66,19 @@ export default function UserForm() {
         enabled: isEdit,
     });
 
-    const { data: userSections, isError: sectionsError } = useQuery({
-        queryKey: ['userSections'],
-        queryFn: getUserSections,
+    const { data: inSections, isError: departmentsError } = useQuery({
+        queryKey: ['inSections'],
+        queryFn: getInSections,
+    });
+
+    const { data: rolesList } = useQuery({
+        queryKey: ['rolesList'],
+        queryFn: () => roleApi.listAll().then((r) => r.data),
+    });
+
+    const { data: groupsList } = useQuery({
+        queryKey: ['permissionGroupsList'],
+        queryFn: () => permissionGroupApi.listAll(false).then((r) => r.data),
     });
 
     const createMutation = useMutation({
@@ -85,7 +100,8 @@ export default function UserForm() {
                 surname: user.surname || '',
                 name: user.name || '',
                 section_id: user.section_id || '',
-                is_admin: user.is_admin,
+                role_ids: (user as any).role_ids ?? [],
+                group_ids: (user as any).group_ids ?? [],
             });
         }
     }, [user, reset]);
@@ -104,6 +120,8 @@ export default function UserForm() {
                 surname: data.surname || undefined,
                 name: data.name || undefined,
                 section_id: data.section_id ? Number(data.section_id) : undefined,
+                role_ids: data.role_ids?.length ? data.role_ids : undefined,
+                group_ids: data.group_ids?.length ? data.group_ids : undefined,
             };
             createMutation.mutate(createData);
         }
@@ -130,7 +148,7 @@ export default function UserForm() {
                     <Button
                         variant="contained"
                         onClick={() => navigate('/admin/users')}
-                        sx={{ bgcolor: '#4a5d23' }}
+                        sx={{ bgcolor: primary }}
                     >
                         Geri qayıt
                     </Button>
@@ -149,7 +167,7 @@ export default function UserForm() {
                         mb: 2,
                         textTransform: 'none',
                         fontWeight: 600,
-                        color: '#4a5d23',
+                        color: primary,
                         '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' }
                     }}
                 >
@@ -173,7 +191,7 @@ export default function UserForm() {
                 }}
             >
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#2c3e50' }}>
+                    <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: 'text.primary' }}>
                         {isEdit ? 'İstifadəçi Məlumatları' : 'Yeni İstifadəçi Yaradın'}
                     </Typography>
                     <Divider sx={{ mb: 3, borderColor: 'rgba(0,0,0,0.06)' }} />
@@ -197,11 +215,11 @@ export default function UserForm() {
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
                                                 bgcolor: 'white',
-                                                '&:hover fieldset': { borderColor: '#4a5d23' },
-                                                '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                                '&:hover fieldset': { borderColor: primary },
+                                                '&.Mui-focused fieldset': { borderColor: primary }
                                             },
-                                            '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
-                                            '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
+                                            '& .MuiFormLabel-root': { fontWeight: 600, color: 'text.secondary' },
+                                            '& .MuiFormLabel-root.Mui-focused': { color: primary }
                                         }}
                                     />
                                 )}
@@ -229,11 +247,11 @@ export default function UserForm() {
                                             sx={{
                                                 '& .MuiOutlinedInput-root': {
                                                     bgcolor: 'white',
-                                                    '&:hover fieldset': { borderColor: '#4a5d23' },
-                                                    '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                                    '&:hover fieldset': { borderColor: primary },
+                                                    '&.Mui-focused fieldset': { borderColor: primary }
                                                 },
-                                                '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
-                                                '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
+                                                '& .MuiFormLabel-root': { fontWeight: 600, color: 'text.secondary' },
+                                                '& .MuiFormLabel-root.Mui-focused': { color: primary }
                                             }}
                                         />
                                     )}
@@ -259,11 +277,11 @@ export default function UserForm() {
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
                                                 bgcolor: 'white',
-                                                '&:hover fieldset': { borderColor: '#4a5d23' },
-                                                '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                                '&:hover fieldset': { borderColor: primary },
+                                                '&.Mui-focused fieldset': { borderColor: primary }
                                             },
-                                            '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
-                                            '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
+                                            '& .MuiFormLabel-root': { fontWeight: 600, color: 'text.secondary' },
+                                            '& .MuiFormLabel-root.Mui-focused': { color: primary }
                                         }}
                                     />
                                 )}
@@ -283,11 +301,11 @@ export default function UserForm() {
                                         sx={{
                                             '& .MuiOutlinedInput-root': {
                                                 bgcolor: 'white',
-                                                '&:hover fieldset': { borderColor: '#4a5d23' },
-                                                '&.Mui-focused fieldset': { borderColor: '#4a5d23' }
+                                                '&:hover fieldset': { borderColor: primary },
+                                                '&.Mui-focused fieldset': { borderColor: primary }
                                             },
-                                            '& .MuiFormLabel-root': { fontWeight: 600, color: '#555' },
-                                            '& .MuiFormLabel-root.Mui-focused': { color: '#4a5d23' }
+                                            '& .MuiFormLabel-root': { fontWeight: 600, color: 'text.secondary' },
+                                            '& .MuiFormLabel-root.Mui-focused': { color: primary }
                                         }}
                                     />
                                 )}
@@ -301,12 +319,13 @@ export default function UserForm() {
                                 control={control}
                                 render={({ field }) => (
                                     <Box>
-                                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#555', mb: 0.8 }}>Hissə</Typography>
+                                        <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.secondary', mb: 0.8 }}>İdarə</Typography>
                                         <Select
                                             {...field}
-                                            value={toSelectOptions(userSections || [], 'section').find(o => o.value === field.value) || undefined}
+                                            value={toSelectOptions(inSections || [], 'section').find(o => o.value === field.value) || undefined}
                                             onChange={(e: any) => field.onChange(e?.value || '')}
-                                            options={toSelectOptions(userSections || [], 'section')}
+                                            options={toSelectOptions(inSections || [], 'section')}
+                                            menuPortalTarget={document.body}
                                             styles={{
                                                 control: (base: any) => ({
                                                     ...base,
@@ -315,12 +334,12 @@ export default function UserForm() {
                                                     minHeight: '36px',
                                                     fontSize: '0.875rem',
                                                     borderRadius: '4px',
-                                                    '&:hover': { borderColor: '#4a5d23' },
-                                                    '&:focus': { borderColor: '#4a5d23' }
+                                                    '&:hover': { borderColor: primary },
+                                                    '&:focus': { borderColor: primary }
                                                 }),
                                                 option: (base: any, state: any) => ({
                                                     ...base,
-                                                    backgroundColor: state.isSelected ? '#4a5d23' : state.isFocused ? 'rgba(74,93,35,0.1)' : 'white',
+                                                    backgroundColor: state.isSelected ? primary : state.isFocused ? alpha(primary, 0.12) : 'var(--app-paper, white)',
                                                     color: state.isSelected ? 'white' : '#333',
                                                     cursor: 'pointer'
                                                 })
@@ -333,35 +352,45 @@ export default function UserForm() {
                             />
                         </Grid>
 
-                        {/* Row 4: Admin Checkbox */}
+                        {/* Row 4: Rollar */}
                         <Grid item xs={12}>
+                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.secondary', mb: 0.8 }}>Rollar</Typography>
                             <Controller
-                                name="is_admin"
+                                name="role_ids"
                                 control={control}
                                 render={({ field }) => (
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                {...field}
-                                                checked={field.value}
-                                                sx={{
-                                                    '& .MuiSwitch-switchBase.Mui-checked': {
-                                                        color: '#4a5d23',
-                                                        '& + .MuiSwitch-track': {
-                                                            backgroundColor: '#4a5d23',
-                                                        },
-                                                    },
-                                                    '& .MuiSwitch-track': {
-                                                        backgroundColor: 'rgba(0,0,0,0.2)',
-                                                    }
-                                                }}
-                                            />
-                                        }
-                                        label={
-                                            <Typography sx={{ fontWeight: 600, color: '#555' }}>
-                                                Admin hüquqları?
-                                            </Typography>
-                                        }
+                                    <Select
+                                        isMulti
+                                        value={(rolesList || [])
+                                            .filter((r: any) => (field.value || []).includes(r.id))
+                                            .map((r: any) => ({ value: r.id, label: r.name }))}
+                                        onChange={(opts: any) => field.onChange((opts || []).map((o: any) => o.value))}
+                                        options={(rolesList || []).map((r: any) => ({ value: r.id, label: r.name }))}
+                                        placeholder="Rol seçin..."
+                                        menuPortalTarget={document.body}
+                                        styles={getSelectStyles(primary)}
+                                    />
+                                )}
+                            />
+                        </Grid>
+
+                        {/* Row 5: Roll qrupları */}
+                        <Grid item xs={12}>
+                            <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.secondary', mb: 0.8 }}>Roll qrupları</Typography>
+                            <Controller
+                                name="group_ids"
+                                control={control}
+                                render={({ field }) => (
+                                    <Select
+                                        isMulti
+                                        value={(groupsList || [])
+                                            .filter((g: any) => (field.value || []).includes(g.id))
+                                            .map((g: any) => ({ value: g.id, label: g.name }))}
+                                        onChange={(opts: any) => field.onChange((opts || []).map((o: any) => o.value))}
+                                        options={(groupsList || []).map((g: any) => ({ value: g.id, label: g.name }))}
+                                        placeholder="Qrup seçin..."
+                                        menuPortalTarget={document.body}
+                                        styles={getSelectStyles(primary)}
                                     />
                                 )}
                             />
@@ -380,10 +409,10 @@ export default function UserForm() {
                             sx={{
                                 textTransform: 'none',
                                 fontWeight: 600,
-                                color: '#4a5d23',
-                                borderColor: '#4a5d23',
+                                color: primary,
+                                borderColor: primary,
                                 '&:hover': {
-                                    borderColor: '#3a4a1b',
+                                    borderColor: primary,
                                     bgcolor: 'rgba(74,93,35,0.05)'
                                 }
                             }}
@@ -398,8 +427,8 @@ export default function UserForm() {
                             sx={{
                                 textTransform: 'none',
                                 fontWeight: 700,
-                                bgcolor: '#4a5d23',
-                                '&:hover': { bgcolor: '#3a4a1b' },
+                                bgcolor: primary,
+                                '&:hover': { bgcolor: theme.palette.primary.dark },
                                 minWidth: 150
                             }}
                         >

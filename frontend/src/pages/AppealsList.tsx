@@ -16,6 +16,7 @@ import {
   TablePagination,
   TextField,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -24,10 +25,11 @@ import { getDepartments, getApStatuses, getRegions } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { selectStylesLight } from '../utils/formStyles';
+import { getSelectStyles } from '../utils/formStyles';
 
 export default function AppealsList() {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
 
@@ -133,18 +135,13 @@ export default function AppealsList() {
             startIcon={<AddIcon />}
             onClick={() => navigate('/appeals/new')}
             sx={{
-              bgcolor: '#4a5d23',
               borderRadius: '8px',
               px: 4,
               py: 1.2,
               fontWeight: 700,
-              boxShadow: '0 8px 16px rgba(74, 93, 35, 0.3)',
+              boxShadow: 2,
               transition: 'all 0.2s ease',
-              '&:hover': {
-                bgcolor: '#3a4a1b',
-                boxShadow: '0 12px 20px rgba(74, 93, 35, 0.4)',
-                transform: 'translateY(-2px)',
-              },
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 },
             }}
           >
             Yeni Müraciət
@@ -179,13 +176,13 @@ export default function AppealsList() {
               flexGrow: 1,
               minWidth: 300,
               '& .MuiOutlinedInput-root': { bgcolor: 'white' },
-              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'primary.main' }
             }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#4a5d23' }} />
+                  <SearchIcon color="primary" />
                 </InputAdornment>
               ),
             }}
@@ -199,7 +196,8 @@ export default function AppealsList() {
               options={(departments || []).map(d => ({ value: d.id, label: d.department }))}
               value={(departments || []).map(d => ({ value: d.id, label: d.department })).find(o => o.value === depFilter) || null}
               onChange={(e: any) => { setDepFilter(e?.value || ''); setPage(0); }}
-              styles={selectStylesLight}
+              styles={getSelectStyles(theme.palette.primary.main)}
+              menuPortalTarget={document.body}
               isClearable
             />
           </div>
@@ -211,7 +209,8 @@ export default function AppealsList() {
               options={(regions || []).map(r => ({ value: r.id, label: r.region }))}
               value={(regions || []).map(r => ({ value: r.id, label: r.region })).find(o => o.value === regionFilter) || null}
               onChange={(e: any) => { setRegionFilter(e?.value || ''); setPage(0); }}
-              styles={selectStylesLight}
+              styles={getSelectStyles(theme.palette.primary.main)}
+              menuPortalTarget={document.body}
               isClearable
             />
           </div>
@@ -223,7 +222,8 @@ export default function AppealsList() {
               options={(statuses || []).map(s => ({ value: s.id, label: s.status }))}
               value={(statuses || []).map(s => ({ value: s.id, label: s.status })).find(o => o.value === statusFilter) || null}
               onChange={(e: any) => { setStatusFilter(e?.value || ''); setPage(0); }}
-              styles={selectStylesLight}
+              styles={getSelectStyles(theme.palette.primary.main)}
+              menuPortalTarget={document.body}
               isClearable
             />
           </div>
@@ -237,7 +237,7 @@ export default function AppealsList() {
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ bgcolor: '#3e4a21' }}>
+              <TableRow sx={{ bgcolor: 'primary.main' }}>
                 <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700, width: 60 }}>Sıra №</TableCell>
                 <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Qeydiyyat №</TableCell>
                 <TableCell className="military-table-header" sx={{ color: 'white', fontWeight: 700 }}>Vətəndaş</TableCell>
@@ -258,13 +258,13 @@ export default function AppealsList() {
                       hover
                       sx={{
                         cursor: 'pointer',
-                        '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.04)' },
+                        '&:hover': { bgcolor: 'action.hover' },
                         '& td': { py: 2, fontSize: '0.875rem', fontWeight: 500 }
                       }}
                       onClick={() => navigate(`/appeals/${appeal.id}`)}
                     >
-                      <TableCell sx={{ fontWeight: 700, color: '#3e4a21', textAlign: 'center' }}>{page * rowsPerPage + index + 1}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#3e4a21' }}>{appeal.reg_num || '-'}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: 'primary.main', textAlign: 'center' }}>{page * rowsPerPage + index + 1}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{appeal.reg_num || '-'}</TableCell>
                       <TableCell>{appeal.person || '-'}</TableCell>
                       <TableCell>{getRegionName(appeal.region_id || undefined)}</TableCell>
                       <TableCell>{getDepName(appeal.dep_id || undefined)}</TableCell>
@@ -288,7 +288,7 @@ export default function AppealsList() {
                           {getStatusName(appeal.status as any)}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#666' }}>
+                      <TableCell sx={{ fontWeight: 600, color: 'text.secondary' }}>
                         {appeal.reg_date ? new Date(appeal.reg_date).toLocaleDateString('az-AZ') : '-'}
                       </TableCell>
                     </TableRow>
@@ -318,7 +318,7 @@ export default function AppealsList() {
             '& .MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
               fontWeight: 600,
               fontSize: '0.875rem',
-              color: '#333'
+              color: 'text.primary'
             }
           }}
         />

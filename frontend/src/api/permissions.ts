@@ -5,8 +5,8 @@ import api from './client';
 export const permissionApi = {
   listAll: () => api.get('/permissions/list'),
   getByCategory: (category: string) => api.get(`/permissions/categories/${category}`),
-  create: (code: string, name: string, description?: string, category?: string) =>
-    api.post('/permissions/create', { code, name, description, category }),
+  create: (data: { code: string; name: string; description?: string; category?: string }) =>
+    api.post('/permissions/create', data),
 };
 
 // ============ ROLES API ============
@@ -24,7 +24,7 @@ export const roleApi = {
   removePermission: (roleId: number, permissionId: number) =>
     api.delete(`/permissions/roles/${roleId}/permissions/${permissionId}`),
   setPermissions: (roleId: number, permissionIds: number[]) =>
-    api.post(`/permissions/roles/${roleId}/permissions/set`, permissionIds),
+    api.post(`/permissions/roles/${roleId}/permissions/set`, { permission_ids: permissionIds }),
 };
 
 // ============ PERMISSION GROUPS API ============

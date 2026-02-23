@@ -1,7 +1,7 @@
 """
 RBAC API endpoints
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -31,6 +31,9 @@ from app.schemas.permission import (
     UserRoleAssignment,
     UserPermissionAssignment,
     UserPermissionsOut,
+    StatusResponse,
+    PermissionCreate,
+    RolePermissionSet,
 )
 
 router = APIRouter(prefix="/permissions", tags=["permissions"])
@@ -80,17 +83,14 @@ def get_permissions_by_category(
     return service.list_by_category(category)
 
 
-@router.post("/create")
+@router.post("/create", response_model=PermissionOut)
 def create_permission(
-    code: str,
-    name: str,
-    description: str | None = None,
-    category: str | None = None,
+    data: PermissionCreate,
     current_user: User = Depends(check_admin),
     service: PermissionService = Depends(get_permission_service),
 ):
     """Create a new permission"""
-    return service.create(code, name, description, category)
+    return service.create(data.code, data.name, data.description, data.category)
 
 
 # ============ ROLES ENDPOINTS ============
@@ -136,7 +136,7 @@ def update_role(
     return service.update(role_id, data)
 
 
-@router.delete("/roles/{role_id}")
+@router.delete("/roles/{role_id}", response_model=StatusResponse)
 def delete_role(
     role_id: int,
     current_user: User = Depends(check_admin),
@@ -144,10 +144,21 @@ def delete_role(
 ):
     """Delete a role"""
     service.delete(role_id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Role deleted")
 
 
-@router.post("/roles/{role_id}/permissions/{permission_id}")
+@router.post("/roles/{role_id}/permissions/set", response_model=RoleOut)
+def set_role_permissions(
+    role_id: int,
+    permission_ids: list[int] = Body(..., embed=True),
+    current_user: User = Depends(check_admin),
+    service: RoleService = Depends(get_role_service),
+):
+    """Set all permissions for a role (replaces existing)"""
+    return service.set_permissions(role_id, permission_ids)
+
+
+@router.post("/roles/{role_id}/permissions/{permission_id}", response_model=RoleOut)
 def add_permission_to_role(
     role_id: int,
     permission_id: int,
@@ -158,7 +169,7 @@ def add_permission_to_role(
     return service.add_permission(role_id, permission_id)
 
 
-@router.delete("/roles/{role_id}/permissions/{permission_id}")
+@router.delete("/roles/{role_id}/permissions/{permission_id}", response_model=RoleOut)
 def remove_permission_from_role(
     role_id: int,
     permission_id: int,
@@ -167,17 +178,6 @@ def remove_permission_from_role(
 ):
     """Remove a permission from a role"""
     return service.remove_permission(role_id, permission_id)
-
-
-@router.post("/roles/{role_id}/permissions/set")
-def set_role_permissions(
-    role_id: int,
-    permission_ids: list[int],
-    current_user: User = Depends(check_admin),
-    service: RoleService = Depends(get_role_service),
-):
-    """Set all permissions for a role (replaces existing)"""
-    return service.set_permissions(role_id, permission_ids)
 
 
 # ============ PERMISSION GROUPS ENDPOINTS ============
@@ -224,7 +224,7 @@ def update_permission_group(
     return service.update(group_id, data)
 
 
-@router.delete("/groups/{group_id}")
+@router.delete("/groups/{group_id}", response_model=StatusResponse)
 def delete_permission_group(
     group_id: int,
     current_user: User = Depends(check_admin),
@@ -232,7 +232,7 @@ def delete_permission_group(
 ):
     """Delete a permission group"""
     service.delete(group_id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Permission group deleted")
 
 
 # ============ USER PERMISSIONS ENDPOINTS ============
@@ -262,7 +262,7 @@ def get_user_permissions(
     )
 
 
-@router.post("/users/{user_id}/roles/{role_id}")
+@router.post("/users/{user_id}/roles/{role_id}", response_model=StatusResponse)
 def assign_role_to_user(
     user_id: int,
     role_id: int,
@@ -271,10 +271,10 @@ def assign_role_to_user(
 ):
     """Assign a role to a user"""
     service.assign_role(user_id, role_id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Role assigned to user")
 
 
-@router.delete("/users/{user_id}/roles/{role_id}")
+@router.delete("/users/{user_id}/roles/{role_id}", response_model=StatusResponse)
 def revoke_role_from_user(
     user_id: int,
     role_id: int,
@@ -283,10 +283,10 @@ def revoke_role_from_user(
 ):
     """Revoke a role from a user"""
     service.revoke_role(user_id, role_id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Role revoked from user")
 
 
-@router.post("/users/{user_id}/permissions/{permission_id}/grant")
+@router.post("/users/{user_id}/permissions/{permission_id}/grant", response_model=StatusResponse)
 def grant_permission_to_user(
     user_id: int,
     permission_id: int,
@@ -295,10 +295,10 @@ def grant_permission_to_user(
 ):
     """Grant a specific permission to a user"""
     service.grant_permission(user_id, permission_id, current_user.id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Permission granted to user")
 
 
-@router.post("/users/{user_id}/permissions/{permission_id}/deny")
+@router.post("/users/{user_id}/permissions/{permission_id}/deny", response_model=StatusResponse)
 def deny_permission_to_user(
     user_id: int,
     permission_id: int,
@@ -307,10 +307,10 @@ def deny_permission_to_user(
 ):
     """Deny a permission to a user (overrides role permissions)"""
     service.deny_permission(user_id, permission_id, current_user.id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Permission denied for user")
 
 
-@router.delete("/users/{user_id}/permissions/{permission_id}/override")
+@router.delete("/users/{user_id}/permissions/{permission_id}/override", response_model=StatusResponse)
 def revoke_permission_override(
     user_id: int,
     permission_id: int,
@@ -319,10 +319,10 @@ def revoke_permission_override(
 ):
     """Remove individual permission override for a user"""
     service.revoke_permission_override(user_id, permission_id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Permission override removed")
 
 
-@router.post("/groups/{group_id}/apply-to-user/{user_id}")
+@router.post("/groups/{group_id}/apply-to-user/{user_id}", response_model=StatusResponse)
 def apply_group_to_user(
     group_id: int,
     user_id: int,
@@ -331,4 +331,4 @@ def apply_group_to_user(
 ):
     """Apply all permissions from a group to a user"""
     service.apply_to_user(user_id, group_id)
-    return {"status": "success"}
+    return StatusResponse(status="success", message="Group permissions applied to user")

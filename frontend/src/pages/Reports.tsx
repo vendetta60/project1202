@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Box,
@@ -13,6 +13,7 @@ import {
     TableHead,
     TableRow,
     LinearProgress,
+    useTheme,
 } from '@mui/material';
 import Select from 'react-select';
 import Flatpickr from 'react-flatpickr';
@@ -21,7 +22,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import { getAppealReport, ReportParams } from '../api/reports';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { selectStylesLight, toSelectOptions } from '../utils/formStyles';
+import { getSelectStyles } from '../utils/formStyles';
 
 const groupByOptions = [
     { value: 'department', label: 'İdarə üzrə' },
@@ -32,6 +33,7 @@ const groupByOptions = [
 ];
 
 export default function Reports() {
+    const theme = useTheme();
     const [params, setParams] = useState<ReportParams>({
         group_by: 'department',
         start_date: '',
@@ -101,47 +103,49 @@ export default function Reports() {
                     bgcolor: 'rgba(255,255,255,0.7)',
                     '& .flatpickr-input': {
                         borderRadius: '8px',
-                        border: '1px solid rgba(0, 0, 0, 0.23)',
+                        border: '1px solid',
+                        borderColor: 'divider',
                         padding: '8px 12px',
-                        backgroundColor: 'white',
+                        backgroundColor: 'background.paper',
                         fontSize: '14px',
                         '&:focus': {
                             outline: 'none',
-                            borderColor: '#3e4a21',
-                            boxShadow: '0 0 0 1px #3e4a21',
+                            borderColor: 'primary.main',
+                            boxShadow: '0 0 0 1px',
                         },
                     },
                     '& .flatpickr-calendar': {
                         borderRadius: '8px',
-                        backgroundColor: '#fff',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        backgroundColor: 'background.paper',
+                        boxShadow: 2,
                     },
                     '& .flatpickr-day.selected': {
-                        backgroundColor: '#3e4a21',
-                        borderColor: '#3e4a21',
+                        backgroundColor: 'primary.main',
+                        borderColor: 'primary.main',
                     },
                     '& .flatpickr-day:hover': {
-                        backgroundColor: '#e8e8e8',
+                        backgroundColor: 'action.hover',
                     },
                     '& .flatpickr-current-month': {
-                        color: '#3e4a21',
+                        color: 'primary.main',
                         fontWeight: 700,
                     },
                 }}
             >
                 <Grid container spacing={3} alignItems="flex-start">
                     <Grid size={{ xs: 12, md: 3 }}>
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Qruplaşdırma</Typography>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Qruplaşdırma</Typography>
                         <Select
                             value={groupByOptions.find(o => o.value === params.group_by) || null}
                             onChange={(e) => setParams({ ...params, group_by: e?.value || 'department' })}
                             options={groupByOptions}
-                            styles={selectStylesLight}
+                            styles={getSelectStyles(theme.palette.primary.main)}
+                            menuPortalTarget={document.body}
                             isSearchable={false}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, md: 2.5 }}>
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Başlanğıc Tarix</Typography>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Başlanğıc Tarix</Typography>
                         <Flatpickr
                             ref={startDateRef}
                             value={params.start_date ? new Date(params.start_date) : null}
@@ -163,7 +167,7 @@ export default function Reports() {
                         />
                     </Grid>
                     <Grid size={{ xs: 12, md: 2.5 }}>
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Son Tarix</Typography>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Son Tarix</Typography>
                         <Flatpickr
                             ref={endDateRef}
                             value={params.end_date ? new Date(params.end_date) : null}
@@ -241,7 +245,7 @@ export default function Reports() {
                                             const percentage = reportData.total > 0 ? (item.count / reportData.total) * 100 : 0;
                                             return (
                                                 <TableRow key={item.id || item.name} hover sx={{ '& td': { py: 2.5, fontWeight: 600 } }}>
-                                                    <TableCell sx={{ color: '#3e4a21', fontWeight: 800 }}>{item.name}</TableCell>
+                                                    <TableCell sx={{ color: 'primary.main', fontWeight: 800 }}>{item.name}</TableCell>
                                                     <TableCell align="right" sx={{ fontSize: '1.1rem' }}>{item.count}</TableCell>
                                                     <TableCell>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -252,9 +256,9 @@ export default function Reports() {
                                                                     flexGrow: 1,
                                                                     height: 10,
                                                                     borderRadius: 5,
-                                                                    bgcolor: 'rgba(62, 74, 33, 0.1)',
+                                                                    bgcolor: 'action.hover',
                                                                     '& .MuiLinearProgress-bar': {
-                                                                        background: 'linear-gradient(90deg, #3e4a21 0%, #a68b44 100%)',
+                                                                        bgcolor: 'primary.main',
                                                                         borderRadius: 5
                                                                     }
                                                                 }}
@@ -289,17 +293,17 @@ export default function Reports() {
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'center',
-                                background: 'linear-gradient(135deg, rgba(62, 74, 33, 0.05) 0%, rgba(44, 62, 80, 0.05) 100%) !important'
+                                bgcolor: 'action.hover'
                             }}
                         >
                             <Typography variant="overline" sx={{ fontWeight: 800, color: 'text.secondary', letterSpacing: '2px' }}>
                                 ÜMUMİ MÜRACİƏT SAYI
                             </Typography>
-                            <Typography variant="h1" sx={{ fontWeight: 900, color: '#3e4a21', my: 2 }}>
+                            <Typography variant="h1" sx={{ fontWeight: 900, color: 'primary.main', my: 2 }}>
                                 {reportData?.total || 0}
                             </Typography>
-                            <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(62, 74, 33, 0.08)', borderRadius: 2 }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700, color: '#3e4a21' }}>
+                            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
                                     HESABAT DÖVRÜ
                                 </Typography>
                                 <Typography variant="caption" sx={{ fontWeight: 600, opacity: 0.8 }}>

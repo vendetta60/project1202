@@ -66,6 +66,17 @@ export function UserPermissionsManagement() {
     }
   };
 
+  const getErrorMessage = (err: any): string => {
+    const detail = err.response?.data?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) return detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
+    if (typeof detail === 'object' && detail !== null) {
+      if (detail.msg) return detail.msg;
+      return JSON.stringify(detail);
+    }
+    return 'Xəta baş verdi';
+  };
+
   const handleSelectUser = async (user: User) => {
     try {
       setSelectedUser(user);
@@ -85,7 +96,7 @@ export function UserPermissionsManagement() {
       await handleSelectUser(selectedUser);
       setSuccess('Rol uğurla təyin edildi');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Rol təyin edilə bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -96,7 +107,7 @@ export function UserPermissionsManagement() {
       await handleSelectUser(selectedUser);
       setSuccess('Rol ləğv edildi');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Rol ləğv edilə bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -107,7 +118,7 @@ export function UserPermissionsManagement() {
       await handleSelectUser(selectedUser);
       setSuccess('Şablon qrup uğurla tətbiq edildi');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Qrup tətbiq edilə bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -131,7 +142,7 @@ export function UserPermissionsManagement() {
       setSuccess('İstifadəçi uğurla yaradıldı');
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'İstifadəçi yaradıla bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -402,7 +413,7 @@ export function UserPermissionsManagement() {
           padding: 40px;
           background: rgba(255,255,255,0.3);
           border-radius: 12px;
-          border: 2px dashed rgba(62, 74, 33, 0.1);
+          border: 2px dashed var(--app-border);
         }
         .empty-icon {
           font-size: 64px;
@@ -412,7 +423,7 @@ export function UserPermissionsManagement() {
         .panel-header {
           margin-bottom: 24px;
           padding-bottom: 16px;
-          border-bottom: 1px solid rgba(62, 74, 33, 0.1);
+          border-bottom: 1px solid var(--app-border);
         }
         .panel-header h3 small {
           font-weight: 500;
@@ -447,8 +458,8 @@ export function UserPermissionsManagement() {
         }
         .modal-form-section h4 {
           margin: 0 0 20px 0;
-          color: #3e4a21;
-          border-bottom: 2px solid #3e4a21;
+          color: var(--app-primary);
+          border-bottom: 2px solid var(--app-primary);
           padding-bottom: 8px;
           font-size: 16px;
           text-transform: uppercase;
@@ -481,7 +492,7 @@ export function UserPermissionsManagement() {
         .checkbox-item input {
           width: 16px;
           height: 16px;
-          accent-color: #3e4a21;
+          accent-color: var(--app-primary);
         }
       `}</style>
     </div>

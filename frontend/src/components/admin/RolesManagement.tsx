@@ -52,6 +52,17 @@ export function RolesManagement() {
     }
   };
 
+  const getErrorMessage = (err: any): string => {
+    const detail = err.response?.data?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) return detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
+    if (typeof detail === 'object' && detail !== null) {
+      if (detail.msg) return detail.msg;
+      return JSON.stringify(detail);
+    }
+    return 'Xəta baş verdi';
+  };
+
   const handleCreateRole = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -64,7 +75,7 @@ export function RolesManagement() {
       setSuccess('Yeni rol uğurla yaradıldı');
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Rol yaradıla bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -83,12 +94,13 @@ export function RolesManagement() {
   const handleSaveRolePermissions = async () => {
     if (!selectedRole) return;
     try {
-      await roleApi.setPermissions(selectedRole.id, selectedPermissions);
+      // selectedRole.id is already a number
+      await roleApi.setPermissions(Number(selectedRole.id), selectedPermissions.map(id => Number(id)));
       setSelectedRole(null);
       setSuccess(`${selectedRole.name} rolu üçün icazələr yeniləndi`);
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'İcazələr yadda saxlanıla bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -99,7 +111,7 @@ export function RolesManagement() {
       setSuccess('Rol silindi');
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Rol silinə bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 

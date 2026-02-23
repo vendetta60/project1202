@@ -5,6 +5,14 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
+class StatusResponse(BaseModel):
+    """Generic status response"""
+    status: str
+    message: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PermissionOut(BaseModel):
     """Permission output schema"""
     id: int
@@ -33,6 +41,19 @@ class RoleCreate(BaseModel):
     """Create role"""
     name: str
     description: str | None = None
+
+
+class PermissionCreate(BaseModel):
+    """Create permission"""
+    code: str
+    name: str
+    description: str | None = None
+    category: str | None = None
+
+
+class RolePermissionSet(BaseModel):
+    """Set of permission IDs for a role"""
+    permission_ids: list[int]
 
 
 class RoleUpdate(BaseModel):

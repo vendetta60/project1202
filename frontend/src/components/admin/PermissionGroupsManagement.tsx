@@ -53,6 +53,17 @@ export function PermissionGroupsManagement() {
     }
   };
 
+  const getErrorMessage = (err: any): string => {
+    const detail = err.response?.data?.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) return detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
+    if (typeof detail === 'object' && detail !== null) {
+      if (detail.msg) return detail.msg;
+      return JSON.stringify(detail);
+    }
+    return 'Xəta baş verdi';
+  };
+
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -60,7 +71,7 @@ export function PermissionGroupsManagement() {
         name: formData.name,
         description: formData.description,
         is_template: true,
-        permission_ids: selectedPermissions,
+        permission_ids: selectedPermissions.map(id => Number(id)),
       });
       setFormData({ name: '', description: '' });
       setSelectedPermissions([]);
@@ -68,7 +79,7 @@ export function PermissionGroupsManagement() {
       setSuccess('Yeni şablon qrup yaradıldı');
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Qrup yaradıla bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -87,14 +98,14 @@ export function PermissionGroupsManagement() {
   const handleSaveGroup = async () => {
     if (!selectedGroup) return;
     try {
-      await permissionGroupApi.update(selectedGroup.id, {
-        permission_ids: selectedPermissions,
+      await permissionGroupApi.update(Number(selectedGroup.id), {
+        permission_ids: selectedPermissions.map(id => Number(id)),
       });
       setSelectedGroup(null);
       setSuccess(`${selectedGroup.name} qrupu yeniləndi`);
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Dəyişikliklər yadda saxlanıla bilmədi');
+      setError(getErrorMessage(err));
     }
   };
 
@@ -105,7 +116,7 @@ export function PermissionGroupsManagement() {
       setSuccess('Şablon silindi');
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Silinmə zamanı xəta baş verdi');
+      setError(getErrorMessage(err));
     }
   };
 

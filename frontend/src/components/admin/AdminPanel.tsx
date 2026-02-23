@@ -74,40 +74,40 @@ export function AdminPanel() {
           display: flex;
           align-items: center;
           gap: 24px;
-          border-left: 6px solid #3e4a21;
+          border-left: 6px solid var(--app-primary);
         }
 
         .header-icon {
           font-size: 48px;
-          background: #3e4a21;
+          background: var(--app-primary);
           width: 80px;
           height: 80px;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 16px;
-          box-shadow: 0 4px 12px rgba(62, 74, 33, 0.2);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .admin-header h1 {
           margin: 0 0 4px 0;
           font-size: 32px;
           font-weight: 800;
-          color: #1a1f16;
+          color: var(--app-text);
           text-transform: uppercase;
           letter-spacing: -0.5px;
         }
 
         .admin-header p {
           margin: 0;
-          color: #64748b;
+          color: var(--app-text-secondary);
           font-size: 16px;
           font-weight: 500;
         }
 
         .admin-tabs-container {
           margin-bottom: 32px;
-          border-bottom: 2px solid rgba(62, 74, 33, 0.1);
+          border-bottom: 2px solid var(--app-border);
         }
 
         .admin-tabs {
@@ -130,7 +130,7 @@ export function AdminPanel() {
           font-size: 15px;
           font-weight: 700;
           cursor: pointer;
-          color: #64748b;
+          color: var(--app-text-secondary);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           white-space: nowrap;
           display: flex;
@@ -141,14 +141,14 @@ export function AdminPanel() {
         }
 
         .tab-button:hover {
-          color: #3e4a21;
-          background: rgba(62, 74, 33, 0.05);
+          color: var(--app-primary);
+          background: var(--app-border);
         }
 
         .tab-button.active {
-          color: #3e4a21;
-          border-bottom-color: #3e4a21;
-          background: rgba(62, 74, 33, 0.08);
+          color: var(--app-primary);
+          border-bottom-color: var(--app-primary);
+          background: var(--app-border);
         }
 
         .tab-icon {

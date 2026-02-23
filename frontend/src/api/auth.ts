@@ -38,3 +38,13 @@ export const getCurrentUser = async (): Promise<User> => {
   const response = await apiClient.get('/me');
   return response.data;
 };
+
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export const changePassword = async (data: ChangePasswordRequest): Promise<{ message: string }> => {
+  const response = await apiClient.post('/me/change-password', data);
+  return response.data;
+};

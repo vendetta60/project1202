@@ -1,17 +1,17 @@
 /* Military Theme Admin Panel Design System */
 :root {
-  --military-olive: #3e4a21;
+  --military-olive: var(--app-primary, #3e4a21);
   --military-olive-light: #4e5d2a;
   --military-olive-dark: #2d3618;
   --military-charcoal: #1a1f16;
   --military-gold: #c5a059;
   --military-steel: #718096;
-  --military-bone: #f4f6f0;
+  --military-bone: var(--app-bg, #f4f6f0);
   --military-red: #8b0000;
   --military-green: #2d5a27;
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(62, 74, 33, 0.1);
-  --military-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  --glass-bg: var(--app-paper, rgba(255, 255, 255, 0.8));
+  --glass-border: var(--app-border, rgba(0, 0, 0, 0.08));
+  --military-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
 }
 
 .admin-section {

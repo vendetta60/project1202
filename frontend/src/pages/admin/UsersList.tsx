@@ -76,7 +76,7 @@ export default function UsersList() {
                     <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
                         {error instanceof Error ? error.message : 'İstifadəçiləri yükləməkdə xəta baş verdi. Lütfən admin sələhiyyətlərə sahib olduğunuzdan əmin olun.'}
                     </Typography>
-                    <Button 
+                    <Button
                         variant="contained"
                         onClick={() => window.location.reload()}
                         sx={{ bgcolor: '#4a5d23' }}
@@ -171,7 +171,7 @@ export default function UsersList() {
                                 <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>İstifadəçi adı</TableCell>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Soyad</TableCell>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Ad</TableCell>
-                                <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Department</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>İdarə</TableCell>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Status</TableCell>
                                 <TableCell align="right" sx={{ color: 'white', fontWeight: 700, py: 2 }}>Əməliyyatlar</TableCell>
                             </TableRow>

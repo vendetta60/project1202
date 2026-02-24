@@ -19,7 +19,7 @@ import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useToast } from '../../components/Toast';
 import { getUser, createUser } from '../../api/users';
-import { getInSections } from '../../api/lookups';
+import { getUserSections } from '../../api/lookups';
 import { roleApi, permissionGroupApi } from '../../api/permissions';
 import { getSelectStyles, toSelectOptions } from '../../utils/formStyles';
 import type { UserCreate } from '../../api/users';
@@ -66,9 +66,9 @@ export default function UserForm() {
         enabled: isEdit,
     });
 
-    const { data: inSections, isError: departmentsError } = useQuery({
-        queryKey: ['inSections'],
-        queryFn: getInSections,
+    const { data: userSections } = useQuery({
+        queryKey: ['userSections'],
+        queryFn: getUserSections,
     });
 
     const { data: rolesList } = useQuery({
@@ -198,7 +198,7 @@ export default function UserForm() {
 
                     <Grid container spacing={2.5} sx={{ mb: 3 }}>
                         {/* Row 1: Username & Password */}
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <Controller
                                 name="username"
                                 control={control}
@@ -227,7 +227,7 @@ export default function UserForm() {
                         </Grid>
 
                         {!isEdit && (
-                            <Grid item xs={12} sm={6}>
+                            <Grid size={{ xs: 12, sm: 6 }}>
                                 <Controller
                                     name="password"
                                     control={control}
@@ -260,11 +260,11 @@ export default function UserForm() {
                         )}
 
                         {isEdit && (
-                            <Grid item xs={12} sm={6} />
+                            <Grid size={{ xs: 12, sm: 6 }} />
                         )}
 
                         {/* Row 2: Surname & Name */}
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <Controller
                                 name="surname"
                                 control={control}
@@ -288,7 +288,7 @@ export default function UserForm() {
                             />
                         </Grid>
 
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <Controller
                                 name="name"
                                 control={control}
@@ -313,7 +313,7 @@ export default function UserForm() {
                         </Grid>
 
                         {/* Row 3: Section */}
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <Controller
                                 name="section_id"
                                 control={control}
@@ -322,9 +322,9 @@ export default function UserForm() {
                                         <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.secondary', mb: 0.8 }}>İdarə</Typography>
                                         <Select
                                             {...field}
-                                            value={toSelectOptions(inSections || [], 'section').find(o => o.value === field.value) || undefined}
+                                            value={toSelectOptions(userSections || [], 'user_section').find(o => o.value === field.value) || undefined}
                                             onChange={(e: any) => field.onChange(e?.value || '')}
-                                            options={toSelectOptions(inSections || [], 'section')}
+                                            options={toSelectOptions(userSections || [], 'user_section')}
                                             menuPortalTarget={document.body}
                                             styles={{
                                                 control: (base: any) => ({
@@ -353,7 +353,7 @@ export default function UserForm() {
                         </Grid>
 
                         {/* Row 4: Rollar */}
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.secondary', mb: 0.8 }}>Rollar</Typography>
                             <Controller
                                 name="role_ids"
@@ -375,7 +375,7 @@ export default function UserForm() {
                         </Grid>
 
                         {/* Row 5: Roll qrupları */}
-                        <Grid item xs={12}>
+                        <Grid size={{ xs: 12 }}>
                             <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.secondary', mb: 0.8 }}>Roll qrupları</Typography>
                             <Controller
                                 name="group_ids"

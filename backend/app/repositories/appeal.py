@@ -161,3 +161,36 @@ class AppealRepository:
         self.db.refresh(obj)
         return obj
 
+    def get_ap_count_for_person(self, person: str, year: int, user_section_id: int) -> int:
+        from sqlalchemy import extract, func, or_, and_
+        person_val = person.strip() if person else ""
+        return self.db.query(func.count(Appeal.id)).filter(
+            func.trim(Appeal.person).ilike(person_val),
+            Appeal.person != None,
+            or_(
+                # reg_date daxil edilibsə — onun ilini istifadə et
+                and_(Appeal.reg_date != None, extract('year', Appeal.reg_date) == year),
+                # reg_date daxil edilməyibsə — yaranma tarixinin ilini istifadə et
+                and_(Appeal.reg_date == None, extract('year', Appeal.created_at) == year),
+            ),
+            Appeal.user_section_id == user_section_id,
+            Appeal.is_deleted == False
+        ).scalar() or 0
+
+    def get_max_num_for_year(self, year: int, user_section_id: int) -> int:
+        from sqlalchemy import extract, func
+        return self.db.query(func.max(Appeal.num)).filter(
+            extract('year', Appeal.reg_date) == year,
+            Appeal.user_section_id == user_section_id,
+            Appeal.is_deleted == False
+        ).scalar() or 0
+
+    def get_original_num_for_person(self, person: str, year: int, user_section_id: int) -> int | None:
+        from sqlalchemy import extract, func
+        return self.db.query(func.min(Appeal.num)).filter(
+            Appeal.person == person,
+            Appeal.person != None,
+            extract('year', Appeal.reg_date) == year,
+            Appeal.user_section_id == user_section_id,
+            Appeal.is_deleted == False
+        ).scalar()

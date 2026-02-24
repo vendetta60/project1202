@@ -19,7 +19,10 @@ class ChangePasswordBody(BaseModel):
 
 @router.get("", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
-    return current_user
+    # Build response manually so we can inject computed permissions
+    data = UserOut.model_validate(current_user)
+    data.permissions = sorted(current_user.get_permissions())
+    return data
 
 
 @router.post("/change-password")

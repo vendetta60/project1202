@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Logs from './pages/Logs';
 import SystemAdmin from './pages/admin/SystemAdmin';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { isAuthenticated } from './utils/auth';
 import { useTheme } from './context/ThemeContext';
@@ -37,40 +38,74 @@ function AppContent() {
           mode,
           primary: {
             main: primaryColor,
-            light: primaryColor + '99',
-            dark: primaryColor + 'dd',
+            light: primaryColor + 'aa',
+            dark: primaryColor + 'ee',
             contrastText: '#ffffff',
           },
           secondary: {
-            main: '#a68b44',
-            contrastText: '#ffffff',
+            main: '#e9a84c',
+            light: '#f0bd74',
+            dark: '#c48926',
+            contrastText: '#1a1a2e',
           },
           background: {
-            default: mode === 'dark' ? '#121212' : '#f4f6f0',
-            paper: mode === 'dark' ? '#1e1e1e' : '#ffffff',
+            default: mode === 'dark' ? '#0d1117' : '#f0f2f8',
+            paper: mode === 'dark' ? '#161b27' : '#ffffff',
           },
           text: {
-            primary: mode === 'dark' ? '#e0e0e0' : '#1f2937',
-            secondary: mode === 'dark' ? '#b0b0b0' : '#4b5563',
+            primary: mode === 'dark' ? '#e8ecf4' : '#1a1f36',
+            secondary: mode === 'dark' ? '#8892a4' : '#5a6175',
           },
+          divider: mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(26,31,54,0.08)',
+          error: { main: '#ef4444' },
+          success: { main: '#10b981' },
+          warning: { main: '#f59e0b' },
+          info: { main: '#3b82f6' },
         },
         typography: {
-          fontFamily: '"Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
+          fontFamily: '"Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif',
+          h4: { fontWeight: 800, letterSpacing: '-0.025em' },
           h5: { fontWeight: 800, letterSpacing: '-0.02em' },
-          h4: { fontWeight: 800 },
-          button: { textTransform: 'none', fontWeight: 600 },
+          h6: { fontWeight: 700, letterSpacing: '-0.01em' },
+          body1: { letterSpacing: '0.01em' },
+          body2: { letterSpacing: '0.01em' },
+          button: { textTransform: 'none', fontWeight: 700, letterSpacing: '0.02em' },
         },
-        shape: { borderRadius: 12 },
+        shape: { borderRadius: 14 },
+        shadows: [
+          'none',
+          '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
+          '0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.06)',
+          '0 10px 15px rgba(0,0,0,0.05), 0 4px 6px rgba(0,0,0,0.04)',
+          '0 20px 25px rgba(0,0,0,0.06), 0 8px 10px rgba(0,0,0,0.04)',
+          '0 25px 50px rgba(0,0,0,0.08)',
+          ...Array(19).fill('none'),
+        ] as any,
         components: {
+          MuiCssBaseline: {
+            styleOverrides: `
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+              * { box-sizing: border-box; }
+              ::-webkit-scrollbar { width: 6px; height: 6px; }
+              ::-webkit-scrollbar-track { background: transparent; }
+              ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.3); border-radius: 99px; }
+              ::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,0.5); }
+            `,
+          },
           MuiButton: {
             styleOverrides: {
               root: {
-                borderRadius: 8,
-                transition: 'all 0.3s ease',
+                borderRadius: 10,
+                fontWeight: 700,
+                padding: '9px 20px',
+                transition: 'all 0.22s cubic-bezier(0.4,0,0.2,1)',
                 '&:hover': {
                   transform: 'translateY(-1px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
                 },
+              },
+              contained: {
+                boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
               },
             },
           },
@@ -79,21 +114,38 @@ function AppContent() {
               root: { backgroundImage: 'none' },
             },
           },
+          MuiTableRow: {
+            styleOverrides: {
+              root: {
+                transition: 'background 0.15s ease',
+              },
+            },
+          },
+          MuiChip: {
+            styleOverrides: {
+              root: { fontWeight: 600, borderRadius: 8 },
+            },
+          },
+          MuiDialog: {
+            styleOverrides: {
+              paper: { borderRadius: 18 },
+            },
+          },
         },
       }),
     [mode, primaryColor]
   );
 
-  // Sync theme to CSS variables so global CSS and class-based styles (e.g. .military-table-header, .glass-card) follow theme/dark mode
+  // Sync theme to CSS variables
   useEffect(() => {
     const r = document.documentElement;
     const isDark = mode === 'dark';
     r.style.setProperty('--app-primary', primaryColor);
-    r.style.setProperty('--app-bg', isDark ? '#121212' : '#f4f6f0');
-    r.style.setProperty('--app-paper', isDark ? '#1e1e1e' : '#ffffff');
-    r.style.setProperty('--app-text', isDark ? '#e0e0e0' : '#1f2937');
-    r.style.setProperty('--app-text-secondary', isDark ? '#9e9e9e' : '#4b5563');
-    r.style.setProperty('--app-border', isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)');
+    r.style.setProperty('--app-bg', isDark ? '#0d1117' : '#f0f2f8');
+    r.style.setProperty('--app-paper', isDark ? '#161b27' : '#ffffff');
+    r.style.setProperty('--app-text', isDark ? '#e8ecf4' : '#1a1f36');
+    r.style.setProperty('--app-text-secondary', isDark ? '#8892a4' : '#5a6175');
+    r.style.setProperty('--app-border', isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,31,54,0.08)');
     document.body.setAttribute('data-theme', mode);
   }, [mode, primaryColor]);
 
@@ -101,103 +153,103 @@ function AppContent() {
     <MuiThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-            <Routes>
-              <Route
-                path="/login"
-                element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/appeals"
-                element={
-                  <ProtectedRoute>
-                    <AppealsList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/appeals/new"
-                element={
-                  <ProtectedRoute>
-                    <AppealForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/appeals/:id"
-                element={
-                  <ProtectedRoute>
-                    <AppealForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <SystemAdmin />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users"
-                element={
-                  <ProtectedRoute>
-                    <UsersList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users/new"
-                element={
-                  <ProtectedRoute>
-                    <UserForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users/:id"
-                element={
-                  <ProtectedRoute>
-                    <UserForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/reports"
-                element={
-                  <ProtectedRoute>
-                    <Reports />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/logs"
-                element={
-                  <ProtectedRoute>
-                    <Logs />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/parameters"
-                element={
-                  <ProtectedRoute>
-                    <Parameters />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </BrowserRouter>
+        <Routes>
+          <Route
+            path="/login"
+            element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appeals"
+            element={
+              <ProtectedRoute>
+                <AppealsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appeals/new"
+            element={
+              <ProtectedRoute>
+                <AppealForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appeals/:id"
+            element={
+              <ProtectedRoute>
+                <AppealForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <SystemAdmin />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <UsersList />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users/new"
+            element={
+              <AdminRoute>
+                <UserForm />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users/:id"
+            element={
+              <AdminRoute>
+                <UserForm />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/logs"
+            element={
+              <AdminRoute>
+                <Logs />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/parameters"
+            element={
+              <AdminRoute>
+                <Parameters />
+              </AdminRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </BrowserRouter>
     </MuiThemeProvider>
   );
 }

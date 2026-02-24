@@ -28,6 +28,8 @@ class UserOut(ORMBase):
     tab3: bool | None = None
     tab4: bool | None = None
     tab5: bool | None = None
+    # RBAC permissions (list of permission codes)
+    permissions: list[str] = []
 
 
 class UsersListResponse(BaseModel):

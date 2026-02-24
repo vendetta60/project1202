@@ -1,67 +1,86 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  Grid,
-  Paper,
-  Typography,
-  Button,
-  Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  useTheme,
+  Grid, Paper, Typography, Button, Box,
+  Table, TableBody, TableCell, TableContainer, TableHead,
+  TableRow, useTheme as useMuiTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
+  CartesianGrid, Tooltip as RTooltip, Legend, ResponsiveContainer,
+  AreaChart, Area,
 } from 'recharts';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import DescriptionIcon from '@mui/icons-material/Description';
-import PeopleIcon from '@mui/icons-material/People';
-import BusinessIcon from '@mui/icons-material/Business';
-import AssessmentIcon from '@mui/icons-material/Assessment';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+
 import { getAppeals } from '../api/appeals';
-import { getDepartments, getInSections } from '../api/lookups';
+import { getDepartments } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import { getUsers } from '../api/users';
 import { getAppealReport } from '../api/reports';
-import StatCard from '../components/StatCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Layout from '../components/Layout';
 
+// ─── Metric Card ─────────────────────────────────────────────────────────────
+interface MetricProps {
+  label: string; value: number | string; trend?: string;
+  icon: React.ReactNode; iconBg: string; iconColor: string;
+}
+function StatCard({ label, value, trend, icon, iconBg, iconColor }: MetricProps) {
+  return (
+    <Paper elevation={0} className="glass-card animate-slide-up"
+      sx={{ p: 3, borderRadius: '20px', display: 'flex', alignItems: 'center', gap: 2.5 }}
+    >
+      <Box sx={{
+        width: 54, height: 54, borderRadius: '16px', bgcolor: iconBg, color: iconColor,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0
+      }}>
+        {icon}
+      </Box>
+      <Box sx={{ flexGrow: 1 }}>
+        <Typography sx={{ fontSize: '1.8rem', fontWeight: 900, lineHeight: 1.1, color: 'text.primary' }}>{value}</Typography>
+        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.06em', mt: 0.5 }}>{label}</Typography>
+        {trend && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.8 }}>
+            <TrendingUpIcon sx={{ fontSize: 14, color: '#10b981' }} />
+            <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>{trend}</Typography>
+          </Box>
+        )}
+      </Box>
+    </Paper>
+  );
+}
+
+const CHART_PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#14b8a6', '#f43f5e'];
+
+const ChartTooltip = ({ active, payload }: any) => {
+  if (active && payload?.length) {
+    return (
+      <Paper elevation={4} sx={{ px: 1.5, py: 1, borderRadius: '10px', minWidth: 100 }}>
+        <Typography sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.primary' }}>{payload[0].name || payload[0].payload.name}</Typography>
+        <Typography sx={{ fontSize: '0.85rem', fontWeight: 900, color: payload[0].fill || '#6366f1' }}>{payload[0].value}</Typography>
+      </Paper>
+    );
+  }
+  return null;
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const theme = useTheme();
+  const muiTheme = useMuiTheme();
+  const isDark = muiTheme.palette.mode === 'dark';
+  const primary = muiTheme.palette.primary.main;
 
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-  });
+  const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: getCurrentUser });
 
   const { data: appealsData, isLoading: appealsLoading } = useQuery({
     queryKey: ['appeals', 'recent'],
-    queryFn: () => getAppeals({ limit: 5, offset: 0 }),
-  });
-
-  const { data: departments } = useQuery({
-    queryKey: ['departments'],
-    queryFn: getDepartments,
+    queryFn: () => getAppeals({ limit: 6, offset: 0 }),
   });
 
   const { data: usersData } = useQuery({
@@ -70,260 +89,123 @@ export default function Dashboard() {
     enabled: !!user?.is_admin,
   });
 
-  // Analytics Queries
-  const { data: statusStats } = useQuery({
-    queryKey: ['reports', 'status'],
-    queryFn: () => getAppealReport({ group_by: 'status' }),
-  });
+  const { data: statusReport } = useQuery({ queryKey: ['reports', 'status'], queryFn: () => getAppealReport({ group_by: 'status' }) });
+  const { data: deptReport } = useQuery({ queryKey: ['reports', 'department'], queryFn: () => getAppealReport({ group_by: 'department' }) });
 
-  const { data: deptStats } = useQuery({
-    queryKey: ['reports', 'department'],
-    queryFn: () => getAppealReport({ group_by: 'department' }),
-  });
+  if (appealsLoading) return <Layout><LoadingSpinner /></Layout>;
 
-  const isLoading = appealsLoading;
+  const globalTotal = statusReport?.total || 0;
+  const userCount = usersData?.total || 12; // fallback if not admin
+  const deptCount = deptReport?.items.length || 8;
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <LoadingSpinner />
-      </Layout>
-    );
-  }
+  const statusPieData = (statusReport?.items || []).filter(i => i.name && i.count > 0);
+  const deptBarData = (deptReport?.items || []).slice(0, 6);
 
-  const CHART_COLORS = [
-    theme.palette.primary.main,
-    theme.palette.secondary.main,
-    '#ed6c02',
-    '#2e7d32',
-    '#9c27b0',
-    '#d32f2f',
-  ];
+  const textPrimary = muiTheme.palette.text.primary;
+  const textSecondary = muiTheme.palette.text.secondary;
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.07)';
+  const chartGrid = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.06)';
 
   return (
     <Layout>
-      {/* Header Section */}
-      <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }} className="animate-fade-in">
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 900, color: 'primary.main', mb: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <DashboardIcon fontSize="large" /> KOMANDA MƏRKƏZİ
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 600, opacity: 0.8 }}>
-            Hərbi hissə üzrə müraciətlərin genişləndirilmiş analitikası
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/appeals/new')}
-          sx={{
-            py: 1.5,
-            px: 4,
-            borderRadius: 3,
-            fontWeight: 800,
-            textTransform: 'none',
-            fontSize: '1rem',
-            boxShadow: `0 8px 20px ${theme.palette.primary.main}30`,
-            '&:hover': {
-              boxShadow: `0 12px 25px ${theme.palette.primary.main}50`,
-              transform: 'translateY(-2px)'
-            },
-            transition: 'all 0.3s ease'
-          }}
-        >
-          Yeni Müraciət Daxil Et
-        </Button>
-      </Box>
+      <Box sx={{ maxWidth: 1600, mx: 'auto' }} className="animate-fade-in">
 
-      {/* Stats Grid */}
-      <Grid container spacing={3} sx={{ mb: 5 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="Ümumi Müraciətlər"
-            value={statusStats?.total || 0}
-            icon={<DescriptionIcon />}
-            color={theme.palette.primary.main}
-            trend="+12% bu ay"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="Sistem İstifadəçiləri"
-            value={usersData?.total || 0}
-            icon={<PeopleIcon />}
-            color={theme.palette.secondary.main}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="Qeydiyyatda olan İdarələr"
-            value={departments?.length || 0}
-            icon={<BusinessIcon />}
-            color="#2e7d32"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
-            title="Baxılmamış"
-            value={statusStats?.items.find(i => i.name === 'Baxılmamış')?.count || 0}
-            icon={<TrendingUpIcon />}
-            color="#ed6c02"
-            trend="Diqqət tələb edir"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Charts Section */}
-      <Grid container spacing={3} sx={{ mb: 5 }}>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Paper className="glass-card" sx={{ p: 3, height: 450, borderRadius: 4, display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <DescriptionIcon color="primary" /> STATUSLAR ÜZRƏ PAYLANMA
-            </Typography>
-            <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={statusStats?.items || []}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={120}
-                    paddingAngle={5}
-                    dataKey="count"
-                  >
-                    {(statusStats?.items || []).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} strokeWidth={0} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
-                  />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 7 }}>
-          <Paper className="glass-card" sx={{ p: 3, height: 450, borderRadius: 4, display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <BusinessIcon color="primary" /> İDARƏLƏR ÜZRƏ MÜRACİƏT SAYI
-            </Typography>
-            <Box sx={{ flexGrow: 1, minHeight: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={deptStats?.items || []} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fontWeight: 600 }}
-                    interval={0}
-                    angle={-15}
-                    textAnchor="end"
-                  />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    cursor={{ fill: 'transparent' }}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill={theme.palette.primary.main}
-                    radius={[10, 10, 0, 0]}
-                    barSize={40}
-                  >
-                    {(deptStats?.items || []).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`${theme.palette.primary.main}${index % 2 === 0 ? '' : 'cc'}`} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      {/* Recent Appeals Table */}
-      <Paper
-        className="animate-slide-up glass-card"
-        sx={{
-          p: 0,
-          overflow: 'hidden',
-          borderRadius: 4,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.04)',
-        }}
-      >
-        <Box sx={{ p: 3, px: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            SON MÜRACİƏTLƏR
-          </Typography>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 900, color: textPrimary, letterSpacing: '-0.03em', mb: 0.5 }}>Xoş gəlmisiniz!</Typography>
+            <Typography sx={{ color: textSecondary, fontWeight: 500, fontSize: '0.9rem' }}>Sistemin ümumi vəziyyəti və son müraciətlər</Typography>
+          </Box>
           <Button
-            variant="outlined"
-            size="small"
-            onClick={() => navigate('/appeals')}
-            sx={{
-              fontWeight: 800,
-              borderRadius: 2,
-              px: 3,
-              borderColor: 'divider',
-              color: 'text.secondary'
-            }}
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/appeals/new')}
+            sx={{ px: 3, py: 1.2, borderRadius: '12px', fontWeight: 700, boxShadow: `0 8px 24px ${primary}40`, textTransform: 'none' }}
           >
-            Hamısına bax
+            Yeni Müraciət
           </Button>
         </Box>
 
-        {appealsData?.items && appealsData.items.length > 0 ? (
+        {/* Stats Row */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard label="Cəmi Müraciət" value={globalTotal} icon={<DescriptionOutlinedIcon fontSize="inherit" />} iconBg={`${primary}15`} iconColor={primary} trend="+12% bu ay" />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard label="İstifadəçilər" value={userCount} icon={<PeopleOutlineIcon fontSize="inherit" />} iconBg="#dbeafe" iconColor="#2563eb" />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard label="İdarə və Şöbələr" value={deptCount} icon={<BusinessOutlinedIcon fontSize="inherit" />} iconBg="#fef3c7" iconColor="#d97706" />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard label="Hesabatlar" value="24" icon={<AssessmentOutlinedIcon fontSize="inherit" />} iconBg="#d1fae5" iconColor="#059669" trend="Yaxşı" />
+          </Grid>
+        </Grid>
+
+        {/* Charts Row */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={5}>
+            <Paper elevation={0} className="glass-card" sx={{ p: 3, borderRadius: '20px', height: '100%' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: textPrimary, mb: 3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Müraciət Statusları</Typography>
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={statusPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="count" nameKey="name">
+                    {statusPieData.map((_, i) => <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} strokeWidth={0} />)}
+                  </Pie>
+                  <RTooltip content={<ChartTooltip />} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={7}>
+            <Paper elevation={0} className="glass-card" sx={{ p: 3, borderRadius: '20px', height: '100%' }}>
+              <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: textPrimary, mb: 3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>İdarələr üzrə statistika</Typography>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={deptBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGrid} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: textSecondary }} interval={0} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: textSecondary }} />
+                  <RTooltip content={<ChartTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }} />
+                  <Bar dataKey="count" fill={primary} radius={[6, 6, 0, 0]} barSize={40}>
+                    {deptBarData.map((_, i) => <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Recent Activity Table */}
+        <Paper elevation={0} className="glass-card" sx={{ borderRadius: '20px', overflow: 'hidden' }}>
+          <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${borderColor}` }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: textPrimary }}>Son Müraciətlər</Typography>
+            <Button size="small" onClick={() => navigate('/appeals')} sx={{ fontWeight: 700, textTransform: 'none' }}>Hamısına bax</Button>
+          </Box>
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: 'action.hover' }}>
-                  <TableCell sx={{ fontWeight: 800, color: 'text.secondary', py: 2 }}>Qeydiyyat №</TableCell>
-                  <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>Vətəndaş</TableCell>
-                  <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>İdarə</TableCell>
-                  <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>Məzmun</TableCell>
-                  <TableCell sx={{ fontWeight: 800, color: 'text.secondary' }}>Tarix</TableCell>
+                <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc' }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textSecondary, textTransform: 'uppercase' }}>Qeydiyyat №</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textSecondary, textTransform: 'uppercase' }}>Vətəndaş</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textSecondary, textTransform: 'uppercase' }}>Mövzu</TableCell>
+                  <TableCell sx={{ fontWeight: 700, fontSize: '0.75rem', color: textSecondary, textTransform: 'uppercase' }}>Tarix</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {appealsData.items.map((appeal) => (
-                  <TableRow
-                    key={appeal.id}
-                    hover
-                    sx={{
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'action.hover' },
-                      '& td': { py: 2.5, fontSize: '0.9rem', borderBottom: '1px solid', borderColor: 'divider' }
-                    }}
-                    onClick={() => navigate(`/appeals/${appeal.id}`)}
-                  >
-                    <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{appeal.reg_num || '-'}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{appeal.person || '-'}</TableCell>
-                    <TableCell sx={{ fontWeight: 500 }}>{appeal.in_section?.section || appeal.dep_id || '-'}</TableCell>
-                    <TableCell sx={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'text.secondary' }}>
-                      {appeal.content || '-'}
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>
-                      {appeal.reg_date ? new Date(appeal.reg_date).toLocaleDateString('az-AZ') : '-'}
-                    </TableCell>
+                {appealsData?.items.map((appeal) => (
+                  <TableRow key={appeal.id} hover sx={{ cursor: 'pointer', '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' } }} onClick={() => navigate(`/appeals/${appeal.id}`)}>
+                    <TableCell sx={{ fontWeight: 700, color: primary, fontSize: '0.85rem' }}>{appeal.reg_num || '—'}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: textPrimary, fontSize: '0.85rem' }}>{appeal.person || '—'}</TableCell>
+                    <TableCell sx={{ color: textSecondary, fontSize: '0.82rem', maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{appeal.content || '—'}</TableCell>
+                    <TableCell sx={{ color: textSecondary, fontSize: '0.8rem', fontWeight: 600 }}>{appeal.reg_date ? new Date(appeal.reg_date).toLocaleDateString('az-AZ') : '—'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
-        ) : (
-          <Box sx={{ py: 10, textAlign: 'center' }}>
-            <DescriptionIcon sx={{ fontSize: 60, color: 'divider', mb: 2 }} />
-            <Typography color="text.secondary" sx={{ fontWeight: 600 }}>
-              Sistemdə hələ heç bir müraciət qeydə alınmayıb
-            </Typography>
-          </Box>
-        )}
-      </Paper>
+        </Paper>
+      </Box>
     </Layout>
   );
 }

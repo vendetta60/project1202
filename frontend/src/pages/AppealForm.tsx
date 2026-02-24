@@ -21,6 +21,11 @@ import {
   TableRow,
   TableCell,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -46,7 +51,7 @@ import NumbersIcon from '@mui/icons-material/Numbers';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import HistoryIcon from '@mui/icons-material/History';
 
-import { getAppeal, createAppeal, updateAppeal } from '../api/appeals';
+import { getAppeal, createAppeal, updateAppeal, checkDuplicateAppeal } from '../api/appeals';
 import {
   getDepartments,
   getRegions,
@@ -194,6 +199,9 @@ export default function AppealForm() {
   const [openInstructionDialog, setOpenInstructionDialog] = useState(false);
   const [openInSectionDialog, setOpenInSectionDialog] = useState(false);
   const [openWhoControlDialog, setOpenWhoControlDialog] = useState(false);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [duplicateCount, setDuplicateCount] = useState(0);
+  const [pendingSubmitData, setPendingSubmitData] = useState<AppealFormData | null>(null);
   const [openExecutorDialog, setOpenExecutorDialog] = useState(false);
   const [selectedDirectionForExecutor, setSelectedDirectionForExecutor] = useState<number | undefined>(undefined);
   const [selectedExecutors, setSelectedExecutors] = useState<any[]>([]); // Store appeal's executors
@@ -230,6 +238,35 @@ export default function AppealForm() {
   });
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: getCurrentUser });
+
+  // Returns true if duplicate found (dialog opened), false if safe to proceed
+  const checkDuplicateBeforeSubmit = async (data: AppealFormData): Promise<boolean> => {
+    const trimmedPerson = data.person?.trim();
+    if (!trimmedPerson || isEditMode) return false;
+
+    const currentYear = new Date().getFullYear();
+    // Use raw user_section_id from form, or fall back to the logged-in user's section
+    const sectionId = data.user_section_id || user?.section_id;
+
+    if (!sectionId) {
+      console.warn("Cannot check duplicate: sectionId missing");
+      return false;
+    }
+
+    try {
+      const result = await checkDuplicateAppeal(trimmedPerson, currentYear, sectionId);
+      if (result.exists) {
+        setDuplicateCount(result.count);
+        // Store sanitized data for actual submission after dialog confirm
+        setPendingSubmitData(sanitizeFormData(data));
+        setDuplicateDialogOpen(true);
+        return true;
+      }
+    } catch (error) {
+      console.error("Duplicate check failed", error);
+    }
+    return false;
+  };
 
   // Appeal data and existing executors
 
@@ -416,24 +453,18 @@ export default function AppealForm() {
     },
   });
 
-  const onSubmit = (data: AppealFormData) => {
-    // Sanitize data: convert empty strings to null for optional fields
+  const sanitizeFormData = (data: AppealFormData): AppealFormData => {
     const sanitizedData = { ...data };
-
-    // Numeric fields: if value is "" or 0 (if 0 is 'not selected'), set to null
-    // But be careful: some IDs might legitimately be 0? Usually not for DB primary keys.
     const numericFields: (keyof AppealFormData)[] = [
       'dep_id', 'official_id', 'region_id', 'who_control_id', 'instructions_id',
       'content_type_id', 'account_index_id', 'ap_index_id', 'status', 'InSection',
       'user_section_id', 'num'
     ];
-
     numericFields.forEach(field => {
       if (sanitizedData[field] === '' || sanitizedData[field] === 0) {
         (sanitizedData as any)[field] = undefined;
       }
     });
-
     const dateFields: (keyof AppealFormData)[] = [
       'reg_date', 'exp_date', 'sec_in_ap_date', 'in_ap_date', 'PC_Tarixi'
     ];
@@ -441,11 +472,20 @@ export default function AppealForm() {
       if (sanitizedData[field] === '') {
         (sanitizedData as any)[field] = undefined;
       } else if (sanitizedData[field]) {
-        // Convert dd/mm/yyyy to YYYY-MM-DD for API
         (sanitizedData as any)[field] = formatDateToISO(sanitizedData[field] as string) || undefined;
       }
     });
+    return sanitizedData;
+  };
 
+  const onSubmit = async (data: AppealFormData) => {
+    // On create mode: check for duplicate BEFORE sanitizing (to keep user_section_id intact)
+    if (!isEditMode) {
+      const isDuplicate = await checkDuplicateBeforeSubmit(data);
+      if (isDuplicate) return; // Wait for dialog confirmation
+    }
+
+    const sanitizedData = sanitizeFormData(data);
     if (isEditMode) updateMutation.mutate(sanitizedData);
     else createMutation.mutate(sanitizedData);
   };
@@ -690,7 +730,19 @@ export default function AppealForm() {
                     </Box>
                     <Box>
                       <Typography sx={labelSx}><PersonIcon /> Müraciət edənin SAA:</Typography>
-                      <Controller name="person" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Aaaaa" />} />
+                      <Controller
+                        name="person"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            fullWidth
+                            size="small"
+                            sx={inputSx}
+                            placeholder="Aaaaa"
+                          />
+                        )}
+                      />
                     </Box>
                     <Box>
                       <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
@@ -808,7 +860,7 @@ export default function AppealForm() {
                       isSearchable
                       placeholder="Seçin..."
                       styles={selectStyles}
-                              menuPortalTarget={document.body}
+                      menuPortalTarget={document.body}
                     />
                   )} />
                 </Box>
@@ -824,7 +876,7 @@ export default function AppealForm() {
                       isSearchable
                       placeholder="Seçin..."
                       styles={selectStyles}
-                              menuPortalTarget={document.body}
+                      menuPortalTarget={document.body}
                     />
                   )} />
                 </Box>
@@ -840,7 +892,7 @@ export default function AppealForm() {
                       isSearchable
                       placeholder="1. Sovlet qullugu ve kadr meseleleri"
                       styles={selectStyles}
-                              menuPortalTarget={document.body}
+                      menuPortalTarget={document.body}
                     />
                   )} />
                 </Box>
@@ -917,31 +969,53 @@ export default function AppealForm() {
                   </Button>
                 </Box>
 
-                <Box sx={{ border: '1px solid',
-            borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+                <Box sx={{
+                  border: '1px solid',
+                  borderColor: 'divider', borderRadius: 1, overflow: 'hidden'
+                }}>
                   <Table size="small" sx={{ minWidth: 800 }}>
                     <TableHead sx={{ bgcolor: 'action.hover' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>İcraçının struktur bölməsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Soyadı, adı</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Hansı sənədlə icra edilib</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Sənədin tarixi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Tikdiyi işin nömrəsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>İşdəki vərəq nömrəsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Göndərilmə nömrəsi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Göndərilmə tarixi</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Hara (kimə) göndərilib</TableCell>
-                        <TableCell sx={{ fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                        borderColor: 'divider' }}>Əsas icraçı</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>İcraçının struktur bölməsi</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Soyadı, adı</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Hansı sənədlə icra edilib</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Sənədin tarixi</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Tikdiyi işin nömrəsi</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>İşdəki vərəq nömrəsi</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Göndərilmə nömrəsi</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Göndərilmə tarixi</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Hara (kimə) göndərilib</TableCell>
+                        <TableCell sx={{
+                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                          borderColor: 'divider'
+                        }}>Əsas icraçı</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1174,6 +1248,47 @@ export default function AppealForm() {
           }}
           loading={updateExecutorDetailsMutation.isPending}
         />
-      )}    </Layout>
+      )}
+
+      <Dialog open={duplicateDialogOpen} onClose={() => setDuplicateDialogOpen(false)}>
+        <DialogTitle sx={{ fontWeight: 800, color: 'warning.dark' }}>⚠️ Təkrar Müraciət!</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ fontWeight: 500 }}>
+            Bu şəxsin (<strong>{pendingSubmitData?.person}</strong>) artıq qeydiyyatda{' '}
+            <strong>{duplicateCount}</strong> müraciəti var.
+            <br />
+            Müraciəti təkrar müraciət kimi qeydiyyata almaq istəyirsiniz?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => {
+              setDuplicateDialogOpen(false);
+              setPendingSubmitData(null);
+            }}
+            sx={{ fontWeight: 700, color: 'text.secondary' }}
+          >
+            Xeyr, qeydə alma
+          </Button>
+          <Button
+            onClick={() => {
+              if (pendingSubmitData) {
+                const dataWithRepetition = { ...pendingSubmitData, repetition: true };
+                setValue('repetition', true);
+                setDuplicateDialogOpen(false);
+                setPendingSubmitData(null);
+                createMutation.mutate(dataWithRepetition);
+              }
+            }}
+            variant="contained"
+            color="warning"
+            autoFocus
+            sx={{ fontWeight: 700 }}
+          >
+            Bəli, qeydə alın
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Layout>
   );
 }

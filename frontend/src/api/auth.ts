@@ -27,6 +27,9 @@ export interface User {
   tab3?: boolean;
   tab4?: boolean;
   tab5?: boolean;
+
+  // RBAC permission codes
+  permissions?: string[];
 }
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {

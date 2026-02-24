@@ -24,9 +24,9 @@ import {
   Alert,
 } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { removeToken } from '../utils/auth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUser, changePassword } from '../api/auth';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -54,6 +54,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [colorMenuEl, setColorMenuEl] = useState<null | HTMLElement>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -65,6 +66,7 @@ export default function Layout({ children }: LayoutProps) {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const { sidebarCollapsed, toggleSidebar, mode, toggleMode, primaryColor, setPrimaryColor } = useTheme();
   const muiTheme = useMuiTheme();
+  const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -79,6 +81,7 @@ export default function Layout({ children }: LayoutProps) {
   const handleColorMenuClose = () => setColorMenuEl(null);
 
   const handleLogout = () => {
+    queryClient.clear();
     removeToken();
     navigate('/login');
   };
@@ -147,9 +150,14 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     document.body.setAttribute('data-theme', mode);
   }, [mode]);
-  const sidebarBg = isDark ? 'linear-gradient(180deg, #1a1d21 0%, #252a30 100%)' : `linear-gradient(180deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`;
-  const appBarBg = isDark ? '#252a30' : primaryColor;
-  const contentBg = isDark ? '#121212' : '#f5f5f5';
+  const sidebarBg = isDark
+    ? 'linear-gradient(175deg, #131825 0%, #0f1320 60%, #12192e 100%)'
+    : `linear-gradient(175deg, ${primaryColor} 0%, ${primaryColor}e8 55%, ${primaryColor}cc 100%)`;
+  const appBarBg = isDark
+    ? 'rgba(13,17,23,0.95)'
+    : 'rgba(255,255,255,0.92)';
+  const appBarColor = isDark ? '#e8ecf4' : '#1a1f36';
+  const contentBg = isDark ? '#0d1117' : '#f0f2f8';
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: contentBg }}>
@@ -203,31 +211,40 @@ export default function Layout({ children }: LayoutProps) {
 
         <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mb: 2 }} />
 
-        <List sx={{ px: 1 }}>
-          {menuItems.map((item) => (
-            <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => navigate(item.path)}
-                sx={{
-                  borderRadius: 1.5,
-                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                  color: '#fff',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.15)', color: '#fff' },
-                  transition: 'all 0.2s',
-                }}
-              >
-                <ListItemIcon sx={{ color: 'inherit', minWidth: sidebarCollapsed ? 0 : 40, justifyContent: 'center' }}>
-                  {item.icon}
-                </ListItemIcon>
-                {!sidebarCollapsed && (
-                  <ListItemText
-                    primary={item.label}
-                    primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.3px' }}
-                  />
-                )}
-              </ListItemButton>
-            </ListItem>
-          ))}
+        <List sx={{ px: 1.5 }}>
+          {menuItems.map((item) => {
+            const active = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+            return (
+              <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    borderRadius: '12px',
+                    justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.65)',
+                    bgcolor: active ? 'rgba(255,255,255,0.18)' : 'transparent',
+                    boxShadow: active ? '0 2px 12px rgba(0,0,0,0.18)' : 'none',
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.13)',
+                      color: '#fff',
+                    },
+                    transition: 'all 0.2s ease',
+                    py: 1.1,
+                  }}
+                >
+                  <ListItemIcon sx={{ color: 'inherit', minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center', fontSize: 20 }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  {!sidebarCollapsed && (
+                    <ListItemText
+                      primary={item.label}
+                      primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: active ? 800 : 600, letterSpacing: '0.4px' }}
+                    />
+                  )}
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
         </List>
 
         {user?.is_admin && (
@@ -238,31 +255,36 @@ export default function Layout({ children }: LayoutProps) {
                 Admin
               </Typography>
             )}
-            <List sx={{ px: 1, mt: 1 }}>
-              {adminItems.map((item) => (
-                <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-                  <ListItemButton
-                    onClick={() => navigate(item.path)}
-                    sx={{
-                      borderRadius: 1.5,
-                      justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                      color: '#fff',
-                      '&:hover': { bgcolor: 'rgba(255,255,255,0.15)', color: '#fff' },
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    <ListItemIcon sx={{ color: 'inherit', minWidth: sidebarCollapsed ? 0 : 40, justifyContent: 'center' }}>
-                      {item.icon}
-                    </ListItemIcon>
-                    {!sidebarCollapsed && (
-                      <ListItemText
-                        primary={item.label}
-                        primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.3px' }}
-                      />
-                    )}
-                  </ListItemButton>
-                </ListItem>
-              ))}
+            <List sx={{ px: 1.5, mt: 1 }}>
+              {adminItems.map((item) => {
+                const active = location.pathname === item.path;
+                return (
+                  <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+                    <ListItemButton
+                      onClick={() => navigate(item.path)}
+                      sx={{
+                        borderRadius: '12px',
+                        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                        color: active ? '#fff' : 'rgba(255,255,255,0.55)',
+                        bgcolor: active ? 'rgba(255,255,255,0.14)' : 'transparent',
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.10)', color: '#fff' },
+                        transition: 'all 0.2s ease',
+                        py: 1,
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: 'inherit', minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center' }}>
+                        {item.icon}
+                      </ListItemIcon>
+                      {!sidebarCollapsed && (
+                        <ListItemText
+                          primary={item.label}
+                          primaryTypographyProps={{ fontSize: '0.78rem', fontWeight: active ? 800 : 600, letterSpacing: '0.3px' }}
+                        />
+                      )}
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
             </List>
           </>
         )}
@@ -358,27 +380,27 @@ export default function Layout({ children }: LayoutProps) {
           </>
         )}
 
-      <Dialog open={passwordDialogOpen} onClose={() => !passwordLoading && setPasswordDialogOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-        <DialogTitle sx={{ fontWeight: 700 }}>Parolunu dəyiş</DialogTitle>
-        <DialogContent>
-          {passwordSuccess ? (
-            <Alert severity="success" sx={{ mt: 1 }}>Şifrə uğurla dəyişdirildi</Alert>
-          ) : (
-            <>
-              {passwordError && <Alert severity="error" sx={{ mb: 2 }}>{passwordError}</Alert>}
-              <TextField fullWidth label="Cari şifrə" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} margin="normal" size="small" autoComplete="current-password" />
-              <TextField fullWidth label="Yeni şifrə" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} margin="normal" size="small" autoComplete="new-password" helperText="Ən azı 6 simvol" />
-              <TextField fullWidth label="Yeni şifrəni təsdiq et" type="password" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} margin="normal" size="small" autoComplete="new-password" />
-            </>
+        <Dialog open={passwordDialogOpen} onClose={() => !passwordLoading && setPasswordDialogOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+          <DialogTitle sx={{ fontWeight: 700 }}>Parolunu dəyiş</DialogTitle>
+          <DialogContent>
+            {passwordSuccess ? (
+              <Alert severity="success" sx={{ mt: 1 }}>Şifrə uğurla dəyişdirildi</Alert>
+            ) : (
+              <>
+                {passwordError && <Alert severity="error" sx={{ mb: 2 }}>{passwordError}</Alert>}
+                <TextField fullWidth label="Cari şifrə" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} margin="normal" size="small" autoComplete="current-password" />
+                <TextField fullWidth label="Yeni şifrə" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} margin="normal" size="small" autoComplete="new-password" helperText="Ən azı 6 simvol" />
+                <TextField fullWidth label="Yeni şifrəni təsdiq et" type="password" value={newPasswordConfirm} onChange={(e) => setNewPasswordConfirm(e.target.value)} margin="normal" size="small" autoComplete="new-password" />
+              </>
+            )}
+          </DialogContent>
+          {!passwordSuccess && (
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button onClick={() => setPasswordDialogOpen(false)} disabled={passwordLoading}>Ləğv et</Button>
+              <Button variant="contained" onClick={handleChangePassword} disabled={passwordLoading}>{passwordLoading ? 'Göndərilir...' : 'Dəyişdir'}</Button>
+            </DialogActions>
           )}
-        </DialogContent>
-        {!passwordSuccess && (
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setPasswordDialogOpen(false)} disabled={passwordLoading}>Ləğv et</Button>
-            <Button variant="contained" onClick={handleChangePassword} disabled={passwordLoading}>{passwordLoading ? 'Göndərilir...' : 'Dəyişdir'}</Button>
-          </DialogActions>
-        )}
-      </Dialog>
+        </Dialog>
       </Drawer>
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', bgcolor: contentBg }}>
@@ -387,12 +409,13 @@ export default function Layout({ children }: LayoutProps) {
           elevation={0}
           sx={{
             bgcolor: appBarBg,
-            borderBottom: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(10px)',
+            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,31,54,0.08)'}`,
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 } }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff', fontSize: '1rem' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: appBarColor, fontSize: '0.95rem', letterSpacing: '-0.01em' }}>
               Müraciət Qeydiyyat Sistemi
             </Typography>
           </Toolbar>

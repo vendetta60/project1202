@@ -30,6 +30,7 @@ def list_appeals(
     q: str | None = None,
     limit: int = 50,
     offset: int = 0,
+    include_deleted: bool = False,
     service: AppealService = Depends(get_appeal_service),
 ):
     items = service.list(
@@ -40,6 +41,7 @@ def list_appeals(
         q=q,
         limit=limit,
         offset=offset,
+        include_deleted=include_deleted,
     )
     total = service.count(
         current_user=current_user,
@@ -47,8 +49,30 @@ def list_appeals(
         region_id=region_id,
         status=status,
         q=q,
+        include_deleted=include_deleted,
     )
     return AppealsListResponse(items=items, total=total, limit=limit, offset=offset)
+
+
+@router.post("/{appeal_id}/restore")
+def restore_appeal(
+    appeal_id: int,
+    current_user: User = Depends(get_current_user),
+    service: AppealService = Depends(get_appeal_service),
+):
+    """Restore a soft-deleted appeal (Admin only)"""
+    return service.restore(appeal_id=appeal_id, current_user=current_user)
+
+
+@router.get("/check-duplicate")
+def check_duplicate(
+    person: str,
+    year: int,
+    section_id: int,
+    current_user: User = Depends(get_current_user),
+    service: AppealService = Depends(get_appeal_service),
+):
+    return service.check_duplicate(person=person, year=year, section_id=section_id)
 
 
 @router.get("/{appeal_id}", response_model=AppealOut)

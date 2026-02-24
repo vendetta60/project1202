@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Box,
   Card,
@@ -21,6 +22,7 @@ import { getErrorMessage } from '../utils/errors';
 export default function Login() {
   const navigate = useNavigate();
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +44,8 @@ export default function Login() {
     try {
       const response = await login(data);
       setToken(response.access_token);
+      // Clear cache to remove any stale data from previous sessions
+      queryClient.clear();
       navigate('/');
     } catch (err) {
       setError(getErrorMessage(err));

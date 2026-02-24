@@ -26,7 +26,7 @@ function loadStored<T>(key: string, fallback: T, parse: (s: string) => T): T {
   try {
     const s = localStorage.getItem(key);
     if (s != null) return parse(s);
-  } catch (_) {}
+  } catch (_) { }
   return fallback;
 }
 

@@ -30,6 +30,7 @@ export interface Appeal {
   user_section_id?: number | null;
   PC?: string | null;
   PC_Tarixi?: string | null; // datetime
+  is_deleted?: boolean;
 }
 
 export interface AppealsResponse {
@@ -49,6 +50,7 @@ export const getAppeals = async (params: {
   q?: string;
   limit?: number;
   offset?: number;
+  include_deleted?: boolean;
 }): Promise<AppealsResponse> => {
   const response = await apiClient.get('/appeals', { params });
   return response.data;
@@ -56,6 +58,13 @@ export const getAppeals = async (params: {
 
 export const getAppeal = async (id: number): Promise<Appeal> => {
   const response = await apiClient.get(`/appeals/${id}`);
+  return response.data;
+};
+
+export const checkDuplicateAppeal = async (person: string, year: number, section_id: number): Promise<{ exists: boolean; count: number }> => {
+  const response = await apiClient.get('/appeals/check-duplicate', {
+    params: { person, year, section_id }
+  });
   return response.data;
 };
 
@@ -68,3 +77,14 @@ export const updateAppeal = async (id: number, data: UpdateAppealRequest): Promi
   const response = await apiClient.patch(`/appeals/${id}`, data);
   return response.data;
 };
+
+export const deleteAppeal = async (id: number): Promise<{ message: string; id: number }> => {
+  const response = await apiClient.delete(`/appeals/${id}`);
+  return response.data;
+};
+
+export const restoreAppeal = async (id: number): Promise<{ message: string; id: number }> => {
+  const response = await apiClient.post(`/appeals/${id}/restore`);
+  return response.data;
+};
+

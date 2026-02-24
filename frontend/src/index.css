@@ -2,86 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Premium Design Tokens (Indigo/Slate/Gold) ───────────────── */
 :root {
-  --app-primary: #3e4a21;
-  --app-bg: #f4f6f0;
+  --app-primary: #4f46e5;
+  /* Indigo */
+  --app-secondary: #f59e0b;
+  /* Gold */
+  --app-bg: #f8fafc;
   --app-paper: #ffffff;
-  --app-text: #1f2937;
-  --app-text-secondary: #4b5563;
-  --app-border: rgba(0, 0, 0, 0.08);
+  --app-text: #0f172a;
+  --app-text-secondary: #64748b;
+  --app-border: rgba(15, 23, 42, 0.08);
+  --sidebar-w: 260px;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ─── Base ──────────────────────────────────────────────────── */
 @layer base {
   body {
     background-color: var(--app-bg);
     color: var(--app-text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* light: modern subtle grid pattern */
   body:not([data-theme="dark"]) {
     background-image:
-      radial-gradient(var(--app-primary) 0.5px, transparent 0.5px),
-      radial-gradient(var(--app-primary) 0.5px, var(--app-bg) 0.5px);
-    background-size: 20px 20px;
-    background-position: 0 0, 10px 10px;
+      linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
     background-attachment: fixed;
-    opacity: 1;
   }
+
+  /* dark mode background */
   body[data-theme="dark"] {
-    background-color: #121212;
-    color: #e0e0e0;
-    background-image: none;
+    background-color: #0f172a;
+    color: #f1f5f9;
+    background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
+/* ─── Keyframes ─────────────────────────────────────────────── */
 @keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.6s ease-out forwards;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-slide-up {
-  animation: slideUp 0.6s ease-out forwards;
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Theme-aware: table header and cards use --app-primary and --app-paper */
-.military-table-header {
-  background: var(--app-primary) !important;
-  color: white !important;
-  font-weight: 700 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
+/* ─── Glass card ────────────────────────────────────────────── */
 .glass-card {
   background: var(--app-paper) !important;
-  backdrop-filter: blur(8px);
   border: 1px solid var(--app-border) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+  transition: all var(--transition) !important;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08) !important;
 }
 
 body[data-theme="dark"] .glass-card {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  background: rgba(30, 41, 59, 0.7) !important;
+  backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* React-Select: dropdown above other content */
-.react-select__menu,
-.react-select__menu-portal,
-[class*="Menu"] {
-  z-index: 9999 !important;
+/* ─── Flatpickr overrides ───────────────────────────────────── */
+.flatpickr-calendar {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid var(--app-border) !important;
+  border-radius: 12px !important;
 }
-div[class*="menu"] {
-  z-index: 9999 !important;
+
+.flatpickr-day.selected {
+  background: var(--app-primary) !important;
+  border-color: var(--app-primary) !important;
 }

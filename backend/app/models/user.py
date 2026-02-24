@@ -27,9 +27,9 @@ class User(Base, AuditMixin):
     name: Mapped[str | None] = mapped_column(String(50))
     username: Mapped[str | None] = mapped_column(String(50))
     password: Mapped[str | None] = mapped_column(String(64))
-    section_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("InSections.id"))
+    section_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("UserSections.id"))
     
-    in_section = relationship("InSection", foreign_keys=[section_id], lazy="joined")
+    user_section = relationship("UserSection", foreign_keys=[section_id], lazy="joined")
 
     # Tab permissions
     tab1: Mapped[bool | None] = mapped_column(Boolean)
@@ -120,7 +120,7 @@ class User(Base, AuditMixin):
 
     @property
     def section_name(self) -> str | None:
-        return self.in_section.section if self.in_section else str(self.section_id) if self.section_id else None
+        return self.user_section.user_section if self.user_section else str(self.section_id) if self.section_id else None
 
     @property
     def password_hash(self) -> str | None:

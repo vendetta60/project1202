@@ -15,6 +15,7 @@ import {
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import { ExecutorAssignment } from '../api/lookups';
+import { parseDateFromDDMMYYYY, formatDateToDDMMYYYY_Safe } from '../utils/dateUtils';
 
 interface ExecutorDetailsDialogProps {
   open: boolean;
@@ -100,9 +101,9 @@ export function ExecutorDetailsDialog({
                 Göndərilmə tarixi
               </Typography>
               <Flatpickr
-                value={formData.out_date ? new Date(formData.out_date) : undefined}
+                value={parseDateFromDDMMYYYY(formData.out_date) || undefined}
                 onChange={(dates) =>
-                  handleChange('out_date', dates[0]?.toISOString() || '')
+                  handleChange('out_date', formatDateToDDMMYYYY_Safe(dates[0]))
                 }
                 options={{
                   mode: 'single',
@@ -179,9 +180,9 @@ export function ExecutorDetailsDialog({
                 Sənədin tarixi
               </Typography>
               <Flatpickr
-                value={formData.r_date ? new Date(formData.r_date) : undefined}
+                value={parseDateFromDDMMYYYY(formData.r_date) || undefined}
                 onChange={(dates) =>
-                  handleChange('r_date', dates[0]?.toISOString() || '')
+                  handleChange('r_date', formatDateToDDMMYYYY_Safe(dates[0]))
                 }
                 options={{
                   mode: 'single',
@@ -242,13 +243,13 @@ export function ExecutorDetailsDialog({
                 PC Tarixi
               </Typography>
               <Flatpickr
-                value={formData.PC_Tarixi ? new Date(formData.PC_Tarixi) : undefined}
+                value={parseDateFromDDMMYYYY(formData.PC_Tarixi) || undefined}
                 onChange={(dates) =>
-                  handleChange('PC_Tarixi', dates[0]?.toISOString() || '')
+                  handleChange('PC_Tarixi', formatDateToDDMMYYYY_Safe(dates[0]))
                 }
                 options={{
                   mode: 'single',
-                  dateFormat: 'Y-m-d',
+                  dateFormat: 'd.m.Y',
                 }}
                 placeholder="Tarix"
                 style={{

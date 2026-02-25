@@ -252,7 +252,7 @@ def get_user_permissions(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    permission_codes = list(user.get_permissions())
+    permission_codes = user.permissions
     role_ids = [ur.role_id for ur in user.user_roles]
     
     return UserPermissionsOut(

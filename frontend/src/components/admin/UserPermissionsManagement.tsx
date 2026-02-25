@@ -1,5 +1,13 @@
 import React, { useEffect, useState, FormEvent } from 'react';
 import { userPermissionApi, roleApi, permissionGroupApi, usersApi, User } from '../../api/index';
+import { usePermissions } from '../../hooks/usePermissions';
+
+interface Permission {
+  id: number;
+  code: string;
+  name: string;
+  category?: string;
+}
 import './AdminPanel.css';
 
 // Local interfaces for state management that are compatible with API types
@@ -9,12 +17,14 @@ interface Role {
   id: number;
   name: string;
   description?: string;
+  permissions: Permission[];
 }
 
 interface PermissionGroup {
   id: number;
   name: string;
   description?: string;
+  permissions: Permission[];
 }
 
 interface UserPermissions {
@@ -24,6 +34,7 @@ interface UserPermissions {
 }
 
 export function UserPermissionsManagement() {
+  const { rank: currentRank } = usePermissions();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [groups, setGroups] = useState<PermissionGroup[]>([]);
@@ -222,11 +233,17 @@ export function UserPermissionsManagement() {
                       onChange={(e) => setAssigningRole(Number(e.target.value) || null)}
                     >
                       <option value="">Rol seçin...</option>
-                      {roles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                        </option>
-                      ))}
+                      {roles
+                        .filter(role => {
+                          if (currentRank >= 3) return true;
+                          const blocked = ['admin', 'users', 'audit'];
+                          return role.permissions.every(p => !p.category || !blocked.includes(p.category));
+                        })
+                        .map((role) => (
+                          <option key={role.id} value={role.id}>
+                            {role.name}
+                          </option>
+                        ))}
                     </select>
                     <button
                       className="btn btn-primary btn-sm"
@@ -242,18 +259,24 @@ export function UserPermissionsManagement() {
               <div className="permission-section">
                 <h4>Şablon Qrup Tətbiq Et</h4>
                 <div className="groups-grid">
-                  {groups.map((group) => (
-                    <button
-                      key={group.id}
-                      className="btn btn-outline"
-                      onClick={() => handleApplyGroup(group.id)}
-                    >
-                      <div className="group-btn-content">
-                        <strong>{group.name}</strong>
-                        {group.description && <small>{group.description}</small>}
-                      </div>
-                    </button>
-                  ))}
+                  {groups
+                    .filter(group => {
+                      if (currentRank >= 3) return true;
+                      const blocked = ['admin', 'users', 'audit'];
+                      return group.permissions.every(p => !p.category || !blocked.includes(p.category));
+                    })
+                    .map((group) => (
+                      <button
+                        key={group.id}
+                        className="btn btn-outline"
+                        onClick={() => handleApplyGroup(group.id)}
+                      >
+                        <div className="group-btn-content">
+                          <strong>{group.name}</strong>
+                          {group.description && <small>{group.description}</small>}
+                        </div>
+                      </button>
+                    ))}
                 </div>
               </div>
 
@@ -331,41 +354,53 @@ export function UserPermissionsManagement() {
                   <div className="form-group">
                     <label>Rollar Təyin Et</label>
                     <div className="checkbox-list">
-                      {roles.map(role => (
-                        <label key={role.id} className="checkbox-item">
-                          <input
-                            type="checkbox"
-                            checked={newUser.role_ids.includes(role.id)}
-                            onChange={e => {
-                              const ids = e.target.checked
-                                ? [...newUser.role_ids, role.id]
-                                : newUser.role_ids.filter(id => id !== role.id);
-                              setNewUser({ ...newUser, role_ids: ids });
-                            }}
-                          />
-                          <span>{role.name}</span>
-                        </label>
-                      ))}
+                      {roles
+                        .filter(role => {
+                          if (currentRank >= 3) return true;
+                          const blocked = ['admin', 'users', 'audit'];
+                          return role.permissions.every(p => !p.category || !blocked.includes(p.category));
+                        })
+                        .map(role => (
+                          <label key={role.id} className="checkbox-item">
+                            <input
+                              type="checkbox"
+                              checked={newUser.role_ids.includes(role.id)}
+                              onChange={e => {
+                                const ids = e.target.checked
+                                  ? [...newUser.role_ids, role.id]
+                                  : newUser.role_ids.filter(id => id !== role.id);
+                                setNewUser({ ...newUser, role_ids: ids });
+                              }}
+                            />
+                            <span>{role.name}</span>
+                          </label>
+                        ))}
                     </div>
                   </div>
                   <div className="form-group">
                     <label>Şablon Qruplar Tətbiq Et</label>
                     <div className="checkbox-list">
-                      {groups.map(group => (
-                        <label key={group.id} className="checkbox-item">
-                          <input
-                            type="checkbox"
-                            checked={newUser.group_ids.includes(group.id)}
-                            onChange={e => {
-                              const ids = e.target.checked
-                                ? [...newUser.group_ids, group.id]
-                                : newUser.group_ids.filter(id => id !== group.id);
-                              setNewUser({ ...newUser, group_ids: ids });
-                            }}
-                          />
-                          <span>{group.name}</span>
-                        </label>
-                      ))}
+                      {groups
+                        .filter(group => {
+                          if (currentRank >= 3) return true;
+                          const blocked = ['admin', 'users', 'audit'];
+                          return group.permissions.every(p => !p.category || !blocked.includes(p.category));
+                        })
+                        .map(group => (
+                          <label key={group.id} className="checkbox-item">
+                            <input
+                              type="checkbox"
+                              checked={newUser.group_ids.includes(group.id)}
+                              onChange={e => {
+                                const ids = e.target.checked
+                                  ? [...newUser.group_ids, group.id]
+                                  : newUser.group_ids.filter(id => id !== group.id);
+                                setNewUser({ ...newUser, group_ids: ids });
+                              }}
+                            />
+                            <span>{group.name}</span>
+                          </label>
+                        ))}
                     </div>
                   </div>
                 </div>

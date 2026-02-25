@@ -40,7 +40,7 @@ apiClient.interceptors.response.use(
       // Server error
       console.error('Server error', error.response?.data);
     }
-    
+
     // Always reject the error for the calling code to handle
     return Promise.reject(error);
   }

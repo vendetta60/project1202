@@ -22,6 +22,11 @@ import { getUser, createUser } from '../../api/users';
 import { getUserSections } from '../../api/lookups';
 import { roleApi, permissionGroupApi } from '../../api/permissions';
 import { getSelectStyles, toSelectOptions } from '../../utils/formStyles';
+import { usePermissions } from '../../hooks/usePermissions';
+import {
+    FormControlLabel,
+    Checkbox,
+} from '@mui/material';
 import type { UserCreate } from '../../api/users';
 
 interface FormData {
@@ -32,6 +37,8 @@ interface FormData {
     section_id?: number | '';
     role_ids: number[];
     group_ids: number[];
+    is_admin: boolean;
+    is_super_admin: boolean;
 }
 
 export default function UserForm() {
@@ -40,6 +47,7 @@ export default function UserForm() {
     const theme = useTheme();
     const queryClient = useQueryClient();
     const { showToast, ToastComponent } = useToast();
+    const { rank: currentRank } = usePermissions();
     const isEdit = Boolean(id);
     const primary = theme.palette.primary.main;
 
@@ -57,6 +65,8 @@ export default function UserForm() {
             section_id: '',
             role_ids: [],
             group_ids: [],
+            is_admin: false,
+            is_super_admin: false,
         },
     });
 
@@ -102,6 +112,8 @@ export default function UserForm() {
                 section_id: user.section_id || '',
                 role_ids: (user as any).role_ids ?? [],
                 group_ids: (user as any).group_ids ?? [],
+                is_admin: user.is_admin || false,
+                is_super_admin: user.is_super_admin || false,
             });
         }
     }, [user, reset]);
@@ -122,6 +134,8 @@ export default function UserForm() {
                 section_id: data.section_id ? Number(data.section_id) : undefined,
                 role_ids: data.role_ids?.length ? data.role_ids : undefined,
                 group_ids: data.group_ids?.length ? data.group_ids : undefined,
+                is_admin: data.is_admin,
+                is_super_admin: data.is_super_admin,
             };
             createMutation.mutate(createData);
         }
@@ -358,19 +372,28 @@ export default function UserForm() {
                             <Controller
                                 name="role_ids"
                                 control={control}
-                                render={({ field }) => (
-                                    <Select
-                                        isMulti
-                                        value={(rolesList || [])
-                                            .filter((r: any) => (field.value || []).includes(r.id))
-                                            .map((r: any) => ({ value: r.id, label: r.name }))}
-                                        onChange={(opts: any) => field.onChange((opts || []).map((o: any) => o.value))}
-                                        options={(rolesList || []).map((r: any) => ({ value: r.id, label: r.name }))}
-                                        placeholder="Rol seçin..."
-                                        menuPortalTarget={document.body}
-                                        styles={getSelectStyles(primary)}
-                                    />
-                                )}
+                                render={({ field }) => {
+                                    const blockedCategories = ['admin', 'users', 'audit'];
+                                    const filteredRoles = (rolesList || []).filter((r: any) => {
+                                        if (currentRank >= 3) return true;
+                                        // Admin (rank 2) can see roles that DON'T have blocked categories
+                                        return r.permissions.every((p: any) => !p.category || !blockedCategories.includes(p.category));
+                                    });
+
+                                    return (
+                                        <Select
+                                            isMulti
+                                            value={filteredRoles
+                                                .filter((r: any) => (field.value || []).includes(r.id))
+                                                .map((r: any) => ({ value: r.id, label: r.name }))}
+                                            onChange={(opts: any) => field.onChange((opts || []).map((o: any) => o.value))}
+                                            options={filteredRoles.map((r: any) => ({ value: r.id, label: r.name }))}
+                                            placeholder="Rol seçin..."
+                                            menuPortalTarget={document.body}
+                                            styles={getSelectStyles(primary)}
+                                        />
+                                    );
+                                }}
                             />
                         </Grid>
 
@@ -380,21 +403,61 @@ export default function UserForm() {
                             <Controller
                                 name="group_ids"
                                 control={control}
-                                render={({ field }) => (
-                                    <Select
-                                        isMulti
-                                        value={(groupsList || [])
-                                            .filter((g: any) => (field.value || []).includes(g.id))
-                                            .map((g: any) => ({ value: g.id, label: g.name }))}
-                                        onChange={(opts: any) => field.onChange((opts || []).map((o: any) => o.value))}
-                                        options={(groupsList || []).map((g: any) => ({ value: g.id, label: g.name }))}
-                                        placeholder="Qrup seçin..."
-                                        menuPortalTarget={document.body}
-                                        styles={getSelectStyles(primary)}
-                                    />
-                                )}
+                                render={({ field }) => {
+                                    const blockedCategories = ['admin', 'users', 'audit'];
+                                    const filteredGroups = (groupsList || []).filter((g: any) => {
+                                        if (currentRank >= 3) return true;
+                                        // Admin (rank 2) can see groups that DON'T have blocked categories
+                                        return g.permissions.every((p: any) => !p.category || !blockedCategories.includes(p.category));
+                                    });
+
+                                    return (
+                                        <Select
+                                            isMulti
+                                            value={filteredGroups
+                                                .filter((g: any) => (field.value || []).includes(g.id))
+                                                .map((g: any) => ({ value: g.id, label: g.name }))}
+                                            onChange={(opts: any) => field.onChange((opts || []).map((o: any) => o.value))}
+                                            options={filteredGroups.map((g: any) => ({ value: g.id, label: g.name }))}
+                                            placeholder="Qrup seçin..."
+                                            menuPortalTarget={document.body}
+                                            styles={getSelectStyles(primary)}
+                                        />
+                                    );
+                                }}
                             />
                         </Grid>
+                        {/* Row 6: Hierarchy Level */}
+                        {currentRank >= 3 && (
+                            <Grid size={{ xs: 12 }}>
+                                <Typography sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'text.secondary', mb: 1 }}>Səlahiyyət Səviyyəsi</Typography>
+                                <Box sx={{ display: 'flex', gap: 3 }}>
+                                    <Controller
+                                        name="is_admin"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <FormControlLabel
+                                                control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                                                label={<Typography sx={{ fontWeight: 600 }}>Administrator</Typography>}
+                                            />
+                                        )}
+                                    />
+                                    <Controller
+                                        name="is_super_admin"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <FormControlLabel
+                                                control={<Checkbox checked={field.value} onChange={(e) => field.onChange(e.target.checked)} color="secondary" />}
+                                                label={<Typography sx={{ fontWeight: 600 }}>Super Admin</Typography>}
+                                            />
+                                        )}
+                                    />
+                                </Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                    Super Admin bütün istifadəçiləri, Admin isə yalnız User-ləri idarə edə bilər.
+                                </Typography>
+                            </Grid>
+                        )}
                     </Grid>
 
                     {/* Divider */}

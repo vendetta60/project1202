@@ -26,8 +26,8 @@ import {
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { removeToken } from '../utils/auth';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCurrentUser, changePassword } from '../api/auth';
+import { useQueryClient } from '@tanstack/react-query';
+import { changePassword } from '../api/auth';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -44,6 +44,7 @@ import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteIcon from '@mui/icons-material/Palette';
 import { useTheme } from '../context/ThemeContext';
 import { PRESET_COLORS } from '../context/ThemeContext';
+import { usePermissions } from '../hooks/usePermissions';
 
 const SIDEBAR_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -67,11 +68,10 @@ export default function Layout({ children }: LayoutProps) {
   const { sidebarCollapsed, toggleSidebar, mode, toggleMode, primaryColor, setPrimaryColor } = useTheme();
   const muiTheme = useMuiTheme();
   const queryClient = useQueryClient();
-
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-  });
+  const {
+    isAdmin, user,
+    canViewAppeals, canExportAppeals, canViewUsers,
+  } = usePermissions();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -83,7 +83,7 @@ export default function Layout({ children }: LayoutProps) {
   const handleLogout = () => {
     queryClient.clear();
     removeToken();
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   const openPasswordDialog = () => {
@@ -131,18 +131,23 @@ export default function Layout({ children }: LayoutProps) {
     return user.username;
   };
 
-  const menuItems = [
-    { label: 'ANA SƏHİFƏ', path: '/', icon: <DashboardIcon /> },
-    { label: 'MÜRACİƏTLƏR', path: '/appeals', icon: <DescriptionIcon /> },
-    { label: 'HESABATLAR', path: '/reports', icon: <AssessmentIcon /> },
+  // Filter menu items based on permissions
+  const allMenuItems = [
+    { label: 'ANA SƏHİFƏ', path: '/', icon: <DashboardIcon />, always: true },
+    { label: 'MÜRACİƏTLƏR', path: '/appeals', icon: <DescriptionIcon />, show: canViewAppeals },
+    { label: 'HESABATLAR', path: '/reports', icon: <AssessmentIcon />, show: canExportAppeals },
   ];
+  const menuItems = allMenuItems.filter(i => i.always || i.show);
 
-  const adminItems = [
-    { label: 'MERKEZİ İDARƏETMƏ', path: '/admin', icon: <SettingsIcon /> },
-    { label: 'İSTİFADƏÇİLƏR', path: '/admin/users', icon: <PeopleIcon /> },
-    { label: 'LOGLAR', path: '/admin/logs', icon: <HistoryIcon /> },
-    { label: 'PARAMETRLƏR', path: '/admin/parameters', icon: <SettingsIcon /> },
+  // Admin sidebar items
+  const allAdminItems = [
+    { label: 'MERKEZİ İDARƏETMƏ', path: '/admin', icon: <SettingsIcon />, show: isAdmin },
+    { label: 'İSTİFADƏÇİLƏR', path: '/admin/users', icon: <PeopleIcon />, show: canViewUsers },
+    { label: 'LOGLAR', path: '/admin/logs', icon: <HistoryIcon />, show: isAdmin },
+    { label: 'PARAMETRLƏR', path: '/admin/parameters', icon: <SettingsIcon />, show: isAdmin },
   ];
+  const adminItems = allAdminItems.filter(i => i.show);
+  const showAdminSection = adminItems.length > 0;
 
   const drawerWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
   const isDark = mode === 'dark';
@@ -247,7 +252,7 @@ export default function Layout({ children }: LayoutProps) {
           })}
         </List>
 
-        {user?.is_admin && (
+        {showAdminSection && (
           <>
             <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', my: 2 }} />
             {!sidebarCollapsed && (

@@ -15,6 +15,7 @@ import Logs from './pages/Logs';
 import SystemAdmin from './pages/admin/SystemAdmin';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import PermissionRoute from './components/PermissionRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { isAuthenticated } from './utils/auth';
 import { useTheme } from './context/ThemeContext';
@@ -169,33 +170,33 @@ function AppContent() {
           <Route
             path="/appeals"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="view_appeals">
                 <AppealsList />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/appeals/new"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="create_appeal">
                 <AppealForm />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/appeals/:id"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="view_appeal_details">
                 <AppealForm />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/reports"
             element={
-              <ProtectedRoute>
+              <PermissionRoute permission="export_appeals">
                 <Reports />
-              </ProtectedRoute>
+              </PermissionRoute>
             }
           />
           <Route
@@ -209,25 +210,25 @@ function AppContent() {
           <Route
             path="/admin/users"
             element={
-              <AdminRoute>
+              <PermissionRoute permission="view_users">
                 <UsersList />
-              </AdminRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/admin/users/new"
             element={
-              <AdminRoute>
+              <PermissionRoute permission="create_user">
                 <UserForm />
-              </AdminRoute>
+              </PermissionRoute>
             }
           />
           <Route
             path="/admin/users/:id"
             element={
-              <AdminRoute>
+              <PermissionRoute permission="edit_user">
                 <UserForm />
-              </AdminRoute>
+              </PermissionRoute>
             }
           />
           <Route

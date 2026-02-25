@@ -21,7 +21,7 @@ class ChangePasswordBody(BaseModel):
 def me(current_user: User = Depends(get_current_user)):
     # Build response manually so we can inject computed permissions
     data = UserOut.model_validate(current_user)
-    data.permissions = sorted(current_user.get_permissions())
+    data.permissions = current_user.permissions
     return data
 
 

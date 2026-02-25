@@ -75,16 +75,18 @@ import {
   addAppealExecutor,
   updateAppealExecutor,
   removeAppealExecutor,
+  getHolidays,
   type ExecutorAssignment,
 } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { usePermissions } from '../hooks/usePermissions';
 import { CustomLookupDialog } from '../components/CustomLookupDialog';
 import { ExecutorDialog } from '../components/ExecutorDialog';
 import { ExecutorDetailsDialog } from '../components/ExecutorDetailsDialog';
 import { getErrorMessage } from '../utils/errors';
-import { formatDateToDDMMYYYY, formatDateToISO } from '../utils/dateUtils';
+import { formatDateToDDMMYYYY, formatDateToISO, parseDateFromDDMMYYYY, formatDateToDDMMYYYY_Safe } from '../utils/dateUtils';
 import { getSelectStyles } from '../utils/formStyles';
 
 interface AppealFormData {
@@ -117,6 +119,7 @@ interface AppealFormData {
   IsExecuted: boolean;
   PC: string | undefined;
   PC_Tarixi: string | undefined; // datetime
+  exp_days: number | undefined;
 }
 
 const defaultValues: Partial<AppealFormData> = {
@@ -147,6 +150,7 @@ const defaultValues: Partial<AppealFormData> = {
   InSection: undefined,
   PC: '',
   PC_Tarixi: '',
+  exp_days: undefined,
 };
 
 
@@ -159,6 +163,9 @@ export default function AppealForm() {
   const isEditMode = !!id;
   const [error, setError] = useState<string>('');
   const selectStyles = getSelectStyles(theme.palette.primary.main);
+  const { canEditAppeal } = usePermissions();
+  // In view/edit mode, if user lacks edit_appeal → read-only
+  const isReadOnly = isEditMode && !canEditAppeal;
   const labelSx = {
     display: 'flex',
     alignItems: 'center',
@@ -237,7 +244,95 @@ export default function AppealForm() {
     enabled: !!selectedDepId,
   });
 
+  // Calendar Day Styling & Tooltips
+  const onDayCreate = (_dObj: any, _dStr: any, _fp: any, dayElem: any) => {
+    const date = dayElem.dateObj;
+    // Sunday is 0, Saturday is 6
+    if (date.getDay() === 0 || date.getDay() === 6) {
+      dayElem.classList.add('is-sunday');
+    }
+
+    // Check holidays
+    if (holidays && holidays.length > 0) {
+      const holiday = holidays.find(h => {
+        const start = new Date(h.start_date);
+        const end = new Date(h.end_date);
+        // Reset times for comparison
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        return date >= start && date <= end;
+      });
+
+      if (holiday) {
+        dayElem.classList.add('is-holiday');
+        dayElem.setAttribute('title', holiday.name);
+      }
+    }
+  };
+
+  const commonFlatpickrOptions = {
+    mode: 'single' as const,
+    dateFormat: 'd.m.Y',
+    allowInput: true,
+    onDayCreate
+  };
+
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: getCurrentUser });
+  const { data: holidays } = useQuery({ queryKey: ['holidays'], queryFn: getHolidays });
+
+  const calculateAndSetExpDate = (daysToAdd: number) => {
+    const regDateStr = watch('reg_date');
+    if (!regDateStr || isNaN(daysToAdd) || daysToAdd <= 0) {
+      if (daysToAdd === 0) setValue('exp_date', regDateStr);
+      return;
+    }
+
+    let currentDate = parseDateFromDDMMYYYY(regDateStr);
+    if (!currentDate) return;
+
+    let addedDays = 0;
+    // We start from the day AFTER registration date
+    let calculationDate = new Date(currentDate);
+
+    while (addedDays < daysToAdd) {
+      calculationDate.setDate(calculationDate.getDate() + 1);
+      const dayOfWeek = calculationDate.getDay(); // 0 = Sunday, 6 = Saturday
+
+      // Check if it's a weekend
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        continue;
+      }
+
+      // Check if it's a holiday
+      const isHoliday = holidays?.some(h => {
+        const start = new Date(h.start_date);
+        const end = new Date(h.end_date);
+        // Normalize to date-only for comparison
+        const check = new Date(calculationDate.getFullYear(), calculationDate.getMonth(), calculationDate.getDate());
+        const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        return check >= s && check <= e;
+      });
+
+      if (isHoliday) {
+        continue;
+      }
+
+      addedDays++;
+    }
+
+    setValue('exp_date', formatDateToDDMMYYYY_Safe(calculationDate));
+  };
+
+  // Auto-calculate exp_date when reg_date or exp_days change
+  const regDateValue = watch('reg_date');
+  const expDaysValue = watch('exp_days');
+
+  useEffect(() => {
+    if (regDateValue && expDaysValue !== undefined) {
+      calculateAndSetExpDate(Number(expDaysValue));
+    }
+  }, [regDateValue, expDaysValue, holidays]);
 
   // Returns true if duplicate found (dialog opened), false if safe to proceed
   const checkDuplicateBeforeSubmit = async (data: AppealFormData): Promise<boolean> => {
@@ -502,8 +597,13 @@ export default function AppealForm() {
     <Layout>
       <Box sx={{ mb: 1.5 }} className="animate-fade-in">
         <Typography variant="h5" component="h1" fontWeight="900" color="primary" sx={{ mb: 0.5 }}>
-          {isEditMode ? 'Müraciətin Redaktəsi' : 'Yeni Müraciət Qeydiyyatı'}
+          {isEditMode ? (isReadOnly ? 'Müraciətin Baxışı' : 'Müraciətin Redaktəsi') : 'Yeni Müraciət Qeydiyyatı'}
         </Typography>
+        {isReadOnly && (
+          <Alert severity="info" sx={{ mt: 1, borderRadius: 1 }}>
+            Siz bu müraciəti yalnız baxış rejimində görürsünuz. Redaktə etmək üçün icazənə yoxlayın.
+          </Alert>
+        )}
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 1, py: 0.8 }}>{error}</Alert>}
@@ -547,575 +647,678 @@ export default function AppealForm() {
             color: var(--app-primary) !important;
             font-weight: 700 !important;
           }
+          .flatpickr-day.is-sunday {
+            color: #d32f2f !important;
+            font-weight: 700 !important;
+          }
+          .flatpickr-day.is-holiday {
+            background-color: #e8f5e9 !important;
+            color: #2e7d32 !important;
+            border-radius: 4px !important;
+            font-weight: 700 !important;
+            border: 1px solid #a5d6a7 !important;
+          }
+          .flatpickr-day.is-holiday:hover {
+            background-color: #c8e6c9 !important;
+          }
+          .flatpickr-day.is-holiday.selected {
+            background-color: var(--app-primary) !important;
+            color: #fff !important;
+          }
         `}</style>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Grid container spacing={1.5}>
-            {/* Top Form Section: 4 Columns */}
-            <Grid size={{ xs: 12 }}>
-              <Grid container spacing={2}>
-                {/* Column 1 */}
-                <Grid size={{ xs: 12, md: 3 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box>
-                      <Typography sx={labelSx}><NumbersIcon /> Qeydealınma nömrəsi:</Typography>
-                      <Controller name="reg_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="3-25-4/1-A-1-1/2026" />} />
-                    </Box>
-                    <Box>
-                      <Typography sx={labelSx}><CalendarMonthIcon /> Qeydealınma tarixi:</Typography>
-                      <Controller name="reg_date" control={control} render={({ field }) => (
-                        <Flatpickr
-                          {...field}
-                          value={field.value ? new Date(field.value) : undefined}
-                          onChange={(dates) => field.onChange(dates[0] ? dates[0].toLocaleDateString('az-AZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\./g, '/') : '')}
-                          options={{ mode: 'single', dateFormat: 'd/m/Y', allowInput: true }}
-                          className="flatpickr-input"
-                          placeholder="dd/mm/yyyy"
-                        />
-                      )} />
-                    </Box>
-                    <Box>
-                      <Typography sx={labelSx}><EventBusyIcon /> İcra müddəti:</Typography>
-                      <Controller name="exp_date" control={control} render={({ field }) => (
-                        <Flatpickr
-                          {...field}
-                          value={field.value ? new Date(field.value) : undefined}
-                          onChange={(dates) => field.onChange(dates[0] ? dates[0].toLocaleDateString('az-AZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\./g, '/') : '')}
-                          options={{ mode: 'single', dateFormat: 'd/m/Y' }}
-                          className="flatpickr-input"
-                          placeholder="dd/mm/yyyy"
-                        />
-                      )} />
-                    </Box>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography sx={labelSx}><MilitaryTechIcon /> Hansı hərbi hissədən daxil olub:</Typography>
-                          <Controller name="InSection" control={control} render={({ field }) => (
-                            <Select
-                              {...field}
-                              options={toSelectOptions(inSections, 'section')}
-                              value={field.value ? toSelectOptions(inSections, 'section').find(o => o.value === field.value) : null}
-                              onChange={(e) => field.onChange(e?.value)}
-                              isClearable
-                              isSearchable
-                              placeholder="MN Katibliyi"
-                              styles={selectStyles}
-                              menuPortalTarget={document.body}
-                            />
-                          )} />
-                        </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenInSectionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+          <fieldset disabled={isReadOnly} style={{ border: 'none', padding: 0, margin: 0 }}>
+            <Grid container spacing={1.5}>
+              {/* Top Form Section: 4 Columns */}
+              <Grid size={{ xs: 12 }}>
+                <Grid container spacing={2}>
+                  {/* Column 1 */}
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box>
+                        <Typography sx={labelSx}><NumbersIcon /> Qeydealınma nömrəsi:</Typography>
+                        <Controller name="reg_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="3-25-4/1-A-1-1/2026" />} />
                       </Box>
-                    </Box>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography sx={labelSx}><AssignmentIcon /> Rəhbərin dərkənarı:</Typography>
-                          <Controller name="instructions_id" control={control} render={({ field }) => (
-                            <Select
-                              {...field}
-                              options={toSelectOptions(instructions, 'instructions')}
-                              value={field.value ? toSelectOptions(instructions, 'instructions').find(o => o.value === field.value) : null}
-                              onChange={(e) => field.onChange(e?.value)}
-                              isClearable
-                              isSearchable
-                              placeholder="Seçin..."
-                              styles={selectStyles}
-                              menuPortalTarget={document.body}
-                            />
-                          )} />
-                        </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenInstructionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
-                      </Box>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-                      <Typography sx={labelSx}><HistoryIcon /> Təkrar müraciət:</Typography>
-                      <Controller name="repetition" control={control} render={({ field }) => (
-                        <input
-                          type="checkbox"
-                          checked={field.value}
-                          onChange={field.onChange}
-                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: theme.palette.primary.main }}
-                        />
-                      )} />
-                    </Box>
-                  </Box>
-                </Grid>
+                      <Box>
+                        <Typography sx={labelSx}><CalendarMonthIcon /> Qeydealınma tarixi: <span style={{ color: '#d32f2f' }}>*</span></Typography>
+                        <Controller
+                          name="reg_date"
+                          control={control}
+                          rules={{ required: 'Bu sahə vacibdir' }}
+                          render={({ field, fieldState }) => (
+                            <Box>
+                              <Flatpickr
+                                {...field}
+                                value={parseDateFromDDMMYYYY(field.value) || undefined}
+                                onChange={(dates) => {
+                                  const dateStr = formatDateToDDMMYYYY_Safe(dates[0]);
+                                  field.onChange(dateStr);
 
-                {/* Column 2 */}
-                <Grid size={{ xs: 12, md: 3 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box sx={{ opacity: inSectionFilled ? 1 : 0.65, pointerEvents: inSectionFilled ? 'auto' : 'none' }}>
-                      <Typography sx={labelSx}><DescriptionIcon /> Digər hərbi hissə üzrə nömrəsi:</Typography>
-                      <Controller name="sec_in_ap_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Nömrə" disabled={!inSectionFilled} />} />
-                    </Box>
-                    <Box sx={{ opacity: inSectionFilled ? 1 : 0.65, pointerEvents: inSectionFilled ? 'auto' : 'none' }}>
-                      <Typography sx={labelSx}><CalendarMonthIcon /> Digər qurum üzrə tarix:</Typography>
-                      <Controller name="sec_in_ap_date" control={control} render={({ field }) => (
-                        <Flatpickr
-                          {...field}
-                          value={field.value ? new Date(field.value) : undefined}
-                          onChange={(dates) => field.onChange(dates[0] ? dates[0].toLocaleDateString('az-AZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\./g, '/') : '')}
-                          options={{ mode: 'single', dateFormat: 'd/m/Y' }}
-                          className="flatpickr-input"
-                          placeholder="dd/mm/yyyy"
+                                  // Sync reg_num year
+                                  if (dates[0]) {
+                                    const year = dates[0].getFullYear();
+                                    const currentRegNum = watch('reg_num');
+                                    if (currentRegNum) {
+                                      const parts = currentRegNum.split('/');
+                                      if (parts.length > 1) {
+                                        parts[parts.length - 1] = year.toString();
+                                        setValue('reg_num', parts.join('/'));
+                                      } else {
+                                        const segments = currentRegNum.split('-');
+                                        if (segments.length > 1) {
+                                          const last = segments[segments.length - 1];
+                                          if (last.length === 4 && !isNaN(Number(last))) {
+                                            segments[segments.length - 1] = year.toString();
+                                            setValue('reg_num', segments.join('-'));
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }}
+                                options={commonFlatpickrOptions}
+                                className="flatpickr-input"
+                                placeholder="dd.mm.yyyy"
+                                style={fieldState.error ? { borderColor: '#d32f2f', boxShadow: '0 0 0 1px #d32f2f' } : {}}
+                              />
+                              {fieldState.error && (
+                                <Typography color="error" variant="caption" sx={{ ml: 1, mt: 0.5, display: 'block' }}>
+                                  {fieldState.error.message}
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
                         />
-                      )} />
-                    </Box>
-                    <Box>
-                      <Typography sx={labelSx}><DescriptionIcon /> Daxil olan müraciətin nömrəsi:</Typography>
-                      <Controller name="in_ap_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Nömrə" />} />
-                    </Box>
-                    <Box>
-                      <Typography sx={labelSx}><CalendarMonthIcon /> Daxil olan müraciətin tarixi:</Typography>
-                      <Controller name="in_ap_date" control={control} render={({ field }) => (
-                        <Flatpickr
-                          {...field}
-                          value={field.value ? new Date(field.value) : undefined}
-                          onChange={(dates) => field.onChange(dates[0] ? dates[0].toLocaleDateString('az-AZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\./g, '/') : '')}
-                          options={{ mode: 'single', dateFormat: 'd/m/Y' }}
-                          className="flatpickr-input"
-                          placeholder="dd/mm/yyyy"
-                        />
-                      )} />
-                    </Box>
-                  </Box>
-                </Grid>
-
-                {/* Column 3 */}
-                <Grid size={{ xs: 12, md: 3 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography sx={labelSx}><GroupIcon /> Hansı qurumdan gəlib:</Typography>
-                          <Controller name="dep_id" control={control} render={({ field }) => (
-                            <Select
-                              {...field}
-                              options={toSelectOptions(departments, 'department')}
-                              value={field.value ? toSelectOptions(departments, 'department').find(o => o.value === field.value) : null}
-                              onChange={(e) => { field.onChange(e?.value); setValue('official_id', undefined); }}
-                              isClearable
-                              isSearchable
-                              placeholder="Seçin..."
-                              styles={selectStyles}
-                              menuPortalTarget={document.body}
-                            />
-                          )} />
-                        </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenDeptDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
                       </Box>
-                    </Box>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography sx={labelSx}><PersonIcon /> Müraciət kimdən gəlib:</Typography>
-                          <Controller name="official_id" control={control} render={({ field }) => (
-                            <Select
-                              {...field}
-                              options={toSelectOptions(depOfficials, 'official')}
-                              value={field.value ? toSelectOptions(depOfficials, 'official').find(o => o.value === field.value) : null}
-                              onChange={(e) => field.onChange(e?.value)}
-                              isClearable
-                              isSearchable
-                              placeholder={selectedDepId ? 'Seçin...' : 'Öncə qurum seçin'}
-                              isDisabled={!selectedDepId || officialsLoading}
-                              styles={selectStyles}
-                              menuPortalTarget={document.body}
+                      <Box>
+                        <Typography sx={labelSx}><EventBusyIcon /> İcra müddəti (gün):</Typography>
+                        <Controller name="exp_days" control={control} render={({ field: daysField }) => (
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <TextField
+                              {...daysField}
+                              value={daysField.value || ''}
+                              size="small"
+                              type="number"
+                              sx={{ ...inputSx, width: '80px' }}
+                              placeholder="15"
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                daysField.onChange(val);
+                              }}
                             />
-                          )} />
-                        </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                            <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                              Date: {watch('exp_date') || '-'}
+                            </Typography>
+                          </Box>
+                        )} />
                       </Box>
-                    </Box>
-                    <Box>
-                      <Typography sx={labelSx}><PersonIcon /> Müraciət edənin SAA:</Typography>
-                      <Controller
-                        name="person"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            fullWidth
-                            size="small"
-                            sx={inputSx}
-                            placeholder="Aaaaa"
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={labelSx}><MilitaryTechIcon /> Hansı hərbi hissədən daxil olub:</Typography>
+                            <Controller name="InSection" control={control} render={({ field }) => (
+                              <Select
+                                {...field}
+                                options={toSelectOptions(inSections, 'section')}
+                                value={field.value ? toSelectOptions(inSections, 'section').find(o => o.value === field.value) : null}
+                                onChange={(e) => field.onChange(e?.value)}
+                                isClearable
+                                isSearchable
+                                placeholder="MN Katibliyi"
+                                styles={selectStyles}
+                                menuPortalTarget={document.body}
+                              />
+                            )} />
+                          </Box>
+                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenInSectionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={labelSx}><AssignmentIcon /> Rəhbərin dərkənarı:</Typography>
+                            <Controller name="instructions_id" control={control} render={({ field }) => (
+                              <Select
+                                {...field}
+                                options={toSelectOptions(instructions, 'instructions')}
+                                value={field.value ? toSelectOptions(instructions, 'instructions').find(o => o.value === field.value) : null}
+                                onChange={(e) => field.onChange(e?.value)}
+                                isClearable
+                                isSearchable
+                                placeholder="Seçin..."
+                                styles={selectStyles}
+                                menuPortalTarget={document.body}
+                              />
+                            )} />
+                          </Box>
+                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenInstructionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography sx={labelSx}><HistoryIcon /> Təkrar müraciət:</Typography>
+                        <Controller name="repetition" control={control} render={({ field }) => (
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            style={{ width: 16, height: 16, cursor: 'pointer', accentColor: theme.palette.primary.main }}
                           />
-                        )}
-                      />
-                    </Box>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography sx={labelSx}><PlaceIcon /> Ünvan:</Typography>
-                          <Controller name="region_id" control={control} render={({ field }) => (
-                            <Select
-                              {...field}
-                              options={toSelectOptions(regions, 'region')}
-                              value={field.value ? toSelectOptions(regions, 'region').find(o => o.value === field.value) : null}
-                              onChange={(e) => field.onChange(e?.value)}
-                              isClearable
-                              isSearchable
-                              placeholder="Seçin..."
-                              styles={selectStyles}
-                              menuPortalTarget={document.body}
-                            />
-                          )} />
-                        </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenRegionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        )} />
                       </Box>
                     </Box>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography sx={labelSx}><SupervisorAccountIcon /> Kim baxmışdır:</Typography>
-                          <Controller name="who_control_id" control={control} render={({ field }) => (
-                            <Select
-                              {...field}
-                              options={toSelectOptions(whoControls, 'chief')}
-                              value={field.value ? toSelectOptions(whoControls, 'chief').find(o => o.value === field.value) : null}
-                              onChange={(e) => field.onChange(e?.value)}
-                              isClearable
-                              isSearchable
-                              placeholder="Seçin..."
-                              styles={selectStyles}
-                              menuPortalTarget={document.body}
-                            />
-                          )} />
-                        </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenWhoControlDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
-                      </Box>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
-                      <Typography sx={labelSx}><VisibilityIcon /> Nəzarətdədir:</Typography>
-                      <Controller name="control" control={control} render={({ field }) => (
-                        <input
-                          type="checkbox"
-                          checked={field.value}
-                          onChange={field.onChange}
-                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: theme.palette.primary.main }}
-                        />
-                      )} />
-                    </Box>
-                  </Box>
-                </Grid>
+                  </Grid>
 
-                {/* Column 4 */}
-                <Grid size={{ xs: 12, md: 3 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography sx={labelSx}><CheckCircleIcon /> Müraciətin baxılması:</Typography>
-                          <Controller name="status" control={control} render={({ field }) => (
-                            <Select
+                  {/* Column 2 */}
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ opacity: inSectionFilled ? 1 : 0.65, pointerEvents: inSectionFilled ? 'auto' : 'none' }}>
+                        <Typography sx={labelSx}><DescriptionIcon /> Digər hərbi hissə üzrə nömrəsi:</Typography>
+                        <Controller name="sec_in_ap_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Nömrə" disabled={!inSectionFilled} />} />
+                      </Box>
+                      <Box sx={{ opacity: inSectionFilled ? 1 : 0.65, pointerEvents: inSectionFilled ? 'auto' : 'none' }}>
+                        <Typography sx={labelSx}><CalendarMonthIcon /> Digər qurum üzrə tarix:</Typography>
+                        <Controller
+                          name="sec_in_ap_date"
+                          control={control}
+                          render={({ field }) => (
+                            <Flatpickr
                               {...field}
-                              options={toSelectOptions(statuses, 'status')}
-                              value={field.value ? toSelectOptions(statuses, 'status').find(o => o.value === field.value) : null}
-                              onChange={(e) => field.onChange(e?.value)}
-                              isClearable
-                              isSearchable
-                              placeholder="Seçin..."
-                              styles={selectStyles}
-                              menuPortalTarget={document.body}
+                              value={parseDateFromDDMMYYYY(field.value) || undefined}
+                              onChange={(dates) => field.onChange(formatDateToDDMMYYYY_Safe(dates[0]))}
+                              options={commonFlatpickrOptions}
+                              className="flatpickr-input"
+                              placeholder="dd.mm.yyyy"
                             />
-                          )} />
-                        </Box>
-                        <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                          )}
+                        />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelSx}><DescriptionIcon /> Daxil olan müraciətin nömrəsi:</Typography>
+                        <Controller name="in_ap_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="Nömrə" />} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelSx}><CalendarMonthIcon /> Daxil olan müraciətin tarixi:</Typography>
+                        <Controller name="in_ap_date" control={control} render={({ field }) => (
+                          <Flatpickr
+                            {...field}
+                            value={parseDateFromDDMMYYYY(field.value) || undefined}
+                            onChange={(dates) => field.onChange(formatDateToDDMMYYYY_Safe(dates[0]))}
+                            options={commonFlatpickrOptions}
+                            disabled={!inSectionFilled}
+                            className="flatpickr-input"
+                            placeholder="dd.mm.yyyy"
+                          />
+                        )} />
                       </Box>
                     </Box>
-                    <Box>
-                      <Typography sx={labelSx}><LayersIcon /> Vərəq sayı:</Typography>
-                      <Controller name="paper_count" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} />} />
+                  </Grid>
+
+                  {/* Column 3 */}
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={labelSx}><GroupIcon /> Hansı qurumdan gəlib:</Typography>
+                            <Controller name="dep_id" control={control} render={({ field }) => (
+                              <Select
+                                {...field}
+                                options={toSelectOptions(departments, 'department')}
+                                value={field.value ? toSelectOptions(departments, 'department').find(o => o.value === field.value) : null}
+                                onChange={(e) => { field.onChange(e?.value); setValue('official_id', undefined); }}
+                                isClearable
+                                isSearchable
+                                placeholder="Seçin..."
+                                styles={selectStyles}
+                                menuPortalTarget={document.body}
+                              />
+                            )} />
+                          </Box>
+                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenDeptDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={labelSx}><PersonIcon /> Müraciət kimdən gəlib:</Typography>
+                            <Controller name="official_id" control={control} render={({ field }) => (
+                              <Select
+                                {...field}
+                                options={toSelectOptions(depOfficials, 'official')}
+                                value={field.value ? toSelectOptions(depOfficials, 'official').find(o => o.value === field.value) : null}
+                                onChange={(e) => field.onChange(e?.value)}
+                                isClearable
+                                isSearchable
+                                placeholder={selectedDepId ? 'Seçin...' : 'Öncə qurum seçin'}
+                                isDisabled={!selectedDepId || officialsLoading}
+                                styles={selectStyles}
+                                menuPortalTarget={document.body}
+                              />
+                            )} />
+                          </Box>
+                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Typography sx={labelSx}>
+                          <PersonIcon /> Müraciət edənin SAA: <span style={{ color: '#d32f2f' }}>*</span>
+                        </Typography>
+                        <Controller
+                          name="person"
+                          control={control}
+                          rules={{ required: 'Bu sahə vacibdir' }}
+                          render={({ field, fieldState }) => (
+                            <TextField
+                              {...field}
+                              fullWidth
+                              size="small"
+                              sx={inputSx}
+                              placeholder="Aaaaa"
+                              error={!!fieldState.error}
+                              helperText={fieldState.error?.message}
+                            />
+                          )}
+                        />
+                      </Box>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={labelSx}><PlaceIcon /> Ünvan:</Typography>
+                            <Controller name="region_id" control={control} render={({ field }) => (
+                              <Select
+                                {...field}
+                                options={toSelectOptions(regions, 'region')}
+                                value={field.value ? toSelectOptions(regions, 'region').find(o => o.value === field.value) : null}
+                                onChange={(e) => field.onChange(e?.value)}
+                                isClearable
+                                isSearchable
+                                placeholder="Seçin..."
+                                styles={selectStyles}
+                                menuPortalTarget={document.body}
+                              />
+                            )} />
+                          </Box>
+                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenRegionDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={labelSx}><SupervisorAccountIcon /> Kim baxmışdır:</Typography>
+                            <Controller name="who_control_id" control={control} render={({ field }) => (
+                              <Select
+                                {...field}
+                                options={toSelectOptions(whoControls, 'chief')}
+                                value={field.value ? toSelectOptions(whoControls, 'chief').find(o => o.value === field.value) : null}
+                                onChange={(e) => field.onChange(e?.value)}
+                                isClearable
+                                isSearchable
+                                placeholder="Seçin..."
+                                styles={selectStyles}
+                                menuPortalTarget={document.body}
+                              />
+                            )} />
+                          </Box>
+                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }} onClick={() => setOpenWhoControlDialog(true)}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5, p: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
+                        <Typography sx={labelSx}><VisibilityIcon /> Nəzarətdədir:</Typography>
+                        <Controller name="control" control={control} render={({ field }) => (
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            style={{ width: 16, height: 16, cursor: 'pointer', accentColor: theme.palette.primary.main }}
+                          />
+                        )} />
+                      </Box>
                     </Box>
-                    <Box>
-                      <Typography sx={labelSx}><MailOutlineIcon /> Elektron poçt ünvanı:</Typography>
-                      <Controller name="email" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="rauf@mail.ru" />} />
+                  </Grid>
+
+                  {/* Column 4 */}
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.6 }}>
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={labelSx}><CheckCircleIcon /> Müraciətin baxılması:</Typography>
+                            <Controller name="status" control={control} render={({ field }) => (
+                              <Select
+                                {...field}
+                                options={toSelectOptions(statuses, 'status')}
+                                value={field.value ? toSelectOptions(statuses, 'status').find(o => o.value === field.value) : null}
+                                onChange={(e) => field.onChange(e?.value)}
+                                isClearable
+                                isSearchable
+                                placeholder="Seçin..."
+                                styles={selectStyles}
+                                menuPortalTarget={document.body}
+                              />
+                            )} />
+                          </Box>
+                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                        </Box>
+                      </Box>
+                      <Box>
+                        <Typography sx={labelSx}><LayersIcon /> Vərəq sayı:</Typography>
+                        <Controller name="paper_count" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} />} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelSx}><MailOutlineIcon /> Elektron poçt ünvanı:</Typography>
+                        <Controller name="email" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="rauf@mail.ru" />} />
+                      </Box>
+                      <Box>
+                        <Typography sx={labelSx}><PhoneIcon /> Telefon nömrəsi:</Typography>
+                        <Controller name="phone" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="( ) - -" />} />
+                      </Box>
                     </Box>
-                    <Box>
-                      <Typography sx={labelSx}><PhoneIcon /> Telefon nömrəsi:</Typography>
-                      <Controller name="phone" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="( ) - -" />} />
-                    </Box>
-                  </Box>
+                  </Grid>
                 </Grid>
+              </Grid>
+
+              {/* Bottom Form Section: Classification & Content */}
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, mt: 1 }}>
+                  <Box>
+                    <Typography sx={labelSx}><NotesIcon /> Müraciətin qısa məzmunu:</Typography>
+                    <Controller name="content" control={control} render={({ field }) => <TextField {...field} fullWidth multiline rows={2} size="small" sx={{ ...inputSx, '& .MuiInputBase-root': { borderRadius: 1.5, height: 'auto' } }} placeholder="Müraciətin əsas mahiyyəti..." />} />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelSx}>Müraciətin növü:</Typography>
+                    <Controller name="content_type_id" control={control} render={({ field }) => (
+                      <Select
+                        {...field}
+                        options={toSelectOptions(contentTypes, 'content_type')}
+                        value={field.value ? toSelectOptions(contentTypes, 'content_type').find(o => o.value === field.value) : null}
+                        onChange={(e) => field.onChange(e?.value)}
+                        isClearable
+                        isSearchable
+                        placeholder="Seçin..."
+                        styles={selectStyles}
+                        menuPortalTarget={document.body}
+                      />
+                    )} />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelSx}>Hesabat İndeksi:</Typography>
+                    <Controller name="account_index_id" control={control} render={({ field }) => (
+                      <Select
+                        {...field}
+                        options={toSelectOptions(accountIndexes, 'account_index')}
+                        value={field.value ? toSelectOptions(accountIndexes, 'account_index').find(o => o.value === field.value) : null}
+                        onChange={(e) => field.onChange(e?.value)}
+                        isClearable
+                        isSearchable
+                        placeholder="Seçin..."
+                        styles={selectStyles}
+                        menuPortalTarget={document.body}
+                      />
+                    )} />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelSx}>
+                      Müraciətin indeksi: <span style={{ color: '#d32f2f' }}>*</span>
+                    </Typography>
+                    <Controller
+                      name="ap_index_id"
+                      control={control}
+                      rules={{ required: 'Bu sahə vacibdir' }}
+                      render={({ field, fieldState }) => (
+                        <Box>
+                          <Select
+                            {...field}
+                            options={toSelectOptions(apIndexes, 'ap_index')}
+                            value={field.value ? toSelectOptions(apIndexes, 'ap_index').find(o => o.value === field.value) : null}
+                            onChange={(e) => field.onChange(e?.value)}
+                            isClearable
+                            isSearchable
+                            placeholder="1. Sovlet qullugu ve kadr meseleleri"
+                            styles={{
+                              ...selectStyles,
+                              control: (base: any, state: any) => ({
+                                ...selectStyles.control(base, state),
+                                borderColor: fieldState.error ? '#d32f2f' : (selectStyles.control(base, state).borderColor || '#cbd5e1'),
+                                '&:hover': {
+                                  borderColor: fieldState.error ? '#d32f2f' : '#94a3b8'
+                                }
+                              })
+                            }}
+                            menuPortalTarget={document.body}
+                          />
+                          {fieldState.error && (
+                            <Typography color="error" variant="caption" sx={{ ml: 1, mt: 0.5, display: 'block' }}>
+                              {fieldState.error.message}
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    />
+                  </Box>
+                </Box>
+              </Grid>
+
+              {/* Executor Section */}
+              <Grid size={{ xs: 12 }}>
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.82rem' }}>
+                    İcraçıların təfsilatları
+                  </Typography>
+
+                  {/* Executor Actions Above Table */}
+                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddCircleOutlineIcon />}
+                      onClick={() => setOpenExecutorDialog(true)}
+                      sx={{
+                        color: 'primary.main',
+                        borderColor: 'primary.main',
+                        bgcolor: 'action.hover',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
+                      }}
+                    >
+                      Əlavə et
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      disabled={!selectedExecutorForEdit}
+                      onClick={() => setExecutorDetailsDialogOpen(true)}
+                      sx={{
+                        color: 'primary.main',
+                        borderColor: 'primary.main',
+                        bgcolor: 'action.hover',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
+                      }}
+                    >
+                      Redaktə et
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<DeleteSweepIcon />}
+                      disabled={!selectedExecutorForEdit}
+                      onClick={() => {
+                        if (selectedExecutorForEdit?.id) {
+                          if (window.confirm('Bu icraçını silmək istədiyinizə əminsiniz?')) {
+                            removeExecutorFromAppealMutation.mutate(selectedExecutorForEdit.id);
+                          }
+                        }
+                      }}
+                      sx={{
+                        color: '#d32f2f',
+                        borderColor: 'rgba(211, 47, 47, 0.3)',
+                        bgcolor: 'rgba(211, 47, 47, 0.05)',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.72rem',
+                        '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.1)', borderColor: '#d32f2f' }
+                      }}
+                    >
+                      Sil
+                    </Button>
+                  </Box>
+
+                  <Box sx={{
+                    border: '1px solid',
+                    borderColor: 'divider', borderRadius: 1, overflow: 'hidden'
+                  }}>
+                    <Table size="small" sx={{ minWidth: 800 }}>
+                      <TableHead sx={{ bgcolor: 'action.hover' }}>
+                        <TableRow>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>İcraçının struktur bölməsi</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Soyadı, adı</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Hansı sənədlə icra edilib</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Sənədin tarixi</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Tikdiyi işin nömrəsi</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>İşdəki vərəq nömrəsi</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Göndərilmə nömrəsi</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Göndərilmə tarixi</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Hara (kimə) göndərilib</TableCell>
+                          <TableCell sx={{
+                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
+                            borderColor: 'divider'
+                          }}>Əsas icraçı</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {selectedExecutors.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={10} align="center" sx={{ py: 2, color: 'text.secondary', fontSize: '0.7rem' }}>Hələ icraçı təyin edilməyib</TableCell>
+                          </TableRow>
+                        ) : (
+                          selectedExecutors.map((executor) => (
+                            <TableRow
+                              key={executor.id || executor.executor_id}
+                              onClick={() => setSelectedExecutorForEdit(executor)}
+                              sx={{
+                                '&:hover': { bgcolor: 'action.hover' },
+                                bgcolor: (selectedExecutorForEdit?.id && selectedExecutorForEdit?.id === executor.id) || (selectedExecutorForEdit?.executor_id === executor.executor_id) ? 'action.selected' : 'inherit',
+                                cursor: 'pointer',
+                                borderBottom: '1px solid',
+                                borderColor: 'divider'
+                              }}
+                            >
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.direction_name || '-'}</TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.executor_name || executor.executor || '-'}</TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.r_num || '-'}</TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>
+                                {executor.r_date ? formatDateToDDMMYYYY(executor.r_date) : '-'}
+                              </TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.attach_num || '-'}</TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.attach_paper_num || '-'}</TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.out_num || '-'}</TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>
+                                {executor.out_date ? formatDateToDDMMYYYY(executor.out_date) : '-'}
+                              </TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.posted_sec || '-'}</TableCell>
+                              <TableCell sx={{ p: 0.5, fontSize: '0.7rem', textAlign: 'center' }}>
+                                {executor.is_primary ? '✓' : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </Box>
+                </Box>
               </Grid>
             </Grid>
 
-            {/* Bottom Form Section: Classification & Content */}
-            <Grid size={{ xs: 12 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, mt: 1 }}>
-                <Box>
-                  <Typography sx={labelSx}><NotesIcon /> Müraciətin qısa məzmunu:</Typography>
-                  <Controller name="content" control={control} render={({ field }) => <TextField {...field} fullWidth multiline rows={2} size="small" sx={{ ...inputSx, '& .MuiInputBase-root': { borderRadius: 1.5, height: 'auto' } }} placeholder="Müraciətin əsas mahiyyəti..." />} />
-                </Box>
-                <Box>
-                  <Typography sx={labelSx}>Müraciətin növü:</Typography>
-                  <Controller name="content_type_id" control={control} render={({ field }) => (
-                    <Select
-                      {...field}
-                      options={toSelectOptions(contentTypes, 'content_type')}
-                      value={field.value ? toSelectOptions(contentTypes, 'content_type').find(o => o.value === field.value) : null}
-                      onChange={(e) => field.onChange(e?.value)}
-                      isClearable
-                      isSearchable
-                      placeholder="Seçin..."
-                      styles={selectStyles}
-                      menuPortalTarget={document.body}
-                    />
-                  )} />
-                </Box>
-                <Box>
-                  <Typography sx={labelSx}>Hesabat İndeksi:</Typography>
-                  <Controller name="account_index_id" control={control} render={({ field }) => (
-                    <Select
-                      {...field}
-                      options={toSelectOptions(accountIndexes, 'account_index')}
-                      value={field.value ? toSelectOptions(accountIndexes, 'account_index').find(o => o.value === field.value) : null}
-                      onChange={(e) => field.onChange(e?.value)}
-                      isClearable
-                      isSearchable
-                      placeholder="Seçin..."
-                      styles={selectStyles}
-                      menuPortalTarget={document.body}
-                    />
-                  )} />
-                </Box>
-                <Box>
-                  <Typography sx={labelSx}>Müraciətin indeksi:</Typography>
-                  <Controller name="ap_index_id" control={control} render={({ field }) => (
-                    <Select
-                      {...field}
-                      options={toSelectOptions(apIndexes, 'ap_index')}
-                      value={field.value ? toSelectOptions(apIndexes, 'ap_index').find(o => o.value === field.value) : null}
-                      onChange={(e) => field.onChange(e?.value)}
-                      isClearable
-                      isSearchable
-                      placeholder="1. Sovlet qullugu ve kadr meseleleri"
-                      styles={selectStyles}
-                      menuPortalTarget={document.body}
-                    />
-                  )} />
-                </Box>
+            {/* Form Footer Actions */}
+            <Divider sx={{ mt: 3, mb: 2, opacity: 0.2 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              {!isReadOnly && (
+                <Button
+                  variant="outlined"
+                  startIcon={<CleaningServicesIcon />}
+                  onClick={handleClear}
+                  sx={{
+                    px: 3,
+                    borderRadius: 1.5,
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    color: 'primary.main',
+                    borderColor: 'primary.main',
+                    '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.dark' }
+                  }}
+                >
+                  TƏMİZLƏ
+                </Button>
+              )}
+              <Box sx={{ display: 'flex', gap: 1.5, ml: 'auto' }}>
+                {!isReadOnly && (
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    type="submit"
+                    sx={{
+                      px: 4,
+                      borderRadius: 1.5,
+                      fontWeight: 700,
+                      fontSize: '0.8rem',
+                      '&:hover': { filter: 'brightness(1.05)' }
+                    }}
+                  >
+                    {isEditMode ? 'REDAKTƏ ET' : 'YADDA SAXLA'}
+                  </Button>
+                )}
+                <Button
+                  variant="outlined"
+                  startIcon={<ExitToAppIcon />}
+                  onClick={() => navigate('/appeals')}
+                  sx={{
+                    px: 3,
+                    borderRadius: 1.5,
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    color: 'text.secondary',
+                    borderColor: 'divider',
+                    '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' }
+                  }}
+                >
+                  ÇIXIŞ
+                </Button>
               </Box>
-            </Grid>
-
-            {/* Executor Section */}
-            <Grid size={{ xs: 12 }}>
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.82rem' }}>
-                  İcraçıların təfsilatları
-                </Typography>
-
-                {/* Executor Actions Above Table */}
-                <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<AddCircleOutlineIcon />}
-                    onClick={() => setOpenExecutorDialog(true)}
-                    sx={{
-                      color: 'primary.main',
-                      borderColor: 'primary.main',
-                      bgcolor: 'action.hover',
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      fontSize: '0.72rem',
-                      '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
-                    }}
-                  >
-                    Əlavə et
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<EditIcon />}
-                    disabled={!selectedExecutorForEdit}
-                    onClick={() => setExecutorDetailsDialogOpen(true)}
-                    sx={{
-                      color: 'primary.main',
-                      borderColor: 'primary.main',
-                      bgcolor: 'action.hover',
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      fontSize: '0.72rem',
-                      '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
-                    }}
-                  >
-                    Redaktə et
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<DeleteSweepIcon />}
-                    disabled={!selectedExecutorForEdit}
-                    onClick={() => {
-                      if (selectedExecutorForEdit?.id) {
-                        if (window.confirm('Bu icraçını silmək istədiyinizə əminsiniz?')) {
-                          removeExecutorFromAppealMutation.mutate(selectedExecutorForEdit.id);
-                        }
-                      }
-                    }}
-                    sx={{
-                      color: '#d32f2f',
-                      borderColor: 'rgba(211, 47, 47, 0.3)',
-                      bgcolor: 'rgba(211, 47, 47, 0.05)',
-                      textTransform: 'none',
-                      fontWeight: 700,
-                      fontSize: '0.72rem',
-                      '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.1)', borderColor: '#d32f2f' }
-                    }}
-                  >
-                    Sil
-                  </Button>
-                </Box>
-
-                <Box sx={{
-                  border: '1px solid',
-                  borderColor: 'divider', borderRadius: 1, overflow: 'hidden'
-                }}>
-                  <Table size="small" sx={{ minWidth: 800 }}>
-                    <TableHead sx={{ bgcolor: 'action.hover' }}>
-                      <TableRow>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>İcraçının struktur bölməsi</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Soyadı, adı</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Hansı sənədlə icra edilib</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Sənədin tarixi</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Tikdiyi işin nömrəsi</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>İşdəki vərəq nömrəsi</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Göndərilmə nömrəsi</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Göndərilmə tarixi</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Hara (kimə) göndərilib</TableCell>
-                        <TableCell sx={{
-                          fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                          borderColor: 'divider'
-                        }}>Əsas icraçı</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {selectedExecutors.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={10} align="center" sx={{ py: 2, color: 'text.secondary', fontSize: '0.7rem' }}>Hələ icraçı təyin edilməyib</TableCell>
-                        </TableRow>
-                      ) : (
-                        selectedExecutors.map((executor) => (
-                          <TableRow
-                            key={executor.id || executor.executor_id}
-                            onClick={() => setSelectedExecutorForEdit(executor)}
-                            sx={{
-                              '&:hover': { bgcolor: 'action.hover' },
-                              bgcolor: (selectedExecutorForEdit?.id && selectedExecutorForEdit?.id === executor.id) || (selectedExecutorForEdit?.executor_id === executor.executor_id) ? 'action.selected' : 'inherit',
-                              cursor: 'pointer',
-                              borderBottom: '1px solid',
-                              borderColor: 'divider'
-                            }}
-                          >
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.direction_name || '-'}</TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.executor_name || executor.executor || '-'}</TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.r_num || '-'}</TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>
-                              {executor.r_date ? formatDateToDDMMYYYY(executor.r_date) : '-'}
-                            </TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.attach_num || '-'}</TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.attach_paper_num || '-'}</TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.out_num || '-'}</TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>
-                              {executor.out_date ? formatDateToDDMMYYYY(executor.out_date) : '-'}
-                            </TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem' }}>{executor.posted_sec || '-'}</TableCell>
-                            <TableCell sx={{ p: 0.5, fontSize: '0.7rem', textAlign: 'center' }}>
-                              {executor.is_primary ? '✓' : '-'}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-
-          {/* Form Footer Actions */}
-          <Divider sx={{ mt: 3, mb: 2, opacity: 0.2 }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Button
-              variant="outlined"
-              startIcon={<CleaningServicesIcon />}
-              onClick={handleClear}
-              sx={{
-                px: 3,
-                borderRadius: 1.5,
-                fontWeight: 700,
-                fontSize: '0.8rem',
-                color: 'primary.main',
-                borderColor: 'primary.main',
-                '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.dark' }
-              }}
-            >
-              TƏMİZLƏ
-            </Button>
-
-            <Box sx={{ display: 'flex', gap: 1.5 }}>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                disabled={createMutation.isPending || updateMutation.isPending}
-                type="submit"
-                sx={{
-                  px: 4,
-                  borderRadius: 1.5,
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  '&:hover': { filter: 'brightness(1.05)' }
-                }}
-              >
-                {isEditMode ? 'REDAKTƏ ET' : 'YADDA SAXLA'}
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<ExitToAppIcon />}
-                onClick={() => navigate('/appeals')}
-                sx={{
-                  px: 3,
-                  borderRadius: 1.5,
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  color: 'text.secondary',
-                  borderColor: 'divider',
-                  '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' }
-                }}
-              >
-                ÇIXIŞ
-              </Button>
             </Box>
-          </Box>
+          </fieldset>
         </form>
       </Paper>
 

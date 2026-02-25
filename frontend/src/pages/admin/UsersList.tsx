@@ -28,12 +28,15 @@ import {
     Edit as EditIcon,
     Search as SearchIcon,
     LockReset as LockResetIcon,
+    Block as BlockIcon,
+    CheckCircle as UnblockIcon,
+    Delete as DeleteIcon,
 } from '@mui/icons-material';
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { getUsers, resetUserPassword } from '../../api/users';
-import { getCurrentUser } from '../../api/auth';
+import { getUsers, resetUserPassword, toggleBlockUser, deleteUser } from '../../api/users';
 import { useToast } from '../../components/Toast';
+import { usePermissions } from '../../hooks/usePermissions';
 
 interface PasswordResetDialogProps {
     open: boolean;
@@ -94,20 +97,23 @@ function PasswordResetDialog({ open, onClose, userId, username }: PasswordResetD
 
 export default function UsersList() {
     const navigate = useNavigate();
-    const { ToastComponent, showToast } = useToast();
+    const { ToastComponent } = useToast();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<{ id: number, username: string } | null>(null);
+    const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<{ id: number, username: string, is_blocked?: boolean } | null>(null);
 
-    // Fetch current user for permissions
-    const { data: currentUser } = useQuery({
-        queryKey: ['currentUser'],
-        queryFn: getCurrentUser,
-    });
+    const { isAdmin, isSuperAdmin, canCreateUser, canEditUser, canDeleteUser, canBlockUser, canResetPassword: canResetPw, rank: currentRank } = usePermissions();
+    void isAdmin;
+    void isSuperAdmin;
+    const canResetPassword = canResetPw;
+    const queryClient = useQueryClient();
+    const { showToast } = useToast();
 
     // Fetch users
     const { data: usersData, isLoading: usersLoading, isError, error } = useQuery({
@@ -120,12 +126,46 @@ export default function UsersList() {
             }),
     });
 
-    const canResetPassword = currentUser?.is_admin; // Simplified for now, or use complex logic if needed
-
     const handleOpenResetDialog = (id: number, username: string) => {
         setSelectedUser({ id, username });
         setResetDialogOpen(true);
     };
+
+    const handleOpenBlockDialog = (id: number, username: string, is_blocked: boolean) => {
+        setSelectedUser({ id, username, is_blocked });
+        setBlockDialogOpen(true);
+    };
+
+    const handleOpenDeleteDialog = (id: number, username: string) => {
+        setSelectedUser({ id, username });
+        setDeleteDialogOpen(true);
+    };
+
+    const blockMutation = useMutation({
+        mutationFn: (userId: number) => toggleBlockUser(userId),
+        onSuccess: () => {
+            showToast(selectedUser?.is_blocked ? 'İstifadəçi blokdan çıxarıldı' : 'İstifadəçi bloklandı', 'success');
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            setBlockDialogOpen(false);
+            setSelectedUser(null);
+        },
+        onError: (error: any) => {
+            showToast(error.response?.data?.detail || 'Xəta baş verdi', 'error');
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (userId: number) => deleteUser(userId),
+        onSuccess: () => {
+            showToast('İstifadəçi silindi', 'success');
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            setDeleteDialogOpen(false);
+            setSelectedUser(null);
+        },
+        onError: (error: any) => {
+            showToast(error.response?.data?.detail || 'İstifadəçini silərkən xəta baş verdi', 'error');
+        }
+    });
 
     const handleChangePage = (_event: unknown, newPage: number) => {
         setPage(newPage);
@@ -215,21 +255,23 @@ export default function UsersList() {
                             ),
                         }}
                     />
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={() => navigate('/admin/users/new')}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 700,
-                            bgcolor: '#4a5d23',
-                            '&:hover': { bgcolor: '#3a4a1b' },
-                            textTransform: 'none',
-                            px: 3
-                        }}
-                    >
-                        Yeni İstifadəçi
-                    </Button>
+                    {canCreateUser && (
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={() => navigate('/admin/users/new')}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                bgcolor: '#4a5d23',
+                                '&:hover': { bgcolor: '#3a4a1b' },
+                                textTransform: 'none',
+                                px: 3
+                            }}
+                        >
+                            Yeni İstifadəçi
+                        </Button>
+                    )}
                 </Box>
             </Paper>
 
@@ -273,23 +315,39 @@ export default function UsersList() {
                                         {user.section_name || user.section_id || '-'}
                                     </TableCell>
                                     <TableCell>
-                                        <Chip
-                                            label={user.is_admin ? 'ADMIN' : 'USER'}
-                                            size="small"
-                                            sx={{
-                                                bgcolor: user.is_admin ? '#4a5d23' : 'rgba(0,0,0,0.08)',
-                                                color: user.is_admin ? 'white' : '#666',
-                                                fontWeight: 700,
-                                                fontSize: '0.7rem',
-                                                borderRadius: 1,
-                                                height: 24,
-                                                border: user.is_admin ? 'none' : '1px solid rgba(0,0,0,0.1)'
-                                            }}
-                                        />
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Chip
+                                                label={user.is_super_admin ? 'SUPER ADMIN' : user.is_admin ? 'ADMIN' : 'USER'}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: user.is_super_admin ? '#8e44ad' : user.is_admin ? '#4a5d23' : 'rgba(0,0,0,0.08)',
+                                                    color: (user.is_super_admin || user.is_admin) ? 'white' : '#666',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.7rem',
+                                                    borderRadius: 1,
+                                                    height: 24,
+                                                    border: (user.is_super_admin || user.is_admin) ? 'none' : '1px solid rgba(0,0,0,0.1)'
+                                                }}
+                                            />
+                                            {user.is_blocked && (
+                                                <Chip
+                                                    label="BLOKED"
+                                                    size="small"
+                                                    color="error"
+                                                    sx={{
+                                                        ml: 1,
+                                                        fontWeight: 700,
+                                                        fontSize: '0.7rem',
+                                                        borderRadius: 1,
+                                                        height: 24,
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
                                     </TableCell>
                                     <TableCell align="right">
                                         <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                                            {canResetPassword && (
+                                            {canResetPassword && (currentRank >= (user.rank || 1) || isSuperAdmin) && (
                                                 <Tooltip title="Parolu sıfırla">
                                                     <IconButton
                                                         size="small"
@@ -303,18 +361,48 @@ export default function UsersList() {
                                                     </IconButton>
                                                 </Tooltip>
                                             )}
-                                            <Tooltip title="Redaktə et">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => navigate(`/admin/users/${user.id}`)}
-                                                    sx={{
-                                                        color: '#4a5d23',
-                                                        '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' }
-                                                    }}
-                                                >
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
+                                            {canEditUser && (currentRank >= (user.rank || 1) || isSuperAdmin) && (
+                                                <Tooltip title="Redaktə et">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => navigate(`/admin/users/${user.id}`)}
+                                                        sx={{
+                                                            color: '#4a5d23',
+                                                            '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' }
+                                                        }}
+                                                    >
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                            {canBlockUser && (currentRank > (user.rank || 1) || isSuperAdmin) && (
+                                                <Tooltip title={user.is_blocked ? "Blokdan çıxar" : "Blokla"}>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleOpenBlockDialog(user.id, user.username || '', !!user.is_blocked)}
+                                                        sx={{
+                                                            color: user.is_blocked ? '#27ae60' : '#e74c3c',
+                                                            '&:hover': { bgcolor: user.is_blocked ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)' }
+                                                        }}
+                                                    >
+                                                        {user.is_blocked ? <UnblockIcon fontSize="small" /> : <BlockIcon fontSize="small" />}
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                            {canDeleteUser && (currentRank > (user.rank || 1) || isSuperAdmin) && (
+                                                <Tooltip title="Sil">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleOpenDeleteDialog(user.id, user.username || '')}
+                                                        sx={{
+                                                            color: '#c0392b',
+                                                            '&:hover': { bgcolor: 'rgba(192, 57, 43, 0.1)' }
+                                                        }}
+                                                    >
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
                                         </Box>
                                     </TableCell>
                                 </TableRow>
@@ -351,7 +439,7 @@ export default function UsersList() {
                 />
             </Paper>
 
-            {selectedUser && (
+            {selectedUser && resetDialogOpen && (
                 <PasswordResetDialog
                     open={resetDialogOpen}
                     onClose={() => {
@@ -362,6 +450,62 @@ export default function UsersList() {
                     username={selectedUser.username}
                 />
             )}
+
+            {/* Block Confirmation Dialog */}
+            <Dialog open={blockDialogOpen} onClose={() => setBlockDialogOpen(false)}>
+                <DialogTitle sx={{ fontWeight: 800 }}>
+                    {selectedUser?.is_blocked ? 'Blokdan çıxar' : 'Blokla'}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1">
+                        <strong>{selectedUser?.username}</strong> istifadəçisini {selectedUser?.is_blocked ? 'blokdan çıxarmaq' : 'bloklamaq'} istədiyinizə əminsiniz?
+                    </Typography>
+                    {!selectedUser?.is_blocked && (
+                        <Typography variant="body2" color="error" sx={{ mt: 1, fontWeight: 500 }}>
+                            Bloklanmış istifadəçilər sistemə giriş edə bilməyəcək.
+                        </Typography>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 3 }}>
+                    <Button onClick={() => setBlockDialogOpen(false)} sx={{ color: 'text.secondary', fontWeight: 700 }}>Ləğv et</Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => selectedUser && blockMutation.mutate(selectedUser.id)}
+                        disabled={blockMutation.isPending}
+                        sx={{
+                            bgcolor: selectedUser?.is_blocked ? '#27ae60' : '#e74c3c',
+                            '&:hover': { bgcolor: selectedUser?.is_blocked ? '#219150' : '#c0392b' },
+                            fontWeight: 700
+                        }}
+                    >
+                        {blockMutation.isPending ? 'Gözləyin...' : (selectedUser?.is_blocked ? 'Blokdan çıxar' : 'Blokla')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                <DialogTitle sx={{ fontWeight: 800, color: '#c0392b' }}>İstifadəçini Sil</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1">
+                        <strong>{selectedUser?.username}</strong> istifadəçisini sistemdən tamamilə silmək istədiyinizə əminsiniz?
+                    </Typography>
+                    <Typography variant="body2" color="error" sx={{ mt: 1, fontWeight: 700 }}>
+                        DİQQƏT: Bu əməliyyat geri qaytarıla bilməz və istifadəçiyə aid bütün məlumatlar silinəcək.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 3 }}>
+                    <Button onClick={() => setDeleteDialogOpen(false)} sx={{ color: 'text.secondary', fontWeight: 700 }}>Ləğv et</Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => selectedUser && deleteMutation.mutate(selectedUser.id)}
+                        disabled={deleteMutation.isPending}
+                        sx={{ bgcolor: '#c0392b', '&:hover': { bgcolor: '#a63026' }, fontWeight: 700 }}
+                    >
+                        {deleteMutation.isPending ? 'Silinir...' : 'Bəli, Sil'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <ToastComponent />
         </Layout>

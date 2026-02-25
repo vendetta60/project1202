@@ -46,6 +46,14 @@ import {
     createApStatus,
     updateApStatus,
     deleteApStatus,
+    getUserSections,
+    createUserSection,
+    updateUserSection,
+    deleteUserSection,
+    getHolidays,
+    createHoliday,
+    updateHoliday,
+    deleteHoliday,
 } from '../../api/lookups';
 
 interface TabPanelProps {
@@ -65,7 +73,7 @@ function TabPanel(props: TabPanelProps) {
 
 interface EditableTableProps {
     items: any[] | undefined;
-    columns: { id: string; label: string }[];
+    columns: { id: string; label: string; type?: 'text' | 'number' | 'date' }[];
     onAdd: (data: any) => void;
     onEdit: (id: number, data: any) => void;
     onDelete: (id: number) => void;
@@ -132,10 +140,12 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                             <TextField
                                 key={col.id}
                                 label={col.label}
+                                type={col.type || 'text'}
                                 value={newData[col.id] || ''}
                                 onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
                                 fullWidth
                                 size="small"
+                                InputLabelProps={col.type === 'date' ? { shrink: true } : undefined}
                                 sx={{
                                     mb: 2,
                                     bgcolor: 'white',
@@ -202,10 +212,12 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                         <TextField
                             key={col.id}
                             label={col.label}
+                            type={col.type || 'text'}
                             value={newData[col.id] || ''}
                             onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
                             fullWidth
                             size="small"
+                            InputLabelProps={col.type === 'date' ? { shrink: true } : undefined}
                             sx={{
                                 mb: 2,
                                 bgcolor: 'white',
@@ -251,7 +263,8 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                         {columns.filter(c => c.id !== 'id').map(col => (
                                             <TableCell key={col.id}>
                                                 <TextField
-                                                    value={editData[col.id] || ''}
+                                                    type={col.type || 'text'}
+                                                    value={col.type === 'date' && editData[col.id] ? editData[col.id].substring(0, 10) : (editData[col.id] || '')}
                                                     onChange={(e) => setEditData({ ...editData, [col.id]: e.target.value })}
                                                     size="small"
                                                     fullWidth
@@ -278,7 +291,11 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                 ) : (
                                     <>
                                         {columns.map(col => (
-                                            <TableCell key={col.id} sx={{ color: '#333' }}>{item[col.id]}</TableCell>
+                                            <TableCell key={col.id} sx={{ color: '#333' }}>
+                                                {col.type === 'date' && item[col.id]
+                                                    ? new Date(item[col.id]).toLocaleDateString('az-AZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                                                    : item[col.id]}
+                                            </TableCell>
                                         ))}
                                         <TableCell align="right">
                                             <IconButton
@@ -321,6 +338,8 @@ export default function Parameters() {
     const { data: instructions } = useQuery({ queryKey: ['chiefInstructions'], queryFn: getChiefInstructions });
     const { data: inSections } = useQuery({ queryKey: ['inSections'], queryFn: getInSections });
     const { data: whoControls } = useQuery({ queryKey: ['whoControls'], queryFn: getWhoControls });
+    const { data: userSections } = useQuery({ queryKey: ['userSections'], queryFn: getUserSections });
+    const { data: holidays } = useQuery({ queryKey: ['holidays'], queryFn: getHolidays });
 
     // Department mutations
     const createDeptMutation = useMutation({
@@ -418,6 +437,41 @@ export default function Parameters() {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['whoControls'] }),
     });
 
+    // UserSection mutations
+    const createSectionMutation = useMutation({
+        mutationFn: createUserSection,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['userSections'] }),
+    });
+
+    const updateSectionMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateUserSection(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['userSections'] }),
+    });
+
+    const deleteSectionMutation = useMutation({
+        mutationFn: deleteUserSection,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['userSections'] }),
+        onError: (err: any) => {
+            alert(err.response?.data?.detail || 'Bölmə silinə bilmədi');
+        }
+    });
+
+    // Holiday mutations
+    const createHolidayMutation = useMutation({
+        mutationFn: createHoliday,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['holidays'] }),
+    });
+
+    const updateHolidayMutation = useMutation({
+        mutationFn: ({ id, data }: any) => updateHoliday(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['holidays'] }),
+    });
+
+    const deleteHolidayMutation = useMutation({
+        mutationFn: deleteHoliday,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['holidays'] }),
+    });
+
     return (
         <Layout>
             <Box sx={{ mb: 4 }} className="animate-fade-in">
@@ -465,6 +519,8 @@ export default function Parameters() {
                     <Tab label="Rəhbər Göstərişləri" />
                     <Tab label="Daxili Şöbələr" />
                     <Tab label="Nəzarətçilər" />
+                    <Tab label="Bölmələr" />
+                    <Tab label="Bayramlar" />
                 </Tabs>
 
                 <Box sx={{ p: 3 }}>
@@ -544,6 +600,33 @@ export default function Parameters() {
                             onEdit={(id, data) => updateWhoControlMutation.mutate({ id, data })}
                             onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu nəzarətçini silmək istədiyinizə əminsinizmi? Bu əməliyyat geri qaytarıla bilməz.', () => deleteWhoControlMutation.mutate(id), 'error')}
                             hideDelete
+                        />
+                    </TabPanel>
+                    <TabPanel value={tab} index={6}>
+                        <EditableTable
+                            items={userSections}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'user_section', label: 'Bölmə Adı' },
+                                { id: 'section_index', label: 'İndeks (Sıra)' }
+                            ]}
+                            onAdd={(data) => createSectionMutation.mutate(data)}
+                            onEdit={(id, data) => updateSectionMutation.mutate({ id, data })}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu bölməni silmək istədiyinizə əminsinizmi? Əgər bölməyə aid müraciətlər varsa, silməyə icazə verilməyəcək.', () => deleteSectionMutation.mutate(id), 'error')}
+                        />
+                    </TabPanel>
+                    <TabPanel value={tab} index={7}>
+                        <EditableTable
+                            items={holidays}
+                            columns={[
+                                { id: 'id', label: 'ID' },
+                                { id: 'name', label: 'Bayram Adı' },
+                                { id: 'start_date', label: 'Başlanğıc Tarixi', type: 'date' },
+                                { id: 'end_date', label: 'Bitmə Tarixi', type: 'date' }
+                            ]}
+                            onAdd={(data) => createHolidayMutation.mutate(data)}
+                            onEdit={(id, data) => updateHolidayMutation.mutate({ id, data })}
+                            onDelete={(id) => showConfirm('Silmək istəyirsiniz?', 'Bu bayramı silmək istədiyinizə əminsinizmi?', () => deleteHolidayMutation.mutate(id), 'error')}
                         />
                     </TabPanel>
                 </Box>

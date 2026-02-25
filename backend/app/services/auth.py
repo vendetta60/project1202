@@ -21,6 +21,9 @@ class AuthService:
         hashed_input = hashlib.sha256(password.encode("utf-8")).hexdigest()
         if user.password != hashed_input:
             raise HTTPException(status_code=400, detail="İstifadəçi adı və ya şifrə yanlışdır")
+        
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Hesabınız bloklanıb. Lütfən administratorla əlaqə saxlayın")
 
         # Log successful login
         if self.audit:

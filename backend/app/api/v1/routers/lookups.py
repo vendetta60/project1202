@@ -9,7 +9,7 @@ from app.repositories.lookup import LookupRepository
 from app.models.lookup import (
     AccountIndex, ApIndex, ApStatus, ContentType,
     ChiefInstruction, InSection, Section, UserSection,
-    WhoControl, Movzu,
+    WhoControl, Movzu, Holiday
 )
 from app.models.department import Department, DepOfficial
 from app.models.region import Region
@@ -25,8 +25,11 @@ from app.schemas.lookup import (
     InSectionCreate, InSectionUpdate, WhoControlCreate, WhoControlUpdate,
     ApStatusCreate, ApStatusUpdate, ApIndexCreate, ApIndexUpdate,
     ContentTypeCreate, ContentTypeUpdate, AccountIndexCreate, AccountIndexUpdate,
-    ExecutorListCreate, ExecutorListUpdate,
+    ExecutorListCreate, ExecutorListUpdate, UserSectionCreate, UserSectionUpdate,
+    HolidayOut, HolidayCreate, HolidayUpdate,
 )
+from app.models.user import User
+from app.models.appeal import Appeal
 
 router = APIRouter(prefix="/lookups", tags=["lookups"])
 
@@ -341,4 +344,91 @@ def delete_executor(executor_id: int, repo: LookupRepository = Depends(get_looku
     success = repo.delete(ExecutorList, executor_id)
     if not success:
         raise HTTPException(status_code=404, detail="Executor not found")
+    return {"success": True}
+
+
+# ===== UserSections =====
+@router.post("/user-sections", response_model=UserSectionOut)
+def create_user_section(data: UserSectionCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    section = UserSection(user_section=data.user_section, section_index=data.section_index)
+    return repo.create(section)
+
+
+@router.put("/user-sections/{section_id}", response_model=UserSectionOut)
+def update_user_section(section_id: int, data: UserSectionUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    section = repo.get(UserSection, section_id)
+    if not section:
+        raise HTTPException(status_code=404, detail="User section not found")
+    
+    if data.section_index is not None and data.section_index != section.section_index:
+        # Check if any appeals are in this section
+        appeal_count = repo.db.query(Appeal).filter(Appeal.user_section_id == section_id, Appeal.is_deleted == False).count()
+        if appeal_count > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail="Bu bölməyə aid müraciətlər var. İndeksi (Sıra) dəyişmək mümkün deyil."
+            )
+
+    if data.user_section is not None:
+        section.user_section = data.user_section
+    if data.section_index is not None:
+        section.section_index = data.section_index
+    return repo.update(section)
+
+
+@router.delete("/user-sections/{section_id}")
+def delete_user_section(section_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    # Check if any users are in this section
+    user_count = repo.db.query(User).filter(User.section_id == section_id, User.is_deleted == False).count()
+    if user_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail="Bu bölmədə aktiv istifadəçilər var. Silmək mümkün deyil."
+        )
+    
+    # Check if any appeals are in this section
+    appeal_count = repo.db.query(Appeal).filter(Appeal.user_section_id == section_id, Appeal.is_deleted == False).count()
+    if appeal_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail="Bu bölməyə aid müraciətlər var. Silmək mümkün deyil."
+        )
+
+    success = repo.delete(UserSection, section_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User section not found")
+    return {"success": True}
+
+
+# ===== Holidays =====
+@router.get("/holidays", response_model=list[HolidayOut])
+def list_holidays(repo: LookupRepository = Depends(get_lookup_repo)):
+    return repo.list_all(Holiday)
+
+
+@router.post("/holidays", response_model=HolidayOut)
+def create_holiday(data: HolidayCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    holiday = Holiday(name=data.name, start_date=data.start_date, end_date=data.end_date)
+    return repo.create(holiday)
+
+
+@router.put("/holidays/{holiday_id}", response_model=HolidayOut)
+def update_holiday(holiday_id: int, data: HolidayUpdate, repo: LookupRepository = Depends(get_lookup_repo)):
+    holiday = repo.get(Holiday, holiday_id)
+    if not holiday:
+        raise HTTPException(status_code=404, detail="Holiday not found")
+    if data.name is not None:
+        holiday.name = data.name
+    if data.start_date is not None:
+        holiday.start_date = data.start_date
+    if data.end_date is not None:
+        holiday.end_date = data.end_date
+    return repo.update(holiday)
+
+
+@router.delete("/holidays/{holiday_id}")
+def delete_holiday(holiday_id: int, repo: LookupRepository = Depends(get_lookup_repo)):
+    success = repo.delete(Holiday, holiday_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Holiday not found")
     return {"success": True}

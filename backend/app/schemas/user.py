@@ -10,6 +10,16 @@ class UserCreate(ORMBase):
     section_id: int | None = None
     role_ids: list[int] | None = None
     group_ids: list[int] | None = None
+    is_admin: bool = False
+    is_super_admin: bool = False
+
+    @property
+    def rank(self) -> int:
+        if self.is_super_admin:
+            return 3
+        if self.is_admin:
+            return 2
+        return 1
 
 
 class UserOut(ORMBase):
@@ -21,7 +31,10 @@ class UserOut(ORMBase):
     section_id: int | None = None
     section_name: str | None = None
     is_admin: bool = False
+    is_super_admin: bool = False
     is_active: bool = True
+    is_blocked: bool = False
+    rank: int = 1
     # Tab permissions
     tab1: bool | None = None
     tab2: bool | None = None

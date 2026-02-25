@@ -23,7 +23,7 @@ import {
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import { getDirections, getExecutorListByDirection } from '../api/lookups';
-import { formatDateToISO } from '../utils/dateUtils';
+import { formatDateToISO, parseDateFromDDMMYYYY, formatDateToDDMMYYYY_Safe } from '../utils/dateUtils';
 
 export interface SelectedExecutorData {
     id: number;
@@ -132,7 +132,7 @@ export function ExecutorDialog({
             // Helper to ensure dates are ISO for backend
             const ensureISO = (dateStr: string) => {
                 if (!dateStr) return '';
-                if (dateStr.includes('/')) return formatDateToISO(dateStr);
+                if (dateStr.includes('.')) return formatDateToISO(dateStr);
                 return dateStr;
             };
 
@@ -277,8 +277,8 @@ export function ExecutorDialog({
                         <Grid size={{ xs: 6 }}>
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Sənədin tarixi</Typography>
                             <Flatpickr
-                                value={rDate}
-                                onChange={(dates) => setRDate(dates[0]?.toISOString() || '')}
+                                value={parseDateFromDDMMYYYY(rDate) || undefined}
+                                onChange={(dates) => setRDate(formatDateToDDMMYYYY_Safe(dates[0]))}
                                 options={{ dateFormat: 'd.m.Y' }}
                                 placeholder="Tarix"
                                 style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem' }}
@@ -299,8 +299,8 @@ export function ExecutorDialog({
                         <Grid size={{ xs: 6 }}>
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Göndərilmə tarixi</Typography>
                             <Flatpickr
-                                value={outDate}
-                                onChange={(dates) => setOutDate(dates[0]?.toISOString() || '')}
+                                value={parseDateFromDDMMYYYY(outDate) || undefined}
+                                onChange={(dates) => setOutDate(formatDateToDDMMYYYY_Safe(dates[0]))}
                                 options={{ dateFormat: 'd.m.Y' }}
                                 placeholder="Tarix"
                                 style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem' }}

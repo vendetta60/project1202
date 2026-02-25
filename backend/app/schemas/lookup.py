@@ -154,6 +154,27 @@ class MovzuOut(ORMBase):
     Movzu: str | None = None
 
 
+# --- Holiday ---
+class HolidayOut(ORMBase):
+    id: int
+    name: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    IsDeleted: bool | None = None
+
+
+class HolidayCreate(ORMBase):
+    name: str
+    start_date: datetime
+    end_date: datetime
+
+
+class HolidayUpdate(ORMBase):
+    name: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+
+
 # ============ CREATE/UPDATE SCHEMAS ============
 
 class DepartmentCreate(ORMBase):
@@ -246,3 +267,13 @@ class AccountIndexCreate(ORMBase):
 class AccountIndexUpdate(ORMBase):
     account_index: str | None = None
     account_order: int | None = None
+
+
+class UserSectionCreate(ORMBase):
+    user_section: str
+    section_index: int | None = None
+
+
+class UserSectionUpdate(ORMBase):
+    user_section: str | None = None
+    section_index: int | None = None

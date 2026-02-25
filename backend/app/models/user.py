@@ -27,6 +27,8 @@ class User(Base, AuditMixin):
     name: Mapped[str | None] = mapped_column(String(50))
     username: Mapped[str | None] = mapped_column(String(50))
     password: Mapped[str | None] = mapped_column(String(64))
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_super_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     section_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("UserSections.id"))
     
     user_section = relationship("UserSection", foreign_keys=[section_id], lazy="joined")
@@ -75,47 +77,57 @@ class User(Base, AuditMixin):
         return " ".join(p for p in parts if p) or None
 
     @property
-    def is_admin(self) -> bool:
-        """tab1 = admin panel access"""
-        return bool(self.tab1)
+    def is_active(self) -> bool:
+        """Blocked users (is_deleted=True) are not active."""
+        return not bool(self.is_deleted)
 
     @property
-    def is_active(self) -> bool:
-        return True
+    def is_blocked(self) -> bool:
+        return bool(self.is_deleted)
 
-    def get_permissions(self) -> set[str]:
+    @property
+    def rank(self) -> int:
+        """Hierarchy: Super Admin (3) > Admin (2) > User (1)"""
+        if self.is_super_admin:
+            return 3
+        if self.is_admin:
+            return 2
+        return 1
+
+    @property
+    def permissions(self) -> list[str]:
         """
         Get all permissions for this user (both from roles and individual permissions)
-        Returns set of permission codes
+        Returns list of permission codes (converted from set for JSON compatibility)
         """
-        permissions = set()
+        perms = set()
 
         # Collect permissions from all roles
         for user_role in self.user_roles:
             for role_permission in user_role.role.role_permissions:
-                permissions.add(role_permission.permission.code)
+                perms.add(role_permission.permission.code)
 
         # Add/remove individual permissions
         for user_perm in self.user_permissions:
             if user_perm.grant_type == "grant":
-                permissions.add(user_perm.permission.code)
+                perms.add(user_perm.permission.code)
             elif user_perm.grant_type == "deny":
-                permissions.discard(user_perm.permission.code)
+                perms.discard(user_perm.permission.code)
 
-        return permissions
+        return sorted(list(perms))
 
     def has_permission(self, permission_code: str) -> bool:
         """Check if user has a specific permission"""
-        return permission_code in self.get_permissions()
+        return permission_code in self.permissions
 
     def has_any_permission(self, permission_codes: list[str]) -> bool:
         """Check if user has any of the given permissions"""
-        user_perms = self.get_permissions()
+        user_perms = self.permissions
         return any(code in user_perms for code in permission_codes)
 
     def has_all_permissions(self, permission_codes: list[str]) -> bool:
         """Check if user has all of the given permissions"""
-        user_perms = self.get_permissions()
+        user_perms = self.permissions
         return all(code in user_perms for code in permission_codes)
 
     @property

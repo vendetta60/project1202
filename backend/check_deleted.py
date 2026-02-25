@@ -13,14 +13,15 @@ try:
     conn = pyodbc.connect(conn_str)
     cursor = conn.cursor()
     
-    cursor.execute("SELECT count(*) FROM Appeals WHERE is_deleted = 1")
-    count = cursor.fetchone()[0]
-    print(f"Deleted appeals count: {count}")
-    
-    cursor.execute("SELECT TOP 5 id, reg_num, is_deleted FROM Appeals WHERE is_deleted = 1")
+    cursor.execute("SELECT * FROM Appeals WHERE is_deleted = 1")
+    columns = [column[0] for column in cursor.description]
     rows = cursor.fetchall()
+    
+    print(f"Deleted appeals: {len(rows)}")
     for row in rows:
-        print(f"ID: {row[0]}, RegNum: {row[1]}, IsDeleted: {row[2]}")
+        data = dict(zip(columns, row))
+        print(f"ID: {data['id']}, RegNum: {data.get('reg_num')}, IsDeleted: {data['is_deleted']}")
+        print(f"  DepID: {data.get('dep_id')}, RegionID: {data.get('region_id')}, Status: {data.get('status')}, SecID: {data.get('user_section_id')}")
         
     conn.close()
 except Exception as e:

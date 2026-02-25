@@ -48,6 +48,23 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
+def require_permission(*permission_codes: str):
+    """
+    Dependency factory: allows admins OR users with ANY of the given permission codes.
+    Usage: current_user: User = Depends(require_permission("view_users", "edit_user"))
+    """
+    def _check(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.is_admin:
+            return current_user
+        if current_user.has_any_permission(list(permission_codes)):
+            return current_user
+        raise HTTPException(
+            status_code=403,
+            detail=f"Bu əməliyyat üçün kifayət qədər səlahiyyətiniz yoxdur"
+        )
+    return _check
+
+
 # Repository factories
 def get_user_repo(db: Session = Depends(get_db)) -> UserRepository:
     return UserRepository(db)

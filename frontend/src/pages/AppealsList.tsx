@@ -29,6 +29,8 @@ import { getDepartments, getApStatuses, getRegions } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { usePermissions } from '../hooks/usePermissions';
+import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
 // ─── Status colour helper ────────────────────────────────────────────────────
 function getStatusStyle(name: string) {
@@ -125,7 +127,10 @@ export default function AppealsList() {
   const [restoreTargetId, setRestoreTargetId] = useState<number | null>(null);
 
   const { data: user } = useQuery({ queryKey: ['currentUser'], queryFn: getCurrentUser });
-  const canDelete = user?.is_admin || (user?.permissions ?? []).includes('delete_appeal');
+  const { isAdmin, canCreateAppeal, canDeleteAppeal, canViewAppealDetails } = usePermissions();
+  const canDelete = canDeleteAppeal;
+  const canCreate = canCreateAppeal;
+  void user; // used for showDeleted toggle admin check via isAdmin below
 
   const { data: departments } = useQuery({ queryKey: ['departments'], queryFn: getDepartments });
   const { data: statuses } = useQuery({ queryKey: ['apStatuses'], queryFn: getApStatuses });
@@ -203,7 +208,8 @@ export default function AppealsList() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {user?.is_admin && (
+            {/* Show Deleted toggle - admin only */}
+            {isAdmin && (
               <Box onClick={() => { setShowDeleted(!showDeleted); setPage(0); }}
                 sx={{
                   display: 'flex', alignItems: 'center', gap: 1.2, px: 2, py: 1,
@@ -216,7 +222,7 @@ export default function AppealsList() {
                 }}
               >
                 <Typography sx={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.04em' }}>
-                  SİLİNƏNLƏRİ GÖSTƏR
+                  SİLİNƏNLƏRİ GÖSTƏR {items.some(i => i.is_deleted) && `(${items.filter(i => i.is_deleted).length})`}
                 </Typography>
                 <Box sx={{
                   width: 34, height: 18, borderRadius: '10px', bgcolor: showDeleted ? 'rgba(255,255,255,0.3)' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'),
@@ -229,20 +235,22 @@ export default function AppealsList() {
                 </Box>
               </Box>
             )}
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => navigate('/appeals/new')}
-              sx={{
-                px: 3.5, py: 1.3, fontSize: '0.88rem', borderRadius: '12px',
-                background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`,
-                boxShadow: `0 6px 22px ${primary}40`,
-                '&:hover': { background: `linear-gradient(135deg, ${primary}ee 0%, ${primary} 100%)`, boxShadow: `0 10px 28px ${primary}55`, transform: 'translateY(-2px)' },
-                transition: 'all 0.25s ease',
-              }}
-            >
-              Yeni Müraciət
-            </Button>
+            {canCreate && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => navigate('/appeals/new')}
+                sx={{
+                  px: 3.5, py: 1.3, fontSize: '0.88rem', borderRadius: '12px',
+                  background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`,
+                  boxShadow: `0 6px 22px ${primary}40`,
+                  '&:hover': { background: `linear-gradient(135deg, ${primary}ee 0%, ${primary} 100%)`, boxShadow: `0 10px 28px ${primary}55`, transform: 'translateY(-2px)' },
+                  transition: 'all 0.25s ease',
+                }}
+              >
+                Yeni Müraciət
+              </Button>
+            )}
           </Box>
         </Box>
 
@@ -456,14 +464,14 @@ export default function AppealsList() {
 
                   return (
                     <TableRow key={appeal.id} hover={!appeal.control}
-                      onClick={() => navigate(`/appeals/${appeal.id}`)}
+                      onClick={() => canViewAppealDetails && navigate(`/appeals/${appeal.id}`)}
                       sx={{
                         cursor: 'pointer',
                         borderBottom: `1px solid ${borderColor}`,
                         '&:last-child': { borderBottom: 'none' },
-                        bgcolor: appeal.is_deleted ? (isDark ? 'rgba(239,68,68,0.05)' : 'rgba(239,68,68,0.02)') : (appeal.control ? 'rgba(255, 235, 59, 0.12)' : 'transparent'),
-                        opacity: appeal.is_deleted ? 0.75 : 1,
-                        '&:hover': { bgcolor: appeal.is_deleted ? (isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.05)') : (appeal.control ? 'rgba(255, 235, 59, 0.18)' : rowHover) },
+                        bgcolor: appeal.is_deleted ? (isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.06)') : (appeal.control ? 'rgba(255, 235, 59, 0.12)' : 'transparent'),
+                        opacity: appeal.is_deleted ? 0.9 : 1,
+                        '&:hover': { bgcolor: appeal.is_deleted ? (isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)') : (appeal.control ? 'rgba(255, 235, 59, 0.18)' : rowHover) },
                         '& td': { py: 1.6, fontSize: '0.83rem', borderBottom: 'none', textDecoration: appeal.is_deleted ? 'line-through' : 'none' },
                       }}
                     >
@@ -476,10 +484,20 @@ export default function AppealsList() {
 
                       {/* Reg num */}
                       <TableCell>
-                        {appeal.reg_num
-                          ? <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: primary }}>{appeal.reg_num}</Typography>
-                          : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
-                        }
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {appeal.is_deleted && (
+                            <Box sx={{
+                              px: 0.8, py: 0.2, borderRadius: '4px', bgcolor: 'error.main', color: '#fff',
+                              fontSize: '0.65rem', fontWeight: 900, letterSpacing: '0.02em'
+                            }}>
+                              SİLİNİB
+                            </Box>
+                          )}
+                          {appeal.reg_num
+                            ? <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: appeal.is_deleted ? 'error.main' : primary }}>{appeal.reg_num}</Typography>
+                            : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
+                          }
+                        </Box>
                       </TableCell>
 
                       {/* Person */}
@@ -535,7 +553,7 @@ export default function AppealsList() {
                       {/* Date */}
                       <TableCell>
                         {appeal.reg_date
-                          ? <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: textPrimary }}>{new Date(appeal.reg_date).toLocaleDateString('az-AZ')}</Typography>
+                          ? <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: textPrimary }}>{formatDateToDDMMYYYY(appeal.reg_date)}</Typography>
                           : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>}
                       </TableCell>
 

@@ -42,5 +42,10 @@ class UserRepository:
         self.db.refresh(obj)
         return obj
 
+    def delete(self, obj: User) -> None:
+        """Hard delete a user from the database."""
+        self.db.delete(obj)
+        self.db.commit()
+
     def count(self) -> int:
         return self.db.query(User).count()

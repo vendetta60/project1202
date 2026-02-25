@@ -43,7 +43,12 @@ class AppealRepository:
                     Appeal.content.ilike(like),
                 )
             )
-        return query.order_by(Appeal.id.desc()).limit(limit).offset(offset).all()
+        if include_deleted:
+            query = query.order_by(Appeal.is_deleted.desc(), Appeal.id.desc())
+        else:
+            query = query.order_by(Appeal.id.desc())
+            
+        return query.limit(limit).offset(offset).all()
 
     def count(
         self,

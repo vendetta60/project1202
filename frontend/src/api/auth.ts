@@ -19,7 +19,10 @@ export interface User {
   section_id?: number;
   section_name?: string;
   is_admin: boolean;
+  is_super_admin: boolean;
   is_active: boolean;
+  is_blocked: boolean;
+  rank: number;
 
   // Tab permissions
   tab1?: boolean; // Admin

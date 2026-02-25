@@ -66,6 +66,13 @@ export interface Organ extends LookupItem {
     isDeleted?: boolean; // Note: casing difference in backend model
 }
 
+export interface Holiday {
+    id: number;
+    name: string;
+    start_date: string;
+    end_date: string;
+}
+
 export interface Direction extends LookupItem {
     direction: string;
     section_id?: number;
@@ -139,6 +146,17 @@ export const deleteWhoControl = (id: number) => apiClient.delete(`/lookups/who-c
 export const createApStatus = (data: Partial<ApStatus>) => apiClient.post<ApStatus>('/lookups/ap-statuses', data).then(r => r.data);
 export const updateApStatus = (id: number, data: Partial<ApStatus>) => apiClient.put<ApStatus>(`/lookups/ap-statuses/${id}`, data).then(r => r.data);
 export const deleteApStatus = (id: number) => apiClient.delete(`/lookups/ap-statuses/${id}`).then(r => r.data);
+
+// UserSections
+export const createUserSection = (data: Partial<UserSection>) => apiClient.post<UserSection>('/lookups/user-sections', data).then(r => r.data);
+export const updateUserSection = (id: number, data: Partial<UserSection>) => apiClient.put<UserSection>(`/lookups/user-sections/${id}`, data).then(r => r.data);
+export const deleteUserSection = (id: number) => apiClient.delete(`/lookups/user-sections/${id}`).then(r => r.data);
+
+// Holidays
+export const getHolidays = () => apiClient.get<Holiday[]>('/lookups/holidays').then(r => r.data);
+export const createHoliday = (data: Partial<Holiday>) => apiClient.post<Holiday>('/lookups/holidays', data).then(r => r.data);
+export const updateHoliday = (id: number, data: Partial<Holiday>) => apiClient.put<Holiday>(`/lookups/holidays/${id}`, data).then(r => r.data);
+export const deleteHoliday = (id: number) => apiClient.delete(`/lookups/holidays/${id}`).then(r => r.data);
 
 // ExecutorList
 export const createExecutor = (data: Partial<ExecutorList>) => apiClient.post<ExecutorList>('/lookups/executor-list', data).then(r => r.data);

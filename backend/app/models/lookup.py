@@ -94,9 +94,10 @@ class Movzu(Base):
 
 
 class Holiday(Base):
-    __tablename__ = "Holiday"
+    __tablename__ = "Holidays"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    holiday: Mapped[str | None] = mapped_column(String(50))
-    hdate: Mapped[datetime | None] = mapped_column(DateTime)
-    Metn: Mapped[str | None] = mapped_column(String(50))
+    name: Mapped[str | None] = mapped_column(String(200))
+    start_date: Mapped[datetime | None] = mapped_column(DateTime)
+    end_date: Mapped[datetime | None] = mapped_column(DateTime)
+    IsDeleted: Mapped[bool | None] = mapped_column(Boolean, default=False)

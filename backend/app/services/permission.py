@@ -243,7 +243,7 @@ class UserPermissionService:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return user.get_permissions()
+        return set(user.permissions)
 
     def assign_role(self, user_id: int, role_id: int) -> bool:
         """Assign a role to a user"""

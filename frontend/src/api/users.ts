@@ -12,6 +12,8 @@ export interface UserCreate {
     section_id?: number;
     role_ids?: number[];
     group_ids?: number[];
+    is_admin?: boolean;
+    is_super_admin?: boolean;
 }
 
 export interface UserListResponse {
@@ -45,4 +47,13 @@ export const createUser = async (data: UserCreate): Promise<User> => {
 export const resetUserPassword = async (userId: number, password: string): Promise<User> => {
     const response = await apiClient.post(`/users/${userId}/reset-password`, { new_password: password });
     return response.data;
+};
+
+export const toggleBlockUser = async (userId: number): Promise<User> => {
+    const response = await apiClient.post(`/users/${userId}/toggle-block`);
+    return response.data;
+};
+
+export const deleteUser = async (userId: number): Promise<void> => {
+    await apiClient.delete(`/users/${userId}`);
 };

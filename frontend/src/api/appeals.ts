@@ -1,3 +1,4 @@
+import { ExecutorAssignment } from './lookups';
 import apiClient from './client';
 
 export interface Appeal {
@@ -14,6 +15,7 @@ export interface Appeal {
   region_id?: number;
   person?: string;
   email?: string;
+  phone?: string;
   content?: string;
   content_type_id?: number;
   account_index_id?: number;
@@ -31,6 +33,7 @@ export interface Appeal {
   PC?: string | null;
   PC_Tarixi?: string | null; // datetime
   is_deleted?: boolean;
+  executors?: ExecutorAssignment[];
 }
 
 export interface AppealsResponse {

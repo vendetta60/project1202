@@ -1,59 +1,182 @@
-/* Theme-aware overrides: use CSS variables set from app theme (--app-primary, --app-bg, etc.) */
+/* ─── MUI Overrides — Premium Military Theme ────────────────── */
+
+/* Buttons */
 .MuiButton-containedPrimary {
-  background-color: var(--app-primary) !important;
-  text-transform: none;
-  font-weight: 600;
+  background: linear-gradient(135deg, var(--app-primary) 0%, #8b5cf6 100%) !important;
+  text-transform: none !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 16px var(--app-primary-glow) !important;
 }
 
 .MuiButton-containedPrimary:hover {
-  filter: brightness(1.1);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.45) !important;
+  transform: translateY(-1px) !important;
 }
 
+.MuiButton-outlinedPrimary {
+  border-color: var(--app-primary) !important;
+  color: var(--app-primary) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.MuiButton-outlinedPrimary:hover {
+  background: rgba(99, 102, 241, 0.06) !important;
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2) !important;
+}
+
+.MuiButton-textPrimary {
+  text-transform: none !important;
+  font-weight: 600 !important;
+}
+
+/* Paper */
 .MuiPaper-root {
   background-color: var(--app-paper) !important;
   border-color: var(--app-border) !important;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease !important;
 }
 
+/* Table Head */
 .MuiTableHead-root .MuiTableCell-root {
-  background: var(--app-primary) !important;
+  background: linear-gradient(135deg, var(--app-primary) 0%, #8b5cf6 100%) !important;
   color: white !important;
-  font-weight: 600 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  font-size: 0.72rem !important;
+  border-bottom: none !important;
 }
 
 .MuiTableCell-root {
   border-bottom-color: var(--app-border) !important;
+  transition: background-color 0.15s ease !important;
 }
 
+.MuiTableRow-root.MuiTableRow-hover:hover>.MuiTableCell-root {
+  background-color: rgba(99, 102, 241, 0.04) !important;
+}
+
+/* Inputs */
 .MuiTextField-root .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
   border-color: var(--app-primary) !important;
+  border-width: 2px !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
 }
 
 .MuiFormLabel-root.Mui-focused {
   color: var(--app-primary) !important;
+  font-weight: 600 !important;
 }
 
+.MuiOutlinedInput-root {
+  transition: box-shadow 0.2s ease !important;
+}
+
+/* Pagination */
 .MuiPaginationItem-root.Mui-selected {
-  background-color: var(--app-primary) !important;
+  background: linear-gradient(135deg, var(--app-primary), #8b5cf6) !important;
   color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px var(--app-primary-glow) !important;
 }
 
+.MuiPaginationItem-root:not(.Mui-selected):hover {
+  background: rgba(99, 102, 241, 0.08) !important;
+}
+
+/* Dialogs */
 .MuiDialog-paper {
-  border-color: var(--app-border) !important;
+  border: 1px solid var(--app-border) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2) !important;
+  overflow: hidden !important;
 }
 
 .MuiDialogTitle-root {
-  background: var(--app-primary) !important;
+  background: linear-gradient(135deg, var(--app-primary) 0%, #8b5cf6 100%) !important;
   color: white !important;
-  font-weight: 600;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
 }
 
+/* AppBar */
 .MuiAppBar-root {
   background: var(--app-primary) !important;
 }
 
-/* Status chips – keep readable in light/dark */
-.MuiChip-colorSuccess { background-color: #2e7d32 !important; }
-.MuiChip-colorWarning { background-color: #ed6c02 !important; }
-.MuiChip-colorError { background-color: #d32f2f !important; }
+/* Chips */
+.MuiChip-colorSuccess {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+}
+
+.MuiChip-colorWarning {
+  background: linear-gradient(135deg, #d97706, #f59e0b) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+}
+
+.MuiChip-colorError {
+  background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+.MuiChip-colorPrimary {
+  background: linear-gradient(135deg, var(--app-primary), #8b5cf6) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px var(--app-primary-glow) !important;
+}
+
+/* Tooltip */
+.MuiTooltip-tooltip {
+  background: rgba(15, 23, 42, 0.92) !important;
+  backdrop-filter: blur(8px);
+  border-radius: 8px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  padding: 6px 12px !important;
+}
+
+/* Switch */
+.MuiSwitch-switchBase.Mui-checked {
+  color: var(--app-primary) !important;
+}
+
+.MuiSwitch-switchBase.Mui-checked+.MuiSwitch-track {
+  background-color: var(--app-primary) !important;
+  opacity: 0.7 !important;
+}
+
+/* Dark mode overrides */
+body[data-theme="dark"] .MuiPaper-root {
+  background-color: rgba(30, 41, 59, 1) !important;
+  /* Slate 800 */
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+body[data-theme="dark"] .MuiTableRow-root.MuiTableRow-hover:hover>.MuiTableCell-root {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+body[data-theme="dark"] .MuiDialog-paper {
+  background-color: rgba(15, 23, 42, 1) !important;
+  /* Slate 900 */
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body[data-theme="dark"] .MuiTextField-root .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}

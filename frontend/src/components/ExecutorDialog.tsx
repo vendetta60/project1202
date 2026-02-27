@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
+import { Azerbaijan } from 'flatpickr/dist/l10n/az';
 import { getDirections, getExecutorListByDirection } from '../api/lookups';
 import { formatDateToISO, parseDateFromDDMMYYYY, formatDateToDDMMYYYY_Safe } from '../utils/dateUtils';
 
@@ -131,8 +132,8 @@ export function ExecutorDialog({
 
             // Helper to ensure dates are ISO for backend
             const ensureISO = (dateStr: string) => {
-                if (!dateStr) return '';
-                if (dateStr.includes('.')) return formatDateToISO(dateStr);
+                if (!dateStr) return undefined;
+                if (dateStr.includes('.')) return formatDateToISO(dateStr) || undefined;
                 return dateStr;
             };
 
@@ -183,13 +184,20 @@ export function ExecutorDialog({
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 800, color: '#3e4a21' }}>Yeni İcraçı Təyin Et</DialogTitle>
+            <DialogTitle sx={{ 
+                fontWeight: 800, 
+                color: 'white',
+                background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
+                pb: 2
+            }}>
+                Yeni İcraçı Təyin Et
+            </DialogTitle>
             <DialogContent>
                 <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                     {error && <Alert severity="error">{error}</Alert>}
 
                     <FormControl fullWidth size="small">
-                        <InputLabel>Bölmə (İstiqamət)</InputLabel>
+                        <InputLabel sx={{ fontWeight: 600 }}>Bölmə (İstiqamət)</InputLabel>
                         <Select
                             value={directionId}
                             label="Bölmə (İstiqamət)"
@@ -200,6 +208,7 @@ export function ExecutorDialog({
                                 setError('');
                             }}
                             disabled={!!directionFilter || isLoading}
+                            sx={{ borderRadius: 1.5, bgcolor: '#f8fafc' }}
                         >
                             <MenuItem value="">Seçin</MenuItem>
                             {directions?.map((dir) => (
@@ -211,7 +220,7 @@ export function ExecutorDialog({
                     </FormControl>
 
                     <FormControl fullWidth size="small" disabled={!directionId || isLoading || isLoadingExecutors} sx={{ position: 'relative' }}>
-                        <InputLabel>İcraçılar</InputLabel>
+                        <InputLabel sx={{ fontWeight: 600 }}>İcraçılar</InputLabel>
                         <Select
                             multiple
                             value={executorIds}
@@ -220,6 +229,7 @@ export function ExecutorDialog({
                                 setExecutorIds(e.target.value as number[]);
                                 setError('');
                             }}
+                            sx={{ borderRadius: 1.5, bgcolor: '#f8fafc' }}
                             renderValue={(selected) => {
                                 return executors
                                     ?.filter(ex => selected.includes(ex.id))
@@ -229,7 +239,10 @@ export function ExecutorDialog({
                         >
                             {executors?.map((ex) => (
                                 <MenuItem key={ex.id} value={ex.id}>
-                                    <Checkbox checked={executorIds.indexOf(ex.id) > -1} />
+                                    <Checkbox 
+                                        checked={executorIds.indexOf(ex.id) > -1} 
+                                        sx={{ '&.Mui-checked': { color: '#7c3aed' } }}
+                                    />
                                     <ListItemText primary={ex.executor} />
                                 </MenuItem>
                             ))}
@@ -261,13 +274,13 @@ export function ExecutorDialog({
                     )}
 
                     {executorIds.length === 1 && (
-                        <Typography variant="caption" sx={{ ml: 1, color: '#3e4a21', fontWeight: 600 }}>
+                        <Typography variant="caption" sx={{ ml: 1, color: '#4f46e5', fontWeight: 600 }}>
                             Seçilmiş icraçı avtomatik olaraq əsas icraçı kimi təyin ediləcək.
                         </Typography>
                     )}
 
-                    <Divider sx={{ my: 1, opacity: 0.3 }} />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#3e4a21', mb: -1 }}>İcra Təfsilatları</Typography>
+                    <Divider sx={{ my: 1, opacity: 0.1 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: -1 }}>İcra Təfsilatları (Könüllü)</Typography>
 
                     <Grid container spacing={1}>
                         <Grid size={{ xs: 6 }}>
@@ -277,9 +290,15 @@ export function ExecutorDialog({
                         <Grid size={{ xs: 6 }}>
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Sənədin tarixi</Typography>
                             <Flatpickr
-                                value={parseDateFromDDMMYYYY(rDate) || undefined}
+                                value={parseDateFromDDMMYYYY(rDate) || ''}
                                 onChange={(dates) => setRDate(formatDateToDDMMYYYY_Safe(dates[0]))}
-                                options={{ dateFormat: 'd.m.Y' }}
+                                options={{ 
+                                    dateFormat: 'd.m.Y',
+                                    locale: {
+                                        ...Azerbaijan,
+                                        firstDayOfWeek: 1
+                                    }
+                                }}
                                 placeholder="Tarix"
                                 style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem' }}
                             />
@@ -299,9 +318,15 @@ export function ExecutorDialog({
                         <Grid size={{ xs: 6 }}>
                             <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#444', mb: 0.5 }}>Göndərilmə tarixi</Typography>
                             <Flatpickr
-                                value={parseDateFromDDMMYYYY(outDate) || undefined}
+                                value={parseDateFromDDMMYYYY(outDate) || ''}
                                 onChange={(dates) => setOutDate(formatDateToDDMMYYYY_Safe(dates[0]))}
-                                options={{ dateFormat: 'd.m.Y' }}
+                                options={{ 
+                                    dateFormat: 'd.m.Y',
+                                    locale: {
+                                        ...Azerbaijan,
+                                        firstDayOfWeek: 1
+                                    }
+                                }}
                                 placeholder="Tarix"
                                 style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem' }}
                             />
@@ -313,8 +338,20 @@ export function ExecutorDialog({
                     </Grid>
                 </Box>
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-                <Button onClick={handleClose} disabled={isLoading} sx={{ color: '#666' }}>
+            <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+                <Button 
+                    onClick={handleClose} 
+                    disabled={isLoading} 
+                    sx={{ 
+                        color: '#64748b', 
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        borderRadius: '50px',
+                        px: 3,
+                        border: '1px solid #e2e8f0',
+                        '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' }
+                    }}
+                >
                     İmtina Et
                 </Button>
                 <Button
@@ -322,10 +359,13 @@ export function ExecutorDialog({
                     variant="contained"
                     disabled={isLoading || !directionId || executorIds.length === 0}
                     sx={{
-                        bgcolor: '#3e4a21',
-                        '&:hover': { bgcolor: '#2c3518' },
-                        px: 3,
-                        fontWeight: 700
+                        background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
+                        textTransform: 'none',
+                        borderRadius: '50px',
+                        px: 4,
+                        fontWeight: 700,
+                        boxShadow: '0 4px 6px -1px rgb(79 70 229 / 0.4)',
+                        '&:hover': { filter: 'brightness(1.05)', boxShadow: '0 10px 15px -3px rgb(79 70 229 / 0.4)' },
                     }}
                 >
                     {isLoading ? 'Əlavə Edilir...' : 'Əlavə Et'}

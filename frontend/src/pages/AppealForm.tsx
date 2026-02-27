@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import Select from 'react-select';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
+import { Azerbaijan } from 'flatpickr/dist/l10n/az';
 import {
   Box,
   Paper,
@@ -26,6 +27,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Autocomplete,
+  Chip,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
@@ -68,9 +71,7 @@ import {
   createChiefInstruction,
   createInSection,
   createWhoControl,
-  getDirections,
-  getDirectionsBySection,
-  getExecutorListByDirection,
+  createDepOfficial,
   getAppealExecutors,
   addAppealExecutor,
   updateAppealExecutor,
@@ -90,7 +91,7 @@ import { formatDateToDDMMYYYY, formatDateToISO, parseDateFromDDMMYYYY, formatDat
 import { getSelectStyles } from '../utils/formStyles';
 
 interface AppealFormData {
-  num: number | undefined; // Hansı hərbi hissədən daxil olub
+  num: number | string | undefined; // Hansı hərbi hissədən daxil olub
   reg_num: string; // Qeydealınma nömrəsi
   reg_date: string | undefined; // Qeydealınma tarixi
   exp_date: string | undefined; // İcra müddəti
@@ -98,32 +99,32 @@ interface AppealFormData {
   sec_in_ap_date: string | undefined; // Digər qurum üzrə tarix
   in_ap_num: string; // Daxil olan müraciətin nömrəsi
   in_ap_date: string | undefined; // Daxil olan müraciətin tarixi
-  dep_id: number | undefined; // Hansı qurumdan gəlib
-  official_id: number | undefined; // Müraciət kimdən gəlib / İcraçılar
+  dep_id: number | string | undefined; // Hansı qurumdan gəlib
+  official_id: number | string | undefined; // Müraciət kimdən gəlib / İcraçılar
   person: string; // Müraciət edənin SAA
-  region_id: number | undefined; // Ünvan (Region olaraq işlənir)
-  who_control_id: number | undefined; // Kim baxımdır (Nəzarətçi)
-  instructions_id: number | undefined; // Rəhbərin dərkənarı
+  region_id: number | string | undefined; // Ünvan (Region olaraq işlənir)
+  who_control_id: number | string | undefined; // Kim baxımdır (Nəzarətçi)
+  instructions_id: number | string | undefined; // Rəhbərin dərkənarı
   email: string; // Elektron poçt ünvanı
   phone: string; // Telefon nömrəsi
   paper_count: string; // Vərəq sayı
   content: string; // Müraciətin qısa məzmunu
-  content_type_id: number | undefined; // Müraciətin növü
-  account_index_id: number | undefined; // Hesabat indeksi
-  ap_index_id: number | undefined; // Müraciətin indeksi
-  status: number | undefined; // Müraciətin baxılması
+  content_type_id: number | string | undefined; // Müraciətin növü
+  account_index_id: number | string | undefined; // Hesabat indeksi
+  ap_index_id: number | string | undefined; // Müraciətin indeksi
+  status: number | string | undefined; // Müraciətin baxılması
   repetition: boolean; // Təkrar müraciət
   control: boolean; // Nəzarətdədir
-  InSection: number | undefined;
-  user_section_id: number | undefined;
+  InSection: number | string | undefined;
+  user_section_id: number | string | undefined;
   IsExecuted: boolean;
   PC: string | undefined;
   PC_Tarixi: string | undefined; // datetime
-  exp_days: number | undefined;
+  exp_days: number | string | undefined;
 }
 
 const defaultValues: Partial<AppealFormData> = {
-  num: undefined,
+  num: '',
   reg_num: '',
   reg_date: '',
   exp_date: '',
@@ -133,24 +134,25 @@ const defaultValues: Partial<AppealFormData> = {
   in_ap_date: '',
   person: '',
   email: '',
+  phone: '',
   content: '',
-  paper_count: '',
   repetition: false,
   control: false,
   IsExecuted: false,
-  dep_id: undefined,
-  official_id: undefined,
-  region_id: undefined,
-  who_control_id: undefined,
-  instructions_id: undefined,
-  content_type_id: undefined,
-  account_index_id: undefined,
-  ap_index_id: undefined,
-  status: undefined,
-  InSection: undefined,
+  dep_id: '',
+  official_id: '',
+  region_id: '',
+  who_control_id: '',
+  instructions_id: '',
+  content_type_id: '',
+  account_index_id: '',
+  ap_index_id: '',
+  status: '',
+  InSection: '',
+  paper_count: '1',
   PC: '',
   PC_Tarixi: '',
-  exp_days: undefined,
+  exp_days: '',
 };
 
 
@@ -205,7 +207,9 @@ export default function AppealForm() {
   const [openRegionDialog, setOpenRegionDialog] = useState(false);
   const [openInstructionDialog, setOpenInstructionDialog] = useState(false);
   const [openInSectionDialog, setOpenInSectionDialog] = useState(false);
+  const [phoneInputValue, setPhoneInputValue] = useState('');
   const [openWhoControlDialog, setOpenWhoControlDialog] = useState(false);
+  const [openOfficialDialog, setOpenOfficialDialog] = useState(false);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [duplicateCount, setDuplicateCount] = useState(0);
   const [pendingSubmitData, setPendingSubmitData] = useState<AppealFormData | null>(null);
@@ -274,6 +278,10 @@ export default function AppealForm() {
     mode: 'single' as const,
     dateFormat: 'd.m.Y',
     allowInput: true,
+    locale: {
+      ...Azerbaijan,
+      firstDayOfWeek: 1
+    },
     onDayCreate
   };
 
@@ -324,6 +332,44 @@ export default function AppealForm() {
     setValue('exp_date', formatDateToDDMMYYYY_Safe(calculationDate));
   };
 
+  const calculateWorkingDays = (startDateStr: string, endDateStr: string): number => {
+    const startDate = parseDateFromDDMMYYYY(startDateStr);
+    const endDate = parseDateFromDDMMYYYY(endDateStr);
+
+    if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return 0;
+    }
+
+    if (endDate < startDate) return 0;
+
+    let workingDays = 0;
+    let tempDate = new Date(startDate);
+
+    while (tempDate < endDate) {
+      tempDate.setDate(tempDate.getDate() + 1);
+      const dayOfWeek = tempDate.getDay();
+
+      // Check weekends
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
+      // Check holidays
+      const isHoliday = holidays?.some(h => {
+        const start = new Date(h.start_date);
+        const end = new Date(h.end_date);
+        const check = new Date(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+        const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        return check >= s && check <= e;
+      });
+
+      if (isHoliday) continue;
+
+      workingDays++;
+    }
+
+    return workingDays;
+  };
+
   // Auto-calculate exp_date when reg_date or exp_days change
   const regDateValue = watch('reg_date');
   const expDaysValue = watch('exp_days');
@@ -349,7 +395,7 @@ export default function AppealForm() {
     }
 
     try {
-      const result = await checkDuplicateAppeal(trimmedPerson, currentYear, sectionId);
+      const result = await checkDuplicateAppeal(trimmedPerson, currentYear, Number(sectionId));
       if (result.exists) {
         setDuplicateCount(result.count);
         // Store sanitized data for actual submission after dialog confirm
@@ -371,11 +417,22 @@ export default function AppealForm() {
     enabled: isEditMode && !!id,
   });
 
-  const { data: appeal, isLoading: appealLoading } = useQuery({
+  const { data: appeal, isLoading: appealLoading, isError: appealError, error: appealFetchError } = useQuery({
     queryKey: ['appeal', id],
     queryFn: () => getAppeal(Number(id)),
     enabled: isEditMode,
+    retry: false, // Silinmiş müraciət üçün yenidən cəhd etmə
   });
+
+  // React Query v5-də onError yoxdur – useEffect ilə izləyirik
+  useEffect(() => {
+    if (appealError) {
+      const status = (appealFetchError as any)?.response?.status;
+      if (status === 404 || status === 403) {
+        navigate('/dashboard');
+      }
+    }
+  }, [appealError, appealFetchError, navigate]);
 
   useEffect(() => {
     if (user?.section_id && !isEditMode) {
@@ -391,35 +448,42 @@ export default function AppealForm() {
 
   useEffect(() => {
     if (appeal) {
+      const workingDays = (appeal.reg_date && appeal.exp_date && holidays)
+        ? calculateWorkingDays(formatDateToDDMMYYYY(appeal.reg_date), formatDateToDDMMYYYY(appeal.exp_date))
+        : '';
+
       reset({
-        num: appeal.num,
+        num: appeal.num || '',
         reg_num: appeal.reg_num || '',
-        reg_date: appeal.reg_date ? formatDateToDDMMYYYY(appeal.reg_date) : undefined,
-        exp_date: appeal.exp_date ? formatDateToDDMMYYYY(appeal.exp_date) : undefined,
+        reg_date: appeal.reg_date ? formatDateToDDMMYYYY(appeal.reg_date) : '',
+        exp_date: appeal.exp_date ? formatDateToDDMMYYYY(appeal.exp_date) : '',
+        exp_days: workingDays,
         sec_in_ap_num: appeal.sec_in_ap_num || '',
-        sec_in_ap_date: appeal.sec_in_ap_date ? formatDateToDDMMYYYY(appeal.sec_in_ap_date) : undefined,
+        sec_in_ap_date: appeal.sec_in_ap_date ? formatDateToDDMMYYYY(appeal.sec_in_ap_date) : '',
         in_ap_num: appeal.in_ap_num || '',
-        in_ap_date: appeal.in_ap_date ? formatDateToDDMMYYYY(appeal.in_ap_date) : undefined,
-        dep_id: appeal.dep_id,
-        official_id: appeal.official_id,
-        region_id: appeal.region_id,
+        in_ap_date: appeal.in_ap_date ? formatDateToDDMMYYYY(appeal.in_ap_date) : '',
+        dep_id: appeal.dep_id || '',
+        official_id: appeal.official_id || '',
+        region_id: appeal.region_id || '',
         person: appeal.person || '',
         email: appeal.email || '',
+        phone: appeal.phone || '',
         content: appeal.content || '',
-        content_type_id: appeal.content_type_id,
-        account_index_id: appeal.account_index_id,
-        ap_index_id: appeal.ap_index_id,
-        paper_count: appeal.paper_count || '',
-        who_control_id: appeal.who_control_id,
-        instructions_id: appeal.instructions_id,
-        status: appeal.status || undefined,
+        content_type_id: appeal.content_type_id || '',
+        account_index_id: appeal.account_index_id || '',
+        ap_index_id: appeal.ap_index_id || '',
+        paper_count: appeal.paper_count || '1',
+        who_control_id: appeal.who_control_id || '',
+        instructions_id: appeal.instructions_id || '',
+        status: appeal.status || '',
         repetition: appeal.repetition || false,
         control: appeal.control || false,
         PC: appeal.PC || '',
         PC_Tarixi: appeal.PC_Tarixi ? formatDateToDDMMYYYY(appeal.PC_Tarixi) : '',
+        InSection: appeal.InSection || '',
       });
     }
-  }, [appeal, reset]);
+  }, [appeal, reset, holidays]);
 
   const createMutation = useMutation({
     mutationFn: async (data: AppealFormData) => {
@@ -509,6 +573,15 @@ export default function AppealForm() {
     },
   });
 
+  const addDepOfficialMutation = useMutation({
+    mutationFn: (name: string) => createDepOfficial({ dep_id: Number(selectedDepId), official: name }),
+    onSuccess: (newOfficial) => {
+      queryClient.invalidateQueries({ queryKey: ['dep-officials', selectedDepId] });
+      setValue('official_id', newOfficial.id);
+      setOpenOfficialDialog(false);
+    },
+  });
+
 
   const addExecutorToAppealMutation = useMutation({
     mutationFn: (data: Partial<ExecutorAssignment>) => {
@@ -581,8 +654,8 @@ export default function AppealForm() {
     }
 
     const sanitizedData = sanitizeFormData(data);
-    if (isEditMode) updateMutation.mutate(sanitizedData);
-    else createMutation.mutate(sanitizedData);
+    if (isEditMode) updateMutation.mutate(sanitizedData as any);
+    else createMutation.mutate(sanitizedData as any);
   };
 
   const handleClear = () => {
@@ -677,7 +750,23 @@ export default function AppealForm() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <Box>
                         <Typography sx={labelSx}><NumbersIcon /> Qeydealınma nömrəsi:</Typography>
-                        <Controller name="reg_num" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="3-25-4/1-A-1-1/2026" />} />
+                        <Controller name="reg_num" control={control} render={({ field }) => (
+                          <TextField
+                            {...field}
+                            fullWidth
+                            size="small"
+                            sx={{
+                              ...inputSx,
+                              '& .MuiInputBase-root': {
+                                ...inputSx['& .MuiInputBase-root'],
+                                bgcolor: 'action.hover',
+                                cursor: 'not-allowed',
+                              },
+                            }}
+                            InputProps={{ readOnly: true }}
+                            placeholder={isEditMode ? '' : 'Avtomatik təyin olunacaq'}
+                          />
+                        )} />
                       </Box>
                       <Box>
                         <Typography sx={labelSx}><CalendarMonthIcon /> Qeydealınma tarixi: <span style={{ color: '#d32f2f' }}>*</span></Typography>
@@ -688,8 +777,10 @@ export default function AppealForm() {
                           render={({ field, fieldState }) => (
                             <Box>
                               <Flatpickr
-                                {...field}
-                                value={parseDateFromDDMMYYYY(field.value) || undefined}
+                                id="reg_date_picker"
+                                key="reg_date_picker"
+                                name={field.name}
+                                value={parseDateFromDDMMYYYY(field.value) || ''}
                                 onChange={(dates) => {
                                   const dateStr = formatDateToDDMMYYYY_Safe(dates[0]);
                                   field.onChange(dateStr);
@@ -716,7 +807,8 @@ export default function AppealForm() {
                                     }
                                   }
                                 }}
-                                options={commonFlatpickrOptions}
+                                onBlur={field.onBlur}
+                                options={{ ...commonFlatpickrOptions }}
                                 className="flatpickr-input"
                                 placeholder="dd.mm.yyyy"
                                 style={fieldState.error ? { borderColor: '#d32f2f', boxShadow: '0 0 0 1px #d32f2f' } : {}}
@@ -800,8 +892,10 @@ export default function AppealForm() {
                           <input
                             type="checkbox"
                             checked={field.value}
-                            onChange={field.onChange}
-                            style={{ width: 16, height: 16, cursor: 'pointer', accentColor: theme.palette.primary.main }}
+                            readOnly
+                            disabled
+                            title="Bu sahə avtomatik təyin olunur"
+                            style={{ width: 16, height: 16, cursor: 'not-allowed', accentColor: theme.palette.primary.main, opacity: 0.65 }}
                           />
                         )} />
                       </Box>
@@ -822,10 +916,13 @@ export default function AppealForm() {
                           control={control}
                           render={({ field }) => (
                             <Flatpickr
-                              {...field}
-                              value={parseDateFromDDMMYYYY(field.value) || undefined}
+                              id="sec_in_ap_date_picker"
+                              key="sec_in_ap_date_picker"
+                              name={field.name}
+                              value={parseDateFromDDMMYYYY(field.value) || ''}
                               onChange={(dates) => field.onChange(formatDateToDDMMYYYY_Safe(dates[0]))}
-                              options={commonFlatpickrOptions}
+                              onBlur={field.onBlur}
+                              options={{ ...commonFlatpickrOptions }}
                               className="flatpickr-input"
                               placeholder="dd.mm.yyyy"
                             />
@@ -840,10 +937,13 @@ export default function AppealForm() {
                         <Typography sx={labelSx}><CalendarMonthIcon /> Daxil olan müraciətin tarixi:</Typography>
                         <Controller name="in_ap_date" control={control} render={({ field }) => (
                           <Flatpickr
-                            {...field}
-                            value={parseDateFromDDMMYYYY(field.value) || undefined}
+                            id="in_ap_date_picker"
+                            key="in_ap_date_picker"
+                            name={field.name}
+                            value={parseDateFromDDMMYYYY(field.value) || ''}
                             onChange={(dates) => field.onChange(formatDateToDDMMYYYY_Safe(dates[0]))}
-                            options={commonFlatpickrOptions}
+                            onBlur={field.onBlur}
+                            options={{ ...commonFlatpickrOptions }}
                             disabled={!inSectionFilled}
                             className="flatpickr-input"
                             placeholder="dd.mm.yyyy"
@@ -896,7 +996,15 @@ export default function AppealForm() {
                               />
                             )} />
                           </Box>
-                          <IconButton size="small" sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}><AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} /></IconButton>
+                          <IconButton
+                            size="small"
+                            sx={{ p: '4px', color: 'primary.main', minWidth: 28 }}
+                            disabled={!selectedDepId}
+                            onClick={() => setOpenOfficialDialog(true)}
+                            title={selectedDepId ? 'Yeni ad əlavə et' : 'Əvvəlcə qurum seçin'}
+                          >
+                            <AddCircleOutlineIcon sx={{ fontSize: '0.9rem' }} />
+                          </IconButton>
                         </Box>
                       </Box>
                       <Box>
@@ -1010,7 +1118,85 @@ export default function AppealForm() {
                       </Box>
                       <Box>
                         <Typography sx={labelSx}><PhoneIcon /> Telefon nömrəsi:</Typography>
-                        <Controller name="phone" control={control} render={({ field }) => <TextField {...field} fullWidth size="small" sx={inputSx} placeholder="( ) - -" />} />
+                        <Controller
+                          name="phone"
+                          control={control}
+                          render={({ field }) => {
+                            const baseDisplay = (field.value || '')
+                              .split(',')
+                              .filter(Boolean)
+                              .join('\n');
+                            const displayValue = phoneInputValue !== '' ? phoneInputValue : baseDisplay;
+
+                            return (
+                              <TextField
+                                fullWidth
+                                multiline
+                                minRows={2}
+                                size="small"
+                                placeholder="+994xx xxx xx xx  (hər sətrdə bir nömrə)"
+                                value={displayValue}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/\r/g, '') || '';
+                                  const lines = raw.split('\n');
+
+                                  const processed: string[] = [];
+                                  let lastDigitsLen = 0;
+
+                                  lines.forEach((line, idx) => {
+                                    let digits = line.replace(/\D/g, '');
+                                    if (digits.startsWith('994')) digits = digits.slice(3);
+                                    digits = digits.slice(0, 9);
+
+                                    if (!digits) {
+                                      processed.push('');
+                                      return;
+                                    }
+
+                                    let formatted = '+994';
+                                    if (digits.length <= 2) {
+                                      formatted += ` ${digits}`;
+                                    } else if (digits.length <= 5) {
+                                      formatted += ` ${digits.slice(0, 2)} ${digits.slice(2)}`;
+                                    } else if (digits.length <= 7) {
+                                      formatted += ` ${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`;
+                                    } else {
+                                      formatted += ` ${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 7)} ${digits.slice(7, 9)}`;
+                                    }
+
+                                    if (idx === lines.length - 1) {
+                                      lastDigitsLen = digits.length;
+                                    }
+
+                                    processed.push(formatted.trim());
+                                  });
+
+                                  let display = processed.join('\n');
+                                  if (lastDigitsLen === 9) {
+                                    display = display + '\n';
+                                  }
+
+                                  const stored = processed
+                                    .map(l => l.trim())
+                                    .filter(Boolean)
+                                    .join(',');
+
+                                  setPhoneInputValue(display);
+                                  field.onChange(stored);
+                                }}
+                                sx={{
+                                  ...inputSx,
+                                  '& .MuiInputBase-root': {
+                                    ...inputSx['& .MuiInputBase-root'],
+                                    height: 'auto',
+                                    minHeight: '40px',
+                                    alignItems: 'flex-start',
+                                  },
+                                }}
+                              />
+                            );
+                          }}
+                        />
                       </Box>
                     </Box>
                   </Grid>
@@ -1113,13 +1299,14 @@ export default function AppealForm() {
                       startIcon={<AddCircleOutlineIcon />}
                       onClick={() => setOpenExecutorDialog(true)}
                       sx={{
-                        color: 'primary.main',
-                        borderColor: 'primary.main',
-                        bgcolor: 'action.hover',
+                        color: '#7c3aed',
+                        borderColor: 'rgba(124, 58, 237, 0.4)',
+                        bgcolor: 'rgba(124, 58, 237, 0.05)',
                         textTransform: 'none',
                         fontWeight: 700,
                         fontSize: '0.72rem',
-                        '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
+                        borderRadius: '6px',
+                        '&:hover': { bgcolor: 'rgba(124, 58, 237, 0.1)', borderColor: '#7c3aed' }
                       }}
                     >
                       Əlavə et
@@ -1131,13 +1318,15 @@ export default function AppealForm() {
                       disabled={!selectedExecutorForEdit}
                       onClick={() => setExecutorDetailsDialogOpen(true)}
                       sx={{
-                        color: 'primary.main',
-                        borderColor: 'primary.main',
-                        bgcolor: 'action.hover',
+                        color: '#374151',
+                        borderColor: '#cbd5e1',
+                        bgcolor: '#f9f9f9',
                         textTransform: 'none',
                         fontWeight: 700,
                         fontSize: '0.72rem',
-                        '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main' }
+                        borderRadius: '6px',
+                        '&:hover': { bgcolor: '#f3f4f6', borderColor: '#9ca3af' },
+                        '&.Mui-disabled': { borderColor: '#e5e7eb', color: '#9ca3af' }
                       }}
                     >
                       Redaktə et
@@ -1148,9 +1337,17 @@ export default function AppealForm() {
                       startIcon={<DeleteSweepIcon />}
                       disabled={!selectedExecutorForEdit}
                       onClick={() => {
-                        if (selectedExecutorForEdit?.id) {
+                        if (selectedExecutorForEdit) {
                           if (window.confirm('Bu icraçını silmək istədiyinizə əminsiniz?')) {
-                            removeExecutorFromAppealMutation.mutate(selectedExecutorForEdit.id);
+                            if (isEditMode && selectedExecutorForEdit.id) {
+                              removeExecutorFromAppealMutation.mutate(selectedExecutorForEdit.id);
+                            } else {
+                              setSelectedExecutors(prev => prev.filter(ex =>
+                                (ex.id && ex.id !== selectedExecutorForEdit.id) ||
+                                (ex.executor_id !== selectedExecutorForEdit.executor_id)
+                              ));
+                              setSelectedExecutorForEdit(null);
+                            }
                           }
                         }
                       }}
@@ -1161,7 +1358,9 @@ export default function AppealForm() {
                         textTransform: 'none',
                         fontWeight: 700,
                         fontSize: '0.72rem',
-                        '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.1)', borderColor: '#d32f2f' }
+                        borderRadius: '6px',
+                        '&:hover': { bgcolor: 'rgba(211, 47, 47, 0.1)', borderColor: '#d32f2f' },
+                        '&.Mui-disabled': { borderColor: '#fee2e2', color: '#f87171' }
                       }}
                     >
                       Sil
@@ -1170,51 +1369,56 @@ export default function AppealForm() {
 
                   <Box sx={{
                     border: '1px solid',
-                    borderColor: 'divider', borderRadius: 1, overflow: 'hidden'
+                    borderColor: 'divider',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                   }}>
                     <Table size="small" sx={{ minWidth: 800 }}>
-                      <TableHead sx={{ bgcolor: 'action.hover' }}>
-                        <TableRow>
+                      <TableHead>
+                        <TableRow sx={{
+                          background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
+                        }}>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>İcraçının struktur bölməsi</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>İCRAÇININ STRUKTUR BÖLMƏSİ</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Soyadı, adı</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>SOYADI, ADI</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Hansı sənədlə icra edilib</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>HANSI SƏNƏDLƏ İCRA EDİLİB</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Sənədin tarixi</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>SƏNƏDİN TARİXİ</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Tikdiyi işin nömrəsi</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>TİKDİYİ İŞİN NÖMRƏSİ</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>İşdəki vərəq nömrəsi</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>İŞDƏKİ VƏRƏQ NÖMRƏSİ</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Göndərilmə nömrəsi</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>GÖNDƏRİLMƏ NÖMRƏSİ</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Göndərilmə tarixi</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>GÖNDƏRİLMƏ TARİXİ</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Hara (kimə) göndərilib</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            borderRight: '1px solid rgba(255,255,255,0.1)'
+                          }}>HARA (KİMƏ) GÖNDƏRİLİB</TableCell>
                           <TableCell sx={{
-                            fontWeight: 700, py: 0.8, fontSize: '0.7rem', borderBottom: '1px solid',
-                            borderColor: 'divider'
-                          }}>Əsas icraçı</TableCell>
+                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
+                            textAlign: 'center'
+                          }}>ƏSAS İCRAÇI</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1271,12 +1475,13 @@ export default function AppealForm() {
                   onClick={handleClear}
                   sx={{
                     px: 3,
-                    borderRadius: 1.5,
+                    borderRadius: '50px',
                     fontWeight: 700,
                     fontSize: '0.8rem',
-                    color: 'primary.main',
-                    borderColor: 'primary.main',
-                    '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.dark' }
+                    color: '#334155',
+                    borderColor: '#cbd5e1',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: '#f8fafc', borderColor: '#94a3b8' }
                   }}
                 >
                   TƏMİZLƏ
@@ -1291,10 +1496,13 @@ export default function AppealForm() {
                     type="submit"
                     sx={{
                       px: 4,
-                      borderRadius: 1.5,
+                      borderRadius: '50px',
                       fontWeight: 700,
                       fontSize: '0.8rem',
-                      '&:hover': { filter: 'brightness(1.05)' }
+                      background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
+                      textTransform: 'none',
+                      boxShadow: '0 4px 6px -1px rgb(79 70 229 / 0.4)',
+                      '&:hover': { filter: 'brightness(1.05)', boxShadow: '0 10px 15px -3px rgb(79 70 229 / 0.4)' }
                     }}
                   >
                     {isEditMode ? 'REDAKTƏ ET' : 'YADDA SAXLA'}
@@ -1306,12 +1514,13 @@ export default function AppealForm() {
                   onClick={() => navigate('/appeals')}
                   sx={{
                     px: 3,
-                    borderRadius: 1.5,
+                    borderRadius: '50px',
                     fontWeight: 700,
                     fontSize: '0.8rem',
-                    color: 'text.secondary',
-                    borderColor: 'divider',
-                    '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' }
+                    color: '#334155',
+                    borderColor: '#cbd5e1',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: '#f8fafc', borderColor: '#94a3b8' }
                   }}
                 >
                   ÇIXIŞ
@@ -1357,6 +1566,13 @@ export default function AppealForm() {
         fieldLabel="Nəzarətçi Adı"
         onAdd={(value) => addWhoControlMutation.mutateAsync(value).then(() => { })}
         onClose={() => setOpenWhoControlDialog(false)}
+      />
+      <CustomLookupDialog
+        open={openOfficialDialog}
+        title="Yeni Ad Əlavə Et"
+        fieldLabel="Ad, Soyad, Ata adı"
+        onAdd={(value) => addDepOfficialMutation.mutateAsync(value).then(() => { })}
+        onClose={() => setOpenOfficialDialog(false)}
       />
       <ExecutorDialog
         open={openExecutorDialog}
@@ -1425,25 +1641,30 @@ export default function AppealForm() {
           open={executorDetailsDialogOpen}
           executor={selectedExecutorForEdit}
           onSave={async (data) => {
-            if (selectedExecutorForEdit.id) {
+            if (isEditMode && selectedExecutorForEdit.id) {
               await updateExecutorDetailsMutation.mutateAsync({
                 executorId: selectedExecutorForEdit.id,
                 data: data,
               });
-              // Update local state to reflect is_primary change
-              setSelectedExecutors(
-                selectedExecutors.map((e: any) => {
-                  if (e.id === selectedExecutorForEdit.id) {
-                    return { ...e, ...data };
-                  }
-                  // Clear is_primary from other executors if this one is primary
-                  if (data.is_primary && e.id !== selectedExecutorForEdit.id) {
-                    return { ...e, is_primary: false };
-                  }
-                  return e;
-                })
-              );
             }
+
+            // Always update local state to reflect changes (ui update)
+            setSelectedExecutors(prev =>
+              prev.map((e: any) => {
+                const match = (e.id && e.id === selectedExecutorForEdit.id) ||
+                  (e.executor_id === selectedExecutorForEdit.executor_id);
+                if (match) {
+                  return { ...e, ...data };
+                }
+                // Clear is_primary from other executors if this one is primary
+                if (data.is_primary) {
+                  return { ...e, is_primary: false };
+                }
+                return e;
+              })
+            );
+            setExecutorDetailsDialogOpen(false);
+            setSelectedExecutorForEdit(null);
           }}
           onClose={() => {
             setExecutorDetailsDialogOpen(false);

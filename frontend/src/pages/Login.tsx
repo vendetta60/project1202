@@ -4,47 +4,44 @@ import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Box,
-  Card,
-  CardContent,
   TextField,
   Button,
   Typography,
   Alert,
   Container,
-  useTheme,
-  alpha,
+  Checkbox,
+  FormControlLabel,
+  InputAdornment,
 } from '@mui/material';
-import LoginIcon from '@mui/icons-material/Login';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { login, LoginRequest } from '../api/auth';
 import { setToken } from '../utils/auth';
 import { getErrorMessage } from '../utils/errors';
 
 export default function Login() {
   const navigate = useNavigate();
-  const theme = useTheme();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
-  const primary = theme.palette.primary.main;
-  const isDark = theme.palette.mode === 'dark';
-  const bgGradient = isDark
-    ? `linear-gradient(135deg, ${alpha(primary, 0.4)} 0%, ${alpha(primary, 0.2)} 50%, #0d1117 100%)`
-    : `linear-gradient(135deg, ${primary} 0%, ${theme.palette.primary.dark} 50%, ${alpha(primary, 0.85)} 100%)`;
-
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
-  } = useForm<LoginRequest>();
+  } = useForm<LoginRequest & { rememberMe: boolean }>();
 
-  const onSubmit = async (data: LoginRequest) => {
+  const rememberMe = watch('rememberMe', false);
+
+  const onSubmit = async (data: LoginRequest & { rememberMe: boolean }) => {
     setError('');
     setLoading(true);
     try {
-      const response = await login(data);
+      const { rememberMe, ...loginData } = data;
+      const response = await login(loginData);
       setToken(response.access_token);
-      // Clear cache to remove any stale data from previous sessions
       queryClient.clear();
       navigate('/');
     } catch (err) {
@@ -58,125 +55,207 @@ export default function Login() {
     <Box
       sx={{
         minHeight: '100vh',
+        width: '100vw',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: bgGradient,
-        p: 2,
+        background: 'radial-gradient(circle at center, #64d4d4 0%, #299e9e 100%)',
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
           content: '""',
           position: 'absolute',
-          inset: 0,
-          background: isDark
-            ? 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,255,255,0.08), transparent)'
-            : 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,255,255,0.25), transparent)',
+          width: '150%',
+          height: '150%',
+          background: 'radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 60%)',
+          filter: 'blur(100px)',
           pointerEvents: 'none',
-        },
+        }
       }}
     >
-      <Container maxWidth="sm">
-        <Card
-          elevation={isDark ? 0 : 8}
-          sx={{
-            borderRadius: 3,
-            overflow: 'hidden',
-            bgcolor: 'background.paper',
-            border: isDark ? '1px solid' : 'none',
-            borderColor: 'divider',
-            boxShadow: isDark ? 'none' : '0 24px 48px rgba(0,0,0,0.12)',
+      <Container maxWidth="xs" sx={{ position: 'relative', zIndex: 1 }}>
+        <Box 
+          sx={{ 
+            bgcolor: '#34495e',
+            p: { xs: 4, sm: 6 },
+            borderRadius: '4px',
+            boxShadow: '0 30px 60px rgba(0,0,0,0.3)',
+            border: '8px solid rgba(255,255,255,0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
           }}
         >
-          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography
-                variant="h5"
-                component="h1"
-                gutterBottom
-                fontWeight="bold"
-                color="primary"
-                sx={{ letterSpacing: '-0.02em' }}
-              >
-                Müraciət Qeydiyyat Sistemi
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Sistemə daxil olmaq üçün məlumatlarınızı daxil edin
-              </Typography>
-            </Box>
+          {/* Circular Logo Container */}
+          <Box 
+            sx={{ 
+              width: 100, 
+              height: 100, 
+              borderRadius: '50%', 
+              border: '2px solid rgba(255,255,255,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 3,
+              p: 1.5,
+              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.2))',
+              bgcolor: 'rgba(255,255,255,0.05)'
+            }}
+          >
+            <Box 
+              component="img"
+              src="/logo.png" 
+              alt="Logo" 
+              sx={{ 
+                maxWidth: '90%', 
+                maxHeight: '90%',
+                objectFit: 'contain'
+              }} 
+            />
+          </Box>
 
-            {error && (
-              <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-                {error}
-              </Alert>
-            )}
+          <Typography
+            variant="h5"
+            sx={{
+              color: '#fff',
+              fontWeight: 300,
+              letterSpacing: '0.2rem',
+              mb: 5,
+              textTransform: 'uppercase',
+              fontSize: '1.25rem',
+              textAlign: 'center'
+            }}
+          >
+            İSTİFADƏÇİ GİRİŞİ
+          </Typography>
 
-            <form onSubmit={handleSubmit(onSubmit)}>
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                width: '100%',
+                mb: 3,
+                bgcolor: 'rgba(239, 68, 68, 0.1)',
+                color: '#fca5a5',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: '4px',
+                '& .MuiAlert-icon': { color: '#f87171' }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
+            <Box sx={{ mb: 4 }}>
               <TextField
                 fullWidth
+                variant="standard"
                 label="İstifadəçi adı"
-                margin="normal"
-                size="medium"
-                {...register('username', {
-                  required: 'İstifadəçi adı tələb olunur',
-                })}
+                {...register('username', { required: 'Tələb olunur' })}
                 error={!!errors.username}
-                helperText={errors.username?.message}
-                autoFocus
+                disabled={loading}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonOutlineIcon sx={{ color: '#fff', opacity: 0.7 }} />
+                    </InputAdornment>
+                  ),
+                }}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    bgcolor: isDark ? 'action.hover' : 'grey.50',
-                    '&:hover fieldset': { borderColor: 'primary.main' },
-                    '&.Mui-focused fieldset': { borderWidth: 2, borderColor: 'primary.main' },
+                  '& .MuiInput-root': {
+                    color: '#fff',
+                    paddingY: 0.5,
+                    '&:before': { borderColor: 'rgba(255,255,255,0.3)' },
+                    '&:hover:not(.Mui-disabled):before': { borderColor: 'rgba(255,255,255,0.6)' },
+                    '&:after': { borderColor: '#fff' },
                   },
+                  '& .MuiInputLabel-root': { 
+                    color: 'rgba(255,255,255,0.5)',
+                    ml: 4
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#fff', ml: 0 },
+                  '& .MuiInputLabel-shrink': { ml: 0 }
                 }}
               />
+            </Box>
 
+            <Box sx={{ mb: 4 }}>
               <TextField
                 fullWidth
                 type="password"
+                variant="standard"
                 label="Şifrə"
-                margin="normal"
-                size="medium"
-                {...register('password', {
-                  required: 'Şifrə tələb olunur',
-                })}
+                {...register('password', { required: 'Tələb olunur' })}
                 error={!!errors.password}
-                helperText={errors.password?.message}
+                disabled={loading}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockOutlinedIcon sx={{ color: '#fff', opacity: 0.7 }} />
+                    </InputAdornment>
+                  ),
+                }}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    bgcolor: isDark ? 'action.hover' : 'grey.50',
-                    '&:hover fieldset': { borderColor: 'primary.main' },
-                    '&.Mui-focused fieldset': { borderWidth: 2, borderColor: 'primary.main' },
+                  '& .MuiInput-root': {
+                    color: '#fff',
+                    paddingY: 0.5,
+                    '&:before': { borderColor: 'rgba(255,255,255,0.3)' },
+                    '&:hover:not(.Mui-disabled):before': { borderColor: 'rgba(255,255,255,0.6)' },
+                    '&:after': { borderColor: '#fff' },
                   },
+                  '& .MuiInputLabel-root': { 
+                    color: 'rgba(255,255,255,0.5)',
+                    ml: 4
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': { color: '#fff', ml: 0 },
+                  '& .MuiInputLabel-shrink': { ml: 0 }
                 }}
               />
+            </Box>
 
-              <Button
-                fullWidth
-                type="submit"
-                variant="contained"
-                size="large"
-                startIcon={<LoginIcon />}
-                disabled={loading}
-                sx={{
-                  mt: 3,
-                  py: 1.5,
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '1rem',
-                  boxShadow: 2,
-                  '&:hover': { boxShadow: 4 },
-                }}
-              >
-                {loading ? 'Daxil olunur...' : 'Daxil ol'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            <Box sx={{ mb: 4 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox 
+                    checked={rememberMe}
+                    {...register('rememberMe')}
+                    size="small" 
+                    sx={{ color: 'rgba(255,255,255,0.4)', '&.Mui-checked': { color: '#fff' } }} 
+                  />
+                }
+                label={
+                  <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                    Məni xatırla
+                  </Typography>
+                }
+              />
+            </Box>
+
+            <Button
+              fullWidth
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              sx={{
+                py: 2,
+                bgcolor: '#0d161d',
+                color: '#fff',
+                borderRadius: '2px',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+                letterSpacing: '0.15rem',
+                '&:hover': {
+                  bgcolor: '#000',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.5)'
+                },
+                transition: 'all 0.3s'
+              }}
+            >
+              {loading ? 'DAXİL OLUNUR...' : 'DAXİL OL'}
+            </Button>
+          </form>
+        </Box>
       </Container>
     </Box>
   );

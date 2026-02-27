@@ -85,7 +85,6 @@ function AppContent() {
         components: {
           MuiCssBaseline: {
             styleOverrides: `
-              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
               * { box-sizing: border-box; }
               ::-webkit-scrollbar { width: 6px; height: 6px; }
               ::-webkit-scrollbar-track { background: transparent; }

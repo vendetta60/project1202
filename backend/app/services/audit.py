@@ -31,8 +31,14 @@ class AuditService:
     ) -> AuditLog:
         """Log an action performed on an entity"""
         
-        old_values_json = json.dumps(old_values) if old_values else None
-        new_values_json = json.dumps(new_values) if new_values else None
+        def json_serial(obj):
+            """JSON serializer for objects not serializable by default json code"""
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            return str(obj)
+
+        old_values_json = json.dumps(old_values, default=json_serial) if old_values else None
+        new_values_json = json.dumps(new_values, default=json_serial) if new_values else None
         
         log_data = AuditLogCreate(
             entity_type=entity_type,

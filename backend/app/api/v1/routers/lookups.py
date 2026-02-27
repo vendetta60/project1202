@@ -140,6 +140,11 @@ def get_movzular(repo: LookupRepository = Depends(get_lookup_repo)):
 # ===== Departments =====
 @router.post("/departments", response_model=DepartmentOut)
 def create_department(data: DepartmentCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    existing = repo.db.query(Department).filter(
+        Department.department.ilike(data.department.strip())
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
     dept = Department(department=data.department, sign=data.sign)
     return repo.create(dept)
 
@@ -150,6 +155,12 @@ def update_department(dept_id: int, data: DepartmentUpdate, repo: LookupReposito
     if not dept:
         raise HTTPException(status_code=404, detail="Department not found")
     if data.department:
+        existing = repo.db.query(Department).filter(
+            Department.department.ilike(data.department.strip()),
+            Department.id != dept_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
         dept.department = data.department
     if data.sign is not None:
         dept.sign = data.sign
@@ -167,6 +178,11 @@ def delete_department(dept_id: int, repo: LookupRepository = Depends(get_lookup_
 # ===== Regions =====
 @router.post("/regions", response_model=RegionOut)
 def create_region(data: RegionCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    existing = repo.db.query(Region).filter(
+        Region.region.ilike(data.region.strip())
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
     region = Region(region=data.region)
     return repo.create(region)
 
@@ -177,6 +193,12 @@ def update_region(region_id: int, data: RegionUpdate, repo: LookupRepository = D
     if not region:
         raise HTTPException(status_code=404, detail="Region not found")
     if data.region:
+        existing = repo.db.query(Region).filter(
+            Region.region.ilike(data.region.strip()),
+            Region.id != region_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
         region.region = data.region
     return repo.update(region)
 
@@ -192,6 +214,13 @@ def delete_region(region_id: int, repo: LookupRepository = Depends(get_lookup_re
 # ===== DepOfficials =====
 @router.post("/dep-officials", response_model=DepOfficialOut)
 def create_dep_official(data: DepOfficialCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    existing_query = repo.db.query(DepOfficial).filter(
+        DepOfficial.official.ilike(data.official.strip())
+    )
+    if data.dep_id is not None:
+        existing_query = existing_query.filter(DepOfficial.dep_id == data.dep_id)
+    if existing_query.first():
+        raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
     official = DepOfficial(dep_id=data.dep_id, official=data.official)
     return repo.create(official)
 
@@ -202,6 +231,15 @@ def update_dep_official(official_id: int, data: DepOfficialUpdate, repo: LookupR
     if not official:
         raise HTTPException(status_code=404, detail="Official not found")
     if data.official:
+        dep_id_to_check = data.dep_id if data.dep_id is not None else official.dep_id
+        existing_query = repo.db.query(DepOfficial).filter(
+            DepOfficial.official.ilike(data.official.strip()),
+            DepOfficial.id != official_id
+        )
+        if dep_id_to_check is not None:
+            existing_query = existing_query.filter(DepOfficial.dep_id == dep_id_to_check)
+        if existing_query.first():
+            raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
         official.official = data.official
     if data.dep_id is not None:
         official.dep_id = data.dep_id
@@ -219,6 +257,11 @@ def delete_dep_official(official_id: int, repo: LookupRepository = Depends(get_l
 # ===== ChiefInstructions =====
 @router.post("/chief-instructions", response_model=ChiefInstructionOut)
 def create_chief_instruction(data: ChiefInstructionCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    existing = repo.db.query(ChiefInstruction).filter(
+        ChiefInstruction.instructions.ilike(data.instructions.strip())
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
     instruction = ChiefInstruction(instructions=data.instructions, section_id=data.section_id)
     return repo.create(instruction)
 
@@ -246,6 +289,11 @@ def delete_chief_instruction(instruction_id: int, repo: LookupRepository = Depen
 # ===== InSections =====
 @router.post("/in-sections", response_model=InSectionOut)
 def create_in_section(data: InSectionCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    existing = repo.db.query(InSection).filter(
+        InSection.section.ilike(data.section.strip())
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
     section = InSection(section=data.section)
     return repo.create(section)
 
@@ -256,6 +304,12 @@ def update_in_section(section_id: int, data: InSectionUpdate, repo: LookupReposi
     if not section:
         raise HTTPException(status_code=404, detail="Section not found")
     if data.section:
+        existing = repo.db.query(InSection).filter(
+            InSection.section.ilike(data.section.strip()),
+            InSection.id != section_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
         section.section = data.section
     return repo.update(section)
 
@@ -271,6 +325,11 @@ def delete_in_section(section_id: int, repo: LookupRepository = Depends(get_look
 # ===== WhoControls =====
 @router.post("/who-controls", response_model=WhoControlOut)
 def create_who_control(data: WhoControlCreate, repo: LookupRepository = Depends(get_lookup_repo)):
+    existing = repo.db.query(WhoControl).filter(
+        WhoControl.chief.ilike(data.chief.strip())
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
     who_control = WhoControl(chief=data.chief, section_id=data.section_id)
     return repo.create(who_control)
 
@@ -281,6 +340,12 @@ def update_who_control(who_control_id: int, data: WhoControlUpdate, repo: Lookup
     if not who_control:
         raise HTTPException(status_code=404, detail="Who control not found")
     if data.chief:
+        existing = repo.db.query(WhoControl).filter(
+            WhoControl.chief.ilike(data.chief.strip()),
+            WhoControl.id != who_control_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Bu məlumat artıq bazada mövcuddur")
         who_control.chief = data.chief
     if data.section_id is not None:
         who_control.section_id = data.section_id

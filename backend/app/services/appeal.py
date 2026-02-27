@@ -172,13 +172,6 @@ class AppealService:
         obj = self.appeals.get(appeal_id)
         if not obj:
             raise HTTPException(status_code=404, detail="Müraciət tapılmadı")
-        
-        # Populate phone from Contacts table
-        from app.models.contact import Contact
-        contact = self.appeals.db.query(Contact).filter(Contact.appeal_id == appeal_id).first()
-        if contact:
-            obj.phone = contact.contact
-            
         return obj
 
     def update(self, current_user: User, appeal_id: int, payload: AppealUpdate) -> Appeal:
@@ -201,7 +194,7 @@ class AppealService:
             user_id=current_user.id,
             user_name=current_user.username
         )
-
+        
         if phone is not None:
             from app.models.contact import Contact
             contact = self.appeals.db.query(Contact).filter(Contact.appeal_id == appeal_id).first()
@@ -212,11 +205,6 @@ class AppealService:
             self.appeals.db.add(contact)
             self.appeals.db.commit()
         
-        # Populate phone for the returned object
-        from app.models.contact import Contact
-        contact = self.appeals.db.query(Contact).filter(Contact.appeal_id == appeal_id).first()
-        result.phone = contact.contact if contact else None
-
         # Log the update
         if self.audit:
             self.audit.log_action(

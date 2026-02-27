@@ -18,8 +18,13 @@ import {
 import Select from 'react-select';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
+import { Azerbaijan } from 'flatpickr/dist/l10n/az';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import { getAppealReport, ReportParams } from '../api/reports';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import DescriptionIcon from '@mui/icons-material/Description';
+import { getAppealReport, ReportParams, exportForma4 } from '../api/reports';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSelectStyles } from '../utils/formStyles';
@@ -148,11 +153,15 @@ export default function Reports() {
                         <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Başlanğıc Tarix</Typography>
                         <Flatpickr
                             ref={startDateRef}
-                            value={params.start_date ? new Date(params.start_date) : null}
+                            value={params.start_date ? new Date(params.start_date) : undefined}
                             onChange={(dates) => setParams({ ...params, start_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',
                                 dateFormat: 'Y-m-d',
+                                locale: {
+                                    ...Azerbaijan,
+                                    firstDayOfWeek: 1
+                                }
                             }}
                             placeholder="Tarix seçin"
                             className="w-full"
@@ -170,11 +179,15 @@ export default function Reports() {
                         <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Son Tarix</Typography>
                         <Flatpickr
                             ref={endDateRef}
-                            value={params.end_date ? new Date(params.end_date) : null}
+                            value={params.end_date ? new Date(params.end_date) : undefined}
                             onChange={(dates) => setParams({ ...params, end_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',
                                 dateFormat: 'Y-m-d',
+                                locale: {
+                                    ...Azerbaijan,
+                                    firstDayOfWeek: 1
+                                }
                             }}
                             placeholder="Tarix seçin"
                             className="w-full"
@@ -322,6 +335,77 @@ export default function Reports() {
                     </Grid>
                 </Grid>
             )}
+
+            {/* Forma No. 4 Section */}
+            <Paper
+                className="animate-slide-up glass-card"
+                sx={{
+                    p: 4,
+                    mt: 4,
+                    borderRadius: 4,
+                    bgcolor: 'rgba(255,255,255,0.7)',
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                    <FileDownloadIcon sx={{ color: 'primary.main' }} />
+                    <Typography variant="h6" fontWeight="800" color="primary">
+                        4 nömrəli Forma (Müraciətlər Jurnalı)
+                    </Typography>
+                </Box>
+
+                <Grid container spacing={3} alignItems="flex-end">
+                    <Grid size={{ xs: 12, md: 3 }}>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Başlanğıc Tarix</Typography>
+                        <Flatpickr
+                            value={params.start_date ? new Date(params.start_date) : undefined}
+                            onChange={(dates) => setParams({ ...params, start_date: dates[0]?.toISOString().split('T')[0] || '' })}
+                            options={{ mode: 'single', dateFormat: 'Y-m-d', locale: Azerbaijan }}
+                            className="w-full"
+                            style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0, 0, 0, 0.23)', backgroundColor: 'white' }}
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 3 }}>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Son Tarix</Typography>
+                        <Flatpickr
+                            value={params.end_date ? new Date(params.end_date) : undefined}
+                            onChange={(dates) => setParams({ ...params, end_date: dates[0]?.toISOString().split('T')[0] || '' })}
+                            options={{ mode: 'single', dateFormat: 'Y-m-d', locale: Azerbaijan }}
+                            className="w-full"
+                            style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0, 0, 0, 0.23)', backgroundColor: 'white' }}
+                        />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<TableChartIcon />}
+                                onClick={() => exportForma4('excel', params)}
+                                sx={{ borderRadius: 2, fontWeight: 700, px: 3 }}
+                            >
+                                EXCEL
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<DescriptionIcon />}
+                                onClick={() => exportForma4('word', params)}
+                                sx={{ borderRadius: 2, fontWeight: 700, px: 3, bgcolor: '#2b579a', '&:hover': { bgcolor: '#1e3e6d' } }}
+                            >
+                                WORD
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<PictureAsPdfIcon />}
+                                onClick={() => exportForma4('pdf', params)}
+                                sx={{ borderRadius: 2, fontWeight: 700, px: 3 }}
+                            >
+                                PDF
+                            </Button>
+                        </Box>
+                    </Grid>
+                </Grid>
+            </Paper>
         </Layout>
     );
 }

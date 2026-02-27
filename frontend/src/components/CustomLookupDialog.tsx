@@ -40,8 +40,12 @@ export function CustomLookupDialog({
             await onAdd(value);
             setValue('');
             onClose();
-        } catch (err) {
-            setError('Xəta baş verdi. Xahiş edirik yenidən cəhd edin.');
+        } catch (err: any) {
+            if (err?.response?.status === 409) {
+                setError('Bu məlumat artıq bazada mövcuddur');
+            } else {
+                setError('Xəta baş verdi. Xahiş edirik yenidən cəhd edin.');
+            }
         } finally {
             setIsLoading(false);
         }

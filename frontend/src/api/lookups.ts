@@ -180,6 +180,8 @@ export interface ExecutorAssignment extends LookupItem {
     is_primary?: boolean;  // Əsas icraçı işarəsi
     PC?: string;
     PC_Tarixi?: string;
+    executor_name?: string;
+    direction_name?: string;
 }
 
 export const getAppealExecutors = (appealId: number) =>

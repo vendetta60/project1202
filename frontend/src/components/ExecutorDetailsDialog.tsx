@@ -11,10 +11,17 @@ import {
   Box,
   Grid,
   Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  CircularProgress,
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-import { ExecutorAssignment } from '../api/lookups';
+import { Azerbaijan } from 'flatpickr/dist/l10n/az';
+import { ExecutorAssignment, getDirections, getExecutorListByDirection } from '../api/lookups';
 import { parseDateFromDDMMYYYY, formatDateToDDMMYYYY_Safe } from '../utils/dateUtils';
 
 interface ExecutorDetailsDialogProps {
@@ -36,6 +43,18 @@ export function ExecutorDetailsDialog({
     executor || {}
   );
 
+  const { data: directions } = useQuery({
+    queryKey: ['directions'],
+    queryFn: getDirections,
+    enabled: open,
+  });
+
+  const { data: executors, isLoading: isLoadingExecutors } = useQuery({
+    queryKey: ['executors', formData.direction_id],
+    queryFn: () => getExecutorListByDirection(Number(formData.direction_id)),
+    enabled: open && !!formData.direction_id,
+  });
+
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -44,39 +63,99 @@ export function ExecutorDetailsDialog({
   };
 
   const handleSave = () => {
-    onSave(formData);
+    // Include names for local state updates
+    const selectedDir = directions?.find(d => d.id === formData.direction_id);
+    const selectedEx = executors?.find(e => e.id === formData.executor_id);
+    
+    // Sanitize dates: convert empty strings to undefined for backend
+    const sanitizedData = { ...formData };
+    const dateFields: (keyof ExecutorAssignment)[] = ['out_date', 'r_date', 'PC_Tarixi'];
+    dateFields.forEach(field => {
+      if (sanitizedData[field] === '') {
+        delete sanitizedData[field];
+      }
+    });
+
+    onSave({
+      ...sanitizedData,
+      direction_name: selectedDir?.direction || (formData as any).direction_name,
+      executor_name: selectedEx?.executor || (formData as any).executor_name,
+    });
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: 700, color: '#3e4a21' }}>
+      <DialogTitle sx={{ 
+        fontWeight: 800, 
+        color: 'white',
+        background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
+        pb: 2
+      }}>
         İcraçı Təfsilatları
       </DialogTitle>
 
       <DialogContent sx={{ pt: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {/* Əsas icraçı */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={formData.is_primary || false}
-                onChange={(e) => handleChange('is_primary', e.target.checked)}
-                sx={{
-                  '&.Mui-checked': {
-                    color: '#3e4a21',
-                  },
-                }}
-              />
-            }
-            label={
-              <Typography sx={{ fontWeight: 600, color: '#333' }}>
-                Əsas icraçı kimi işarələ
-              </Typography>
-            }
-            sx={{ mb: 1 }}
-          />
-
           <Grid container spacing={2}>
+            {/* Bölmə / İdarə */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel sx={{ fontSize: '0.85rem', fontWeight: 600 }}>İcraçının struktur bölməsi</InputLabel>
+                <Select
+                  value={formData.direction_id || ''}
+                  label="İcraçının struktur bölməsi"
+                  onChange={(e) => {
+                    handleChange('direction_id', e.target.value);
+                    handleChange('executor_id', undefined);
+                  }}
+                  sx={{ borderRadius: 1.5, bgcolor: 'white' }}
+                >
+                  {directions?.map((dir) => (
+                    <MenuItem key={dir.id} value={dir.id}>{dir.direction}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* İcraçı */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <FormControl fullWidth size="small" disabled={!formData.direction_id || isLoadingExecutors}>
+                <InputLabel sx={{ fontSize: '0.85rem', fontWeight: 600 }}>İcraçı</InputLabel>
+                <Select
+                  value={formData.executor_id || ''}
+                  label="İcraçı"
+                  onChange={(e) => handleChange('executor_id', e.target.value)}
+                  sx={{ borderRadius: 1.5, bgcolor: 'white' }}
+                  endAdornment={isLoadingExecutors ? <CircularProgress size={20} sx={{ mr: 2 }} /> : null}
+                >
+                  {executors?.map((ex) => (
+                    <MenuItem key={ex.id} value={ex.id}>{ex.executor}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Əsas icraçı */}
+            <Grid size={{ xs: 12 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.is_primary || false}
+                    onChange={(e) => handleChange('is_primary', e.target.checked)}
+                    sx={{
+                      '&.Mui-checked': {
+                        color: '#7c3aed',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography sx={{ fontWeight: 600, color: '#333' }}>
+                    Əsas icraçı kimi işarələ
+                  </Typography>
+                }
+              />
+            </Grid>
             {/* Göndərilmə nömrəsi */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#444', mb: 0.5 }}>
@@ -101,22 +180,28 @@ export function ExecutorDetailsDialog({
                 Göndərilmə tarixi
               </Typography>
               <Flatpickr
-                value={parseDateFromDDMMYYYY(formData.out_date) || undefined}
+                value={parseDateFromDDMMYYYY(formData.out_date) || ''}
                 onChange={(dates) =>
                   handleChange('out_date', formatDateToDDMMYYYY_Safe(dates[0]))
                 }
                 options={{
                   mode: 'single',
                   dateFormat: 'd.m.Y',
+                  locale: {
+                    ...Azerbaijan,
+                    firstDayOfWeek: 1
+                  }
                 }}
                 placeholder="Tarix seçin"
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(0, 0, 0, 0.23)',
-                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  backgroundColor: '#f8fafc',
                   fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
                 }}
               />
             </Grid>
@@ -180,13 +265,17 @@ export function ExecutorDetailsDialog({
                 Sənədin tarixi
               </Typography>
               <Flatpickr
-                value={parseDateFromDDMMYYYY(formData.r_date) || undefined}
+                value={parseDateFromDDMMYYYY(formData.r_date) || ''}
                 onChange={(dates) =>
                   handleChange('r_date', formatDateToDDMMYYYY_Safe(dates[0]))
                 }
                 options={{
                   mode: 'single',
                   dateFormat: 'd.m.Y',
+                  locale: {
+                    ...Azerbaijan,
+                    firstDayOfWeek: 1
+                  }
                 }}
                 placeholder="Tarix"
                 style={{
@@ -194,7 +283,7 @@ export function ExecutorDetailsDialog({
                   padding: '8px 12px',
                   borderRadius: '8px',
                   border: '1px solid rgba(0, 0, 0, 0.23)',
-                  backgroundColor: 'white',
+                  backgroundColor: '#f8fafc',
                   fontSize: '14px',
                 }}
               />
@@ -243,13 +332,17 @@ export function ExecutorDetailsDialog({
                 PC Tarixi
               </Typography>
               <Flatpickr
-                value={parseDateFromDDMMYYYY(formData.PC_Tarixi) || undefined}
+                value={parseDateFromDDMMYYYY(formData.PC_Tarixi) || ''}
                 onChange={(dates) =>
                   handleChange('PC_Tarixi', formatDateToDDMMYYYY_Safe(dates[0]))
                 }
                 options={{
                   mode: 'single',
                   dateFormat: 'd.m.Y',
+                  locale: {
+                    ...Azerbaijan,
+                    firstDayOfWeek: 1
+                  }
                 }}
                 placeholder="Tarix"
                 style={{
@@ -257,7 +350,7 @@ export function ExecutorDetailsDialog({
                   padding: '8px 12px',
                   borderRadius: '8px',
                   border: '1px solid rgba(0, 0, 0, 0.23)',
-                  backgroundColor: 'white',
+                  backgroundColor: '#f8fafc',
                   fontSize: '14px',
                 }}
               />
@@ -272,7 +365,7 @@ export function ExecutorDetailsDialog({
                     onChange={(e) => handleChange('active', e.target.checked)}
                     sx={{
                       '&.Mui-checked': {
-                        color: '#3e4a21',
+                        color: '#7c3aed',
                       },
                     }}
                   />
@@ -293,11 +386,13 @@ export function ExecutorDetailsDialog({
           onClick={onClose}
           variant="outlined"
           sx={{
-            borderColor: '#ccc',
-            color: '#666',
+            borderColor: '#e2e8f0',
+            color: '#64748b',
             textTransform: 'none',
-            fontWeight: 600,
-            '&:hover': { borderColor: '#999' },
+            fontWeight: 700,
+            borderRadius: '50px',
+            px: 3,
+            '&:hover': { borderColor: '#cbd5e1', bgcolor: '#f8fafc' },
           }}
         >
           Ləğv et
@@ -307,10 +402,13 @@ export function ExecutorDetailsDialog({
           variant="contained"
           disabled={loading}
           sx={{
-            bgcolor: '#3e4a21',
+            background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
             textTransform: 'none',
             fontWeight: 700,
-            '&:hover': { bgcolor: '#2c3a19' },
+            borderRadius: '50px',
+            px: 4,
+            boxShadow: '0 4px 6px -1px rgb(79 70 229 / 0.4)',
+            '&:hover': { filter: 'brightness(1.05)', boxShadow: '0 10px 15px -3px rgb(79 70 229 / 0.4)' },
           }}
         >
           Yadda saxla

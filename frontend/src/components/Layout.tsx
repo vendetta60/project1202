@@ -37,8 +37,6 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import HistoryIcon from '@mui/icons-material/History';
 import SettingsIcon from '@mui/icons-material/Settings';
-import MenuOpenIcon from '@mui/icons-material/MenuOpen';
-import MenuIcon from '@mui/icons-material/Menu';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteIcon from '@mui/icons-material/Palette';
@@ -156,13 +154,13 @@ export default function Layout({ children }: LayoutProps) {
     document.body.setAttribute('data-theme', mode);
   }, [mode]);
   const sidebarBg = isDark
-    ? 'linear-gradient(175deg, #131825 0%, #0f1320 60%, #12192e 100%)'
-    : `linear-gradient(175deg, ${primaryColor} 0%, ${primaryColor}e8 55%, ${primaryColor}cc 100%)`;
+    ? 'linear-gradient(175deg, #0f172a 0%, #0f172a 60%, #1e293b 100%)'
+    : `linear-gradient(175deg, ${primaryColor} 0%, ${primaryColor}ee 50%, ${primaryColor}cc 100%)`;
   const appBarBg = isDark
-    ? 'rgba(13,17,23,0.95)'
+    ? 'rgba(15,23,42,0.96)'
     : 'rgba(255,255,255,0.92)';
-  const appBarColor = isDark ? '#e8ecf4' : '#1a1f36';
-  const contentBg = isDark ? '#0d1117' : '#f0f2f8';
+  const appBarColor = isDark ? '#f8fafc' : '#1a1f36';
+  const contentBg = isDark ? '#0f172a' : '#f0f2f8';
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: contentBg }}>
@@ -185,33 +183,48 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         {/* Logo / Title + Toggle */}
-        <Box sx={{ px: sidebarCollapsed ? 1.5 : 2.5, mb: 2, display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'space-between', gap: 1 }}>
-          {!sidebarCollapsed && (
-            <Box sx={{ cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={() => navigate('/')}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 900,
-                  letterSpacing: '0.5px',
-                  textTransform: 'uppercase',
-                  background: 'linear-gradient(45deg, #ffffff 30%, #a68b44 90%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontSize: '0.9rem',
-                }}
-              >
-                Müraciət<br />Qeydiyyatı
-              </Typography>
-            </Box>
-          )}
-          <IconButton
-            size="small"
-            onClick={toggleSidebar}
-            sx={{ color: 'rgba(255,255,255,0.9)', flexShrink: 0 }}
-            aria-label={sidebarCollapsed ? 'Menyunu aç' : 'Menyunu yığ'}
+        <Box sx={{ px: sidebarCollapsed ? 1 : 2, mb: 3, mt: 1, display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              cursor: 'pointer',
+              overflow: 'hidden',
+              width: '100%'
+            }}
+            onClick={() => navigate('/')}
           >
-            {sidebarCollapsed ? <MenuIcon /> : <MenuOpenIcon />}
-          </IconButton>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Logo"
+              sx={{
+                height: 36,
+                width: 'auto',
+                flexShrink: 0,
+                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'
+              }}
+            />
+            {!sidebarCollapsed && (
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 900,
+                    fontSize: '0.75rem',
+                    lineHeight: 1.2,
+                    color: '#fff',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap',
+                    textTransform: 'uppercase'
+                  }}
+                >
+                  Müraciətlərin<br />Qeydiyyatı
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
 
         <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mb: 2 }} />
@@ -223,17 +236,24 @@ export default function Layout({ children }: LayoutProps) {
               <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   onClick={() => navigate(item.path)}
+                  className={active ? 'sidebar-active-pulse' : ''}
                   sx={{
                     borderRadius: '12px',
                     justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.65)',
-                    bgcolor: active ? 'rgba(255,255,255,0.18)' : 'transparent',
-                    boxShadow: active ? '0 2px 12px rgba(0,0,0,0.18)' : 'none',
+                    color: '#fff',
+                    bgcolor: active ? 'rgba(255,255,255,0.2)' : 'transparent',
+                    boxShadow: active
+                      ? '0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)'
+                      : 'none',
+                    borderLeft: active && !sidebarCollapsed ? '3px solid rgba(255,255,255,0.8)' : '3px solid transparent',
+                    opacity: active ? 1 : 0.72,
                     '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.13)',
-                      color: '#fff',
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      opacity: 1,
+                      transform: 'scale(1.01)',
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.2)',
                     },
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
                     py: 1.1,
                   }}
                 >
@@ -267,13 +287,21 @@ export default function Layout({ children }: LayoutProps) {
                   <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                     <ListItemButton
                       onClick={() => navigate(item.path)}
+                      className={active ? 'sidebar-active-pulse' : ''}
                       sx={{
                         borderRadius: '12px',
                         justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                        color: active ? '#fff' : 'rgba(255,255,255,0.55)',
-                        bgcolor: active ? 'rgba(255,255,255,0.14)' : 'transparent',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.10)', color: '#fff' },
-                        transition: 'all 0.2s ease',
+                        color: '#fff',
+                        bgcolor: active ? 'rgba(255,255,255,0.18)' : 'transparent',
+                        borderLeft: active && !sidebarCollapsed ? '3px solid rgba(255,255,255,0.7)' : '3px solid transparent',
+                        boxShadow: active ? '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
+                        opacity: active ? 1 : 0.65,
+                        '&:hover': {
+                          bgcolor: 'rgba(255,255,255,0.12)',
+                          opacity: 1,
+                          transform: 'scale(1.01)',
+                        },
+                        transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
                         py: 1,
                       }}
                     >
@@ -334,19 +362,31 @@ export default function Layout({ children }: LayoutProps) {
 
         {user && (
           <>
-            <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)' }} />
+            <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)' }} />
             <Box sx={{ p: sidebarCollapsed ? 1.5 : 2.5 }}>
               <Button
                 fullWidth
                 color="inherit"
-                startIcon={!sidebarCollapsed && <AccountCircleIcon />}
+                startIcon={!sidebarCollapsed && (
+                  <Box sx={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    border: '2px solid rgba(255,255,255,0.5)',
+                    boxShadow: '0 0 0 3px rgba(255,255,255,0.15), 0 0 10px rgba(255,255,255,0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'box-shadow 0.2s ease',
+                    '&:hover': { boxShadow: '0 0 0 4px rgba(255,255,255,0.25), 0 0 16px rgba(255,255,255,0.2)' },
+                  }}>
+                    <AccountCircleIcon sx={{ fontSize: 20 }} />
+                  </Box>
+                )}
                 onClick={handleMenu}
                 sx={{
-                  textTransform: 'uppercase',
+                  textTransform: 'none',
                   fontWeight: 700,
-                  fontSize: '0.75rem',
+                  fontSize: '0.78rem',
                   justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                   minWidth: 0,
+                  borderRadius: '10px',
                   '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
                 }}
               >
@@ -414,9 +454,19 @@ export default function Layout({ children }: LayoutProps) {
           elevation={0}
           sx={{
             bgcolor: appBarBg,
-            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,31,54,0.08)'}`,
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
+            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,31,54,0.07)'}`,
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: '100%',
+              height: '2px',
+              background: `linear-gradient(90deg, transparent, ${primaryColor}60, ${primaryColor}, ${primaryColor}60, transparent)`,
+              opacity: 0.6,
+            },
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 } }}>

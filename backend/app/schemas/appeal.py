@@ -1,5 +1,6 @@
 from datetime import datetime
 from app.schemas.common import ORMBase
+from app.schemas.executor import ExecutorOut
 
 
 class AppealCreate(ORMBase):
@@ -97,6 +98,10 @@ class AppealOut(ORMBase):
     user_section_id: int | None = None
     PC: str | None = None
     PC_Tarixi: datetime | None = None
+    
+    # Extra fields for optimization
+    executors: list[ExecutorOut] = []
+    phone: str | None = None
     
     # Audit fields
     is_deleted: bool = False

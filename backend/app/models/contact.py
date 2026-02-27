@@ -24,4 +24,4 @@ class Contact(Base, AuditMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     appeal_id: Mapped[int | None] = mapped_column(Integer)
-    contact: Mapped[str | None] = mapped_column(String(15))
+    contact: Mapped[str | None] = mapped_column(String(255))

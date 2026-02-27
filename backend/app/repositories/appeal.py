@@ -1,8 +1,8 @@
-from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 
 from app.models.appeal import Appeal
+from app.models.executor import Executor
 
 
 class AppealRepository:
@@ -20,7 +20,11 @@ class AppealRepository:
         offset: int = 0,
         include_deleted: bool = False,
     ) -> list[Appeal]:
-        query = self.db.query(Appeal)
+        query = self.db.query(Appeal).options(
+            joinedload(Appeal.executors).joinedload(Executor.executor_list),
+            joinedload(Appeal.executors).joinedload(Executor.direction),
+            joinedload(Appeal.contacts)
+        )
         
         # Filter out deleted records unless explicitly requested
         if not include_deleted:
@@ -85,7 +89,11 @@ class AppealRepository:
         return query.count()
 
     def get(self, appeal_id: int, include_deleted: bool = False) -> Appeal | None:
-        query = self.db.query(Appeal).filter(Appeal.id == appeal_id)
+        query = self.db.query(Appeal).options(
+            joinedload(Appeal.executors).joinedload(Executor.executor_list),
+            joinedload(Appeal.executors).joinedload(Executor.direction),
+            joinedload(Appeal.contacts)
+        ).filter(Appeal.id == appeal_id)
         if not include_deleted:
             query = query.filter(Appeal.is_deleted == False)
         return query.first()

@@ -4,7 +4,7 @@ Maps to MSSQL tables: Direction, ExecutorList, Executors
 from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, SmallInteger, String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 
 from app.db.base import Base
 
@@ -49,3 +49,23 @@ class Executor(Base):
     is_primary: Mapped[bool | None] = mapped_column(Boolean, default=False)  # Əsas icraçı işarəsi
     PC: Mapped[str | None] = mapped_column(String(35))
     PC_Tarixi: Mapped[datetime | None] = mapped_column(DateTime)
+
+    # Relationships for eager loading
+    executor_list: Mapped["ExecutorList"] = relationship(
+        "ExecutorList",
+        primaryjoin="Executor.executor_id == foreign(ExecutorList.id)",
+        viewonly=True
+    )
+    direction: Mapped["Direction"] = relationship(
+        "Direction",
+        primaryjoin="Executor.direction_id == foreign(Direction.id)",
+        viewonly=True
+    )
+
+    @property
+    def executor_name(self):
+        return self.executor_list.executor if self.executor_list else None
+
+    @property
+    def direction_name(self):
+        return self.direction.direction if self.direction else None

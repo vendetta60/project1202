@@ -7,7 +7,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import DateTime, Integer, SmallInteger, String, Boolean, Text, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 
 from app.db.base import Base
 
@@ -61,3 +61,61 @@ class Appeal(Base, AuditMixin):
     user_section_id: Mapped[int | None] = mapped_column(Integer)
     PC: Mapped[str | None] = mapped_column(String(20))
     PC_Tarixi: Mapped[datetime | None] = mapped_column(DateTime)
+    
+    # Relationships for eager loading
+    executors: Mapped[list["Executor"]] = relationship(
+        "Executor", 
+        primaryjoin="Appeal.id == foreign(Executor.appeal_id)",
+        viewonly=True
+    )
+    contacts: Mapped[list["Contact"]] = relationship(
+        "Contact",
+        primaryjoin="Appeal.id == foreign(Contact.appeal_id)",
+        viewonly=True
+    )
+    
+    # Relationships for Form 4
+    department: Mapped["Department"] = relationship(
+        "Department",
+        primaryjoin="Appeal.dep_id == foreign(Department.id)",
+        viewonly=True
+    )
+    ap_index_rel: Mapped["ApIndex"] = relationship(
+        "ApIndex",
+        primaryjoin="Appeal.ap_index_id == foreign(ApIndex.id)",
+        viewonly=True
+    )
+    account_index_rel: Mapped["AccountIndex"] = relationship(
+        "AccountIndex",
+        primaryjoin="Appeal.account_index_id == foreign(AccountIndex.id)",
+        viewonly=True
+    )
+    content_type_rel: Mapped["ContentType"] = relationship(
+        "ContentType",
+        primaryjoin="Appeal.content_type_id == foreign(ContentType.id)",
+        viewonly=True
+    )
+    status_rel: Mapped["ApStatus"] = relationship(
+        "ApStatus",
+        primaryjoin="Appeal.status == foreign(ApStatus.id)",
+        viewonly=True
+    )
+    instruction_rel: Mapped["ChiefInstruction"] = relationship(
+        "ChiefInstruction",
+        primaryjoin="Appeal.instructions_id == foreign(ChiefInstruction.id)",
+        viewonly=True
+    )
+    control_rel: Mapped["WhoControl"] = relationship(
+        "WhoControl",
+        primaryjoin="Appeal.who_control_id == foreign(WhoControl.id)",
+        viewonly=True
+    )
+    region_rel: Mapped["Region"] = relationship(
+        "Region",
+        primaryjoin="Appeal.region_id == foreign(Region.id)",
+        viewonly=True
+    )
+
+    @property
+    def phone(self):
+        return self.contacts[0].contact if self.contacts else None

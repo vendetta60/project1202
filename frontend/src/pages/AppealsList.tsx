@@ -12,67 +12,17 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import InboxIcon from '@mui/icons-material/Inbox';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import PendingActionsIcon from '@mui/icons-material/PendingActions';
-import {
-  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip as RTooltip, ResponsiveContainer, Legend,
-} from 'recharts';
 
 import { getAppeals, deleteAppeal, restoreAppeal } from '../api/appeals';
-import { getAppealReport } from '../api/reports';
 import { getDepartments, getApStatuses, getRegions } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { usePermissions } from '../hooks/usePermissions';
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
-
-// ─── Status colour helper ────────────────────────────────────────────────────
-function getStatusStyle(name: string) {
-  const n = name.toLowerCase();
-  if (n.includes('icra') && (n.includes('olun') || n.includes('edildi')))
-    return { bg: '#d1fae5', color: '#065f46', darkBg: 'rgba(16,185,129,0.15)', darkColor: '#34d399' };
-  if (n.includes('icra'))
-    return { bg: '#fef3c7', color: '#92400e', darkBg: 'rgba(245,158,11,0.15)', darkColor: '#fbbf24' };
-  if (n.includes('baxılmamış') || n.includes('gözl'))
-    return { bg: '#dbeafe', color: '#1e40af', darkBg: 'rgba(59,130,246,0.15)', darkColor: '#60a5fa' };
-  if (n === '—' || !n)
-    return null; // no pill
-  return { bg: '#ede9fe', color: '#4c1d95', darkBg: 'rgba(139,92,246,0.15)', darkColor: '#a78bfa' };
-}
-
-// chart palette
-const CHART_PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#14b8a6', '#f43f5e'];
-
-// ─── Metric card ─────────────────────────────────────────────────────────────
-interface MetricProps {
-  label: string; value: number | string;
-  icon: React.ReactNode; iconBg: string; iconColor: string; sub?: string;
-}
-function MetricCard({ label, value, icon, iconBg, iconColor, sub }: MetricProps) {
-  return (
-    <Paper elevation={0} className="glass-card animate-slide-up"
-      sx={{ flex: '1 1 160px', minWidth: 150, p: 2.5, borderRadius: '16px', display: 'flex', alignItems: 'center', gap: 2 }}
-    >
-      <Box sx={{
-        width: 46, height: 46, borderRadius: '13px', bgcolor: iconBg, color: iconColor,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0
-      }}>
-        {icon}
-      </Box>
-      <Box>
-        <Typography sx={{ fontSize: '1.65rem', fontWeight: 900, lineHeight: 1, color: 'text.primary' }}>{value}</Typography>
-        <Typography sx={{ fontSize: '0.72rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.07em', mt: 0.3 }}>{label}</Typography>
-        {sub && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', opacity: 0.65, mt: 0.2 }}>{sub}</Typography>}
-      </Box>
-    </Paper>
-  );
-}
 
 // ─── React-Select dark styles ─────────────────────────────────────────────────
 function selectStyles(isDark: boolean, primary: string) {
@@ -93,19 +43,6 @@ function selectStyles(isDark: boolean, primary: string) {
     input: (b: any) => ({ ...b, color: text }),
   };
 }
-
-// custom tooltip for recharts
-const ChartTooltip = ({ active, payload }: any) => {
-  if (active && payload?.length) {
-    return (
-      <Paper elevation={4} sx={{ px: 1.5, py: 1, borderRadius: '10px', minWidth: 110 }}>
-        <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'text.primary' }}>{payload[0].name || payload[0].payload.name}</Typography>
-        <Typography sx={{ fontSize: '0.85rem', fontWeight: 800, color: payload[0].fill || '#6366f1' }}>{payload[0].value} müraciət</Typography>
-      </Paper>
-    );
-  }
-  return null;
-};
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function AppealsList() {
@@ -136,10 +73,7 @@ export default function AppealsList() {
   const { data: statuses } = useQuery({ queryKey: ['apStatuses'], queryFn: getApStatuses });
   const { data: regions } = useQuery({ queryKey: ['regions'], queryFn: getRegions });
 
-  // ── report queries for charts ─────────────────────────────────────────────
-  const { data: statusReport } = useQuery({ queryKey: ['report', 'status'], queryFn: () => getAppealReport({ group_by: 'status' }) });
-  const { data: deptReport } = useQuery({ queryKey: ['report', 'department'], queryFn: () => getAppealReport({ group_by: 'department' }) });
-  const { data: regionReport } = useQuery({ queryKey: ['report', 'region'], queryFn: () => getAppealReport({ group_by: 'region' }) });
+  // ── item fetching ────────────────────────────────────────────────────────
 
   const { data: appealsData, isLoading } = useQuery({
     queryKey: ['appeals', page, rowsPerPage, depFilter, regionFilter, statusFilter, search, showDeleted],
@@ -161,27 +95,11 @@ export default function AppealsList() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['appeals'] }); setRestoreTargetId(null); },
   });
 
-  const getStatusName = (id?: number | null) => id ? String(statuses?.find(s => s.id === id)?.status ?? id) : null;
-  const getDepName = (id?: number | null) => id ? String(departments?.find(d => d.id === id)?.department ?? id) : null;
-  const getRegionName = (id?: number | null) => id ? String(regions?.find(r => r.id === id)?.region ?? id) : null;
-
   const items = appealsData?.items ?? [];
   const total = appealsData?.total ?? 0;
-  const globalTotal = statusReport?.total ?? 0;
 
-  // derive global counts from statusReport
-  const completedCount = statusReport?.items.filter(i => { const n = i.name?.toLowerCase() ?? ''; return n.includes('icra') && (n.includes('olun') || n.includes('edildi')); }).reduce((acc, i) => acc + i.count, 0) ?? 0;
-  const inProgressCount = statusReport?.items.filter(i => { const n = i.name?.toLowerCase() ?? ''; return n.includes('icra') && !n.includes('olun') && !n.includes('edildi'); }).reduce((acc, i) => acc + i.count, 0) ?? 0;
-  const pendingCount = statusReport?.items.filter(i => { const n = i.name?.toLowerCase() ?? ''; return n.includes('baxılmamış') || n.includes('gözl'); }).reduce((acc, i) => acc + i.count, 0) ?? 0;
-
-  // chart data: top 6 departments
-  const topDepts = (deptReport?.items ?? []).filter(i => i.name && i.name !== 'Naməlum').slice(0, 6);
-  // top 5 regions
-  const topRegions = (regionReport?.items ?? []).filter(i => i.name && i.name !== 'Naməlum').slice(0, 5);
-  // status pie (filter unnamed)
-  const statusPie = (statusReport?.items ?? []).filter(i => i.name && i.count > 0);
-
-  const selectSx = selectStyles(isDark, primary);
+  // Per-appeal extra data (for current page) - REMOVED for optimization
+  const selectSx = selectStyles(isDark, muiTheme.palette.primary.main);
 
   if (isLoading) return <Layout><LoadingSpinner /></Layout>;
 
@@ -190,8 +108,6 @@ export default function AppealsList() {
   const headBg = isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc';
   const textPrimary = muiTheme.palette.text.primary;
   const textSecondary = muiTheme.palette.text.secondary;
-  const chartGrid = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,31,54,0.06)';
-  const chartTick = isDark ? '#8892a4' : '#8890a4';
 
   return (
     <Layout>
@@ -254,99 +170,6 @@ export default function AppealsList() {
           </Box>
         </Box>
 
-        {/* ── Metric Cards ─────────────────────────────────────────────── */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-          <MetricCard label="Cəmi (sistem)" value={globalTotal} icon={<DescriptionOutlinedIcon fontSize="inherit" />} iconBg={`${primary}18`} iconColor={primary} sub="bütün qeydlər" />
-          <MetricCard label="Gözləmədə" value={pendingCount} icon={<PendingActionsIcon fontSize="inherit" />} iconBg="#dbeafe" iconColor="#1d4ed8" sub="baxılmamış" />
-          <MetricCard label="İcrada" value={inProgressCount} icon={<HourglassTopIcon fontSize="inherit" />} iconBg="#fef3c7" iconColor="#d97706" sub="davam edir" />
-          <MetricCard label="Tamamlanmış" value={completedCount} icon={<CheckCircleOutlineIcon fontSize="inherit" />} iconBg="#d1fae5" iconColor="#059669" sub="bağlanıb" />
-          <MetricCard label="Bu filtrədə" value={total} icon={<InboxIcon fontSize="inherit" />} iconBg="rgba(139,92,246,0.13)" iconColor="#7c3aed" sub={`${rowsPerPage} sıralı`} />
-        </Box>
-
-        {/* ── Charts Row ───────────────────────────────────────────────── */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-
-          {/* Status Donut */}
-          <Paper elevation={0} className="glass-card" sx={{ flex: '1 1 280px', minWidth: 260, borderRadius: '16px', p: 2.5 }}>
-            <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: textPrimary, mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Status üzrə paylanma
-            </Typography>
-            {statusPie.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={statusPie} cx="50%" cy="45%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="count" nameKey="name">
-                    {statusPie.map((_, i) => (
-                      <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} strokeWidth={0} />
-                    ))}
-                  </Pie>
-                  <RTooltip content={<ChartTooltip />} />
-                  <Legend
-                    iconType="circle"
-                    iconSize={8}
-                    formatter={(v) => <span style={{ fontSize: '0.73rem', color: textSecondary, fontWeight: 600 }}>{v}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography sx={{ color: textSecondary, fontSize: '0.8rem' }}>Məlumat yoxdur</Typography>
-              </Box>
-            )}
-          </Paper>
-
-          {/* Top Departments Bar */}
-          <Paper elevation={0} className="glass-card" sx={{ flex: '2 1 400px', minWidth: 340, borderRadius: '16px', p: 2.5 }}>
-            <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: textPrimary, mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              İdarələr üzrə müraciət sayı (top 6)
-            </Typography>
-            {topDepts.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={topDepts} margin={{ top: 4, right: 4, left: -20, bottom: 55 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGrid} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: chartTick, fontWeight: 600 }} axisLine={false} tickLine={false}
-                    angle={-35} textAnchor="end" interval={0} />
-                  <YAxis tick={{ fontSize: 11, fill: chartTick }} axisLine={false} tickLine={false} />
-                  <RTooltip content={<ChartTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(26,31,54,0.04)' }} />
-                  <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={32}>
-                    {topDepts.map((_, i) => (
-                      <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography sx={{ color: textSecondary, fontSize: '0.8rem' }}>Məlumat yoxdur</Typography>
-              </Box>
-            )}
-          </Paper>
-
-          {/* Top Regions Bar */}
-          <Paper elevation={0} className="glass-card" sx={{ flex: '1 1 280px', minWidth: 260, borderRadius: '16px', p: 2.5 }}>
-            <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: textPrimary, mb: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Regionlar üzrə (top 5)
-            </Typography>
-            {topRegions.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={topRegions} layout="vertical" margin={{ top: 4, right: 16, left: 10, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={chartGrid} />
-                  <XAxis type="number" tick={{ fontSize: 11, fill: chartTick }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={95} tick={{ fontSize: 10, fill: chartTick, fontWeight: 600 }} axisLine={false} tickLine={false} />
-                  <RTooltip content={<ChartTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(26,31,54,0.04)' }} />
-                  <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
-                    {topRegions.map((_, i) => (
-                      <Cell key={i} fill={CHART_PALETTE[(i + 3) % CHART_PALETTE.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Box sx={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography sx={{ color: textSecondary, fontSize: '0.8rem' }}>Məlumat yoxdur</Typography>
-              </Box>
-            )}
-          </Paper>
-        </Box>
 
         {/* ── Filters ──────────────────────────────────────────────────── */}
         <Paper elevation={0} className="glass-card"
@@ -422,13 +245,12 @@ export default function AppealsList() {
                 <TableRow sx={{ bgcolor: headBg }}>
                   {[
                     { label: '№', w: 50, center: true },
-                    { label: 'Qeydiyyat №', w: 130 },
-                    { label: 'Vətəndaş', w: 180 },
-                    { label: 'Region', w: 140 },
-                    { label: 'İdarə', w: 'auto' },
-                    { label: 'Məzmun', w: 200 },
-                    { label: 'Status', w: 140 },
-                    { label: 'Tarix', w: 110 },
+                    { label: 'Qeydalınma nömrəsi', w: 150 },
+                    { label: 'Qeydalınma tarixi', w: 120 },
+                    { label: 'Müraciət edənin SAA', w: 220 },
+                    { label: 'Telefon nömrəsi', w: 160 },
+                    { label: 'İcra müddəti (tarix)', w: 140 },
+                    { label: 'İcraçı(lar)', w: 200 },
                     ...(canDelete ? [{ label: '', w: 54, center: true }] : []),
                   ].map((col, i) => (
                     <TableCell key={i} sx={{
@@ -456,11 +278,18 @@ export default function AppealsList() {
                     </TableCell>
                   </TableRow>
                 ) : items.map((appeal, idx) => {
-                  const statusName = getStatusName(appeal.status);
-                  const statusStyle = statusName ? getStatusStyle(statusName) : null;
-                  const depName = getDepName(appeal.dep_id);
-                  const regionName = getRegionName(appeal.region_id);
                   const initial = appeal.person ? appeal.person.charAt(0).toUpperCase() : null;
+                  const phoneSource = appeal.phone;
+                  const phoneList = phoneSource
+                    ? phoneSource.split(',').map((p: string) => p.trim()).filter(Boolean)
+                    : [];
+
+                  const execData = appeal.executors || [];
+                  const primaryExecutors = execData.filter((e: any) => e.is_primary);
+                  const allNames = (primaryExecutors.length > 0 ? primaryExecutors : execData)
+                    .map((e: any) => e.executor_name || e.executor)
+                    .filter(Boolean);
+                  const executorsDisplay = allNames.join(', ');
 
                   return (
                     <TableRow key={appeal.id} hover={!appeal.control}
@@ -482,7 +311,7 @@ export default function AppealsList() {
                         </Typography>
                       </TableCell>
 
-                      {/* Reg num */}
+                      {/* Qeydalınma nömrəsi */}
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {appeal.is_deleted && (
@@ -493,14 +322,28 @@ export default function AppealsList() {
                               SİLİNİB
                             </Box>
                           )}
-                          {appeal.reg_num
-                            ? <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: appeal.is_deleted ? 'error.main' : primary }}>{appeal.reg_num}</Typography>
-                            : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
-                          }
+                          {appeal.reg_num ? (
+                            <Typography sx={{ fontWeight: 700, fontSize: '0.82rem', color: appeal.is_deleted ? 'error.main' : primary }}>
+                              {appeal.reg_num}
+                            </Typography>
+                          ) : (
+                            <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
+                          )}
                         </Box>
                       </TableCell>
 
-                      {/* Person */}
+                      {/* Qeydalınma tarixi */}
+                      <TableCell>
+                        {appeal.reg_date ? (
+                          <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: textPrimary }}>
+                            {formatDateToDDMMYYYY(appeal.reg_date)}
+                          </Typography>
+                        ) : (
+                          <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
+                        )}
+                      </TableCell>
+
+                      {/* Müraciət edənin SAA */}
                       <TableCell>
                         {initial ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
@@ -509,52 +352,51 @@ export default function AppealsList() {
                             </Box>
                             <Typography sx={{ fontSize: '0.82rem', fontWeight: 600, color: textPrimary }}>{appeal.person}</Typography>
                           </Box>
-                        ) : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>}
+                        ) : (
+                          <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
+                        )}
                       </TableCell>
 
-                      {/* Region */}
+                      {/* Telefon nömrəsi */}
                       <TableCell>
-                        {regionName
-                          ? <Typography sx={{ fontSize: '0.82rem', color: textSecondary, fontWeight: 500 }}>{regionName}</Typography>
-                          : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>}
-                      </TableCell>
-
-                      {/* Department */}
-                      <TableCell>
-                        {depName
-                          ? <Typography sx={{ fontSize: '0.82rem', color: textSecondary, fontWeight: 500 }}>{depName}</Typography>
-                          : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>}
-                      </TableCell>
-
-                      {/* Content */}
-                      <TableCell sx={{ maxWidth: 200 }}>
-                        {appeal.content
-                          ? <Typography sx={{ fontSize: '0.8rem', color: textSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>{appeal.content}</Typography>
-                          : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>}
-                      </TableCell>
-
-                      {/* Status pill */}
-                      <TableCell>
-                        {statusStyle && statusName ? (
-                          <Box sx={{
-                            display: 'inline-flex', alignItems: 'center',
-                            px: 1.4, py: 0.35, borderRadius: '999px',
-                            bgcolor: isDark ? statusStyle.darkBg : statusStyle.bg,
-                            color: isDark ? statusStyle.darkColor : statusStyle.color,
-                            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em', whiteSpace: 'nowrap',
-                          }}>
-                            {statusName}
+                        {phoneList.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.3 }}>
+                            {phoneList.map((p: string, i: number) => (
+                              <Typography
+                                key={i}
+                                sx={{ fontSize: '0.82rem', color: textSecondary, fontWeight: 500, lineHeight: 1.2 }}
+                              >
+                                {p}
+                              </Typography>
+                            ))}
                           </Box>
                         ) : (
                           <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
                         )}
                       </TableCell>
 
-                      {/* Date */}
+                      {/* İcra müddəti (tarix) */}
                       <TableCell>
-                        {appeal.reg_date
-                          ? <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: textPrimary }}>{formatDateToDDMMYYYY(appeal.reg_date)}</Typography>
-                          : <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>}
+                        {appeal.exp_date ? (
+                          <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: textPrimary }}>
+                            {formatDateToDDMMYYYY(appeal.exp_date)}
+                          </Typography>
+                        ) : (
+                          <Typography sx={{ color: textSecondary, opacity: 0.35, fontSize: '0.82rem' }}>–</Typography>
+                        )}
+                      </TableCell>
+
+                      {/* İcraçı(lar) */}
+                      <TableCell>
+                        {executorsDisplay ? (
+                          <Typography sx={{ fontSize: '0.8rem', color: textSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>
+                            {executorsDisplay}
+                          </Typography>
+                        ) : (
+                          <Typography sx={{ fontSize: '0.8rem', color: textSecondary, opacity: 0.35 }}>
+                            –
+                          </Typography>
+                        )}
                       </TableCell>
 
                       {/* Actions */}

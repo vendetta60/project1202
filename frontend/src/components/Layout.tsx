@@ -166,6 +166,7 @@ export default function Layout({ children }: LayoutProps) {
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: contentBg }}>
       <Drawer
         variant="permanent"
+        className="no-print"
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -250,7 +251,6 @@ export default function Layout({ children }: LayoutProps) {
                     '&:hover': {
                       bgcolor: 'rgba(255,255,255,0.15)',
                       opacity: 1,
-                      transform: 'scale(1.01)',
                       boxShadow: '0 6px 20px rgba(0,0,0,0.2)',
                     },
                     transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -299,7 +299,6 @@ export default function Layout({ children }: LayoutProps) {
                         '&:hover': {
                           bgcolor: 'rgba(255,255,255,0.12)',
                           opacity: 1,
-                          transform: 'scale(1.01)',
                         },
                         transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
                         py: 1,
@@ -351,7 +350,7 @@ export default function Layout({ children }: LayoutProps) {
                     border: primaryColor === c ? '2px solid #fff' : '2px solid transparent',
                     cursor: 'pointer',
                     boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-                    '&:hover': { transform: 'scale(1.1)' },
+                    '&:hover': {},
                     transition: 'transform 0.15s',
                   }}
                 />

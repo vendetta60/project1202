@@ -165,7 +165,6 @@ class AppealService:
                 new_values=payload.model_dump(),
             )
         
-        result.phone = phone
         return result
 
     def get(self, appeal_id: int, current_user: User) -> Appeal:

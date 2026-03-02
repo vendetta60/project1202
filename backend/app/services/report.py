@@ -66,12 +66,10 @@ class ReportService:
         for ap in results:
             # Column 5: haradan gəlib
             haradan_parts = []
-            if ap.region_rel:
-                haradan_parts.append(ap.region_rel.region)
-            if ap.person:
-                haradan_parts.append(ap.person)
-            if ap.phone:
-                haradan_parts.append(ap.phone)
+            if ap.department:
+                haradan_parts.append(ap.department.department)
+            if ap.official_rel:
+                haradan_parts.append(ap.official_rel.official)
             haradan = "\n".join(haradan_parts)
             
             # Column 11: Kim baxmışdır və dərkənar
@@ -107,19 +105,22 @@ class ReportService:
                     gonderilme_parts.append(s)
             gonderilme = "\n".join(gonderilme_parts)
 
-            # Column 17: PC_Tarixi - handle as string just in case it's not a real datetime in DB
-            pc_tarixi_str = ""
-            if ap.PC_Tarixi:
-                if isinstance(ap.PC_Tarixi, (datetime, date)):
-                    pc_tarixi_str = ap.PC_Tarixi.strftime("%d.%m.%Y")
-                else:
-                    pc_tarixi_str = str(ap.PC_Tarixi)
+            # Col 16-17: Tikildiyi iş №-si and İşdəki vərəq №-si
+            tikildiyi_is_parts = []
+            isdeki_vereq_parts = []
+            for e in execs:
+                if getattr(e, "attach_num", None):
+                    tikildiyi_is_parts.append(str(e.attach_num))
+                if getattr(e, "attach_paper_num", None):
+                    isdeki_vereq_parts.append(str(e.attach_paper_num))
+            tikildiyi_is = "\n".join(tikildiyi_is_parts)
+            isdeki_vereq = "\n".join(isdeki_vereq_parts)
 
             row = {
                 "1": ap.reg_num or "",
                 "2": ap.reg_date.strftime("%d.%m.%Y") if ap.reg_date else "",
-                "3": ap.sec_in_ap_num or "",
-                "4": ap.sec_in_ap_date.strftime("%d.%m.%Y") if ap.sec_in_ap_date else "",
+                "3": ap.in_ap_num or "",
+                "4": ap.in_ap_date.strftime("%d.%m.%Y") if ap.in_ap_date else "",
                 "5": haradan,
                 "6": ap.content or "",
                 "7": ap.ap_index_rel.ap_index if ap.ap_index_rel else "",
@@ -131,8 +132,8 @@ class ReportService:
                 "13": executor_names,
                 "14": icra_senedi,
                 "15": ap.status_rel.status if ap.status_rel else "",
-                "16": ap.PC or "",
-                "17": pc_tarixi_str,
+                "16": tikildiyi_is,
+                "17": isdeki_vereq,
                 "18": gonderilme
             }
             rows.append(row)
@@ -141,59 +142,84 @@ class ReportService:
     def generate_forma_4_excel(self, start_date: date | None, end_date: date | None, user: User) -> io.BytesIO:
         user_section_id = None if user.is_admin else user.section_id
         results = self.reports.get_forma_4_data(start_date, end_date, user_section_id)
-        
+
         headers = [
             "Qeydəalınma №-si", "Qeydəalınma tarixi", "Daxil olan müraciətin №-si", "Daxil olan müraciətin tarixi",
             "Müraciət haradan (kimdən) gəlib", "Müraciətin qısa məzmunu", "Müraciətin indeksi", "Vərəq sayı",
-            "Hesabat indeksi", "Müraciətin növü", "Kim baxmışdır və dərkənar", 
-            "Müraciət hansı struktur bölməyə icraya verilib", "İcraçının adı və soyadı", 
-            "Müraciət hansı sənədlə icra edilib", "Müraciətin baxılması vəziyyəti", 
+            "Hesabat indeksi", "Müraciətin növü", "Kim baxmışdır və dərkənar",
+            "Müraciət hansı struktur bölməyə icraya verilib", "İcraçının adı və soyadı",
+            "Müraciət hansı sənədlə icra edilib", "Müraciətin baxılması vəziyyəti",
             "Tikildiyi iş №-si", "İşdəki vərəq №-si", "Sənədin göndərilməsi barədə qeyd"
         ]
 
-        if not results:
-            df = pd.DataFrame(columns=headers)
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Side, Font
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Forma 4"
+
+        # Header rows
+        ws.append(headers)
+        ws.append(list(range(1, 19)))
+
+        # Data rows start from row 3
+        if results:
+            prepared_rows = self._prepare_forma_4_rows(results)
+            for r in prepared_rows:
+                ws.append([r.get(str(i), "") for i in range(1, 19)])
         else:
-            rows = self._prepare_forma_4_rows(results)
-            df = pd.DataFrame(rows)
-            df.columns = headers
-        
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Forma 4')
-            workbook = writer.book
-            worksheet = writer.sheets['Forma 4']
-            
-            # Styling
-            from openpyxl.styles import Alignment, Border, Side, Font
-            
-            thin_border = Border(
-                left=Side(style='thin'), 
-                right=Side(style='thin'), 
-                top=Side(style='thin'), 
-                bottom=Side(style='thin')
-            )
-            
-            # Column widths
-            col_widths = [15, 12, 15, 12, 25, 30, 10, 8, 10, 15, 25, 20, 20, 20, 15, 8, 8, 15]
-            for i, width in enumerate(col_widths):
-                worksheet.column_dimensions[chr(65 + i)].width = width
-            
-            # Apply styling to all data cells
-            for row in worksheet.iter_rows(min_row=2):
-                for cell in row:
-                    cell.alignment = Alignment(wrap_text=True, vertical='top', horizontal='center')
-                    cell.border = thin_border
-                    cell.font = Font(size=10)
-            
-            # Header styling and rotation
-            worksheet.row_dimensions[1].height = 120 # Height for vertical text
-            for cell in worksheet[1]:
-                cell.font = Font(bold=True, size=10)
-                # textRotation=90 makes the text vertical
-                cell.alignment = Alignment(textRotation=90, wrap_text=True, vertical='center', horizontal='center')
+            ws.append([""] * 18)
+
+        thin_border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin"),
+        )
+
+        col_widths = [15, 12, 15, 12, 25, 30, 10, 8, 10, 15, 25, 20, 20, 20, 15, 12, 12, 15]
+        for i, width in enumerate(col_widths, start=1):
+            ws.column_dimensions[chr(64 + i)].width = width
+
+        ws.row_dimensions[1].height = 120
+        ws.row_dimensions[2].height = 22
+        ws.freeze_panes = "A3"
+
+        header_font = Font(bold=True, size=10)
+        normal_font = Font(size=10)
+
+        max_row = ws.max_row
+        max_col = 18
+
+        for row in ws.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+            for cell in row:
                 cell.border = thin_border
-            
+                if cell.row == 1:
+                    cell.font = header_font
+                    cell.alignment = Alignment(
+                        textRotation=90,
+                        wrap_text=True,
+                        vertical="center",
+                        horizontal="center",
+                    )
+                elif cell.row == 2:
+                    cell.font = header_font
+                    cell.alignment = Alignment(
+                        wrap_text=True,
+                        vertical="center",
+                        horizontal="center",
+                    )
+                else:
+                    cell.font = normal_font
+                    cell.alignment = Alignment(
+                        wrap_text=True,
+                        vertical="top",
+                        horizontal="center",
+                    )
+
+        output = io.BytesIO()
+        wb.save(output)
         output.seek(0)
         return output
 
@@ -257,6 +283,102 @@ class ReportService:
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
+        ]))
+        
+        elements.append(t)
+        doc.build(elements)
+        output.seek(0)
+        return output
+
+    def _get_group_label(self, group_by: str) -> str:
+        labels = {
+            "department": "İdarə",
+            "region": "Region",
+            "status": "Status",
+            "index": "Müraciət İndeksi",
+            "insection": "Hərbi hissə (Bölmə)"
+        }
+        return labels.get(group_by, "Kateqoriya")
+
+    def generate_appeal_stats_excel(self, params: ReportParams, user: User) -> io.BytesIO:
+        report = self.get_appeal_report(params, user)
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Side, Font
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Hesabat"
+        
+        group_label = self._get_group_label(params.group_by)
+        ws.append(["MÜRACİƏTLƏRİN STATİSTİK HESABATI"])
+        ws.append([f"Qruplaşdırma: {group_label} üzrə"])
+        ws.append([f"Dövr: {params.start_date or 'Əvvəldən'} - {params.end_date or 'Bugünədək'}"])
+        ws.append([])
+        
+        headers = [group_label, "Sayı", "Nisbət (%)"]
+        ws.append(headers)
+        
+        for item in report.items:
+            percentage = (item.count / report.total * 100) if report.total > 0 else 0
+            ws.append([item.name, item.count, f"{percentage:.1f}%"])
+            
+        ws.append([])
+        ws.append(["CƏMİ", report.total, "100.0%"])
+        
+        # Styling
+        header_font = Font(bold=True)
+        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        
+        ws.column_dimensions['A'].width = 30
+        ws.column_dimensions['B'].width = 15
+        ws.column_dimensions['C'].width = 15
+        
+        for cell in ws[5]:
+            cell.font = header_font
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal='center')
+            
+        for row in ws.iter_rows(min_row=6, max_row=ws.max_row):
+            for cell in row:
+                cell.border = thin_border
+                
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return output
+
+    def generate_appeal_stats_pdf(self, params: ReportParams, user: User) -> io.BytesIO:
+        report = self.get_appeal_report(params, user)
+        output = io.BytesIO()
+        doc = SimpleDocTemplate(output, pagesize=A4)
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        group_label = self._get_group_label(params.group_by)
+        
+        elements.append(Paragraph("MÜRACİƏTLƏRİN STATİSTİK HESABATI", styles['Title']))
+        elements.append(Paragraph(f"Qruplaşdırma: {group_label} üzrə", styles['Normal']))
+        elements.append(Paragraph(f"Dövr: {params.start_date or 'Əvvəldən'} - {params.end_date or 'Bugünədək'}", styles['Normal']))
+        elements.append(Spacer(1, 12))
+        
+        data = [[group_label, "Sayı", "Nisbət (%)"]]
+        for item in report.items:
+            percentage = (item.count / report.total * 100) if report.total > 0 else 0
+            data.append([item.name, str(item.count), f"{percentage:.1f}%"])
+            
+        data.append(["CƏMİ", str(report.total), "100.0%"])
+        
+        t = Table(data, hAlign='LEFT')
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), f'{DEFAULT_FONT}-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), DEFAULT_FONT),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
+            ('FONTNAME', (0, -1), (-1, -1), f'{DEFAULT_FONT}-Bold'),
         ]))
         
         elements.append(t)

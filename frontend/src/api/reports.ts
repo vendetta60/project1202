@@ -45,3 +45,24 @@ export const exportForma4 = async (type: 'excel' | 'word' | 'pdf', params: Repor
     link.click();
     link.remove();
 };
+
+export const exportAppealStats = async (type: 'excel' | 'pdf', params: ReportParams) => {
+    // Filter out empty params
+    const filteredParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+    );
+
+    const response = await apiClient.get(`/reports/appeals/export/${type}`, {
+        params: filteredParams,
+        responseType: 'blob'
+    });
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    const extension = type === 'excel' ? 'xlsx' : 'pdf';
+    link.setAttribute('download', `appeal_stats_${new Date().toISOString().split('T')[0]}.${extension}`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+};

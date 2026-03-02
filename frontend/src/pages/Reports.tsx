@@ -24,7 +24,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import DescriptionIcon from '@mui/icons-material/Description';
-import { getAppealReport, ReportParams, exportForma4 } from '../api/reports';
+import { getAppealReport, ReportParams, exportForma4, exportAppealStats } from '../api/reports';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSelectStyles } from '../utils/formStyles';
@@ -99,8 +99,21 @@ export default function Reports() {
                 </Typography>
             </Box>
 
+            {/* Print Header */}
+            <Box className="print-only" sx={{ mb: 4, textAlign: 'center', borderBottom: '2px solid #000', pb: 2 }}>
+                <Typography variant="h4" sx={{ fontWeight: 900, mb: 1 }}>
+                    MÜRACİƏTLƏRİN STATİSTİK HESABATI
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                    {getGroupLabel(params.group_by || 'department')} ÜZRƏ BÖLGÜ
+                </Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    Hesabat dövrü: {params.start_date || 'ƏVVƏLDƏN'} — {params.end_date || 'BUGÜNƏDƏK'}
+                </Typography>
+            </Box>
+
             <Paper
-                className="animate-fade-in glass-card"
+                className="animate-fade-in glass-card no-print"
                 sx={{
                     p: 4,
                     mb: 4,
@@ -295,7 +308,7 @@ export default function Reports() {
                         </Paper>
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 4 }}>
+                    <Grid size={{ xs: 12, md: 4 }} className="no-print">
                         <Paper
                             className="animate-slide-up glass-card"
                             sx={{
@@ -323,14 +336,43 @@ export default function Reports() {
                                     {params.start_date || 'ƏVVƏLDƏN'} — {params.end_date || 'BUGÜNƏDƏK'}
                                 </Typography>
                             </Box>
+
+                            {/* Summary for Print (hidden in web) */}
+                            <Box className="print-only" sx={{ mt: 4, textAlign: 'left', borderTop: '1px solid #eee', pt: 2 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                    ÜMUMİ SAY: {reportData?.total || 0}
+                                </Typography>
+                            </Box>
+
                             <Button
                                 variant="outlined"
                                 fullWidth
                                 sx={{ mt: 4, borderWidth: 2, fontWeight: 800, '&:hover': { borderWidth: 2 } }}
                                 onClick={() => window.print()}
                             >
-                                ÇAP ET / PDF YÜKLƏ
+                                ÇAP ET
                             </Button>
+
+                            <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    fullWidth
+                                    onClick={() => exportAppealStats('excel', params)}
+                                    sx={{ fontWeight: 700 }}
+                                >
+                                    EXCEL
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    fullWidth
+                                    onClick={() => exportAppealStats('pdf', params)}
+                                    sx={{ fontWeight: 700 }}
+                                >
+                                    PDF
+                                </Button>
+                            </Box>
                         </Paper>
                     </Grid>
                 </Grid>
@@ -338,7 +380,7 @@ export default function Reports() {
 
             {/* Forma No. 4 Section */}
             <Paper
-                className="animate-slide-up glass-card"
+                className="animate-slide-up glass-card no-print"
                 sx={{
                     p: 4,
                     mt: 4,

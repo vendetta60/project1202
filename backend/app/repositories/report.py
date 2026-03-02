@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
 from app.models.appeal import Appeal
 from app.models.department import Department
 from app.models.region import Region
@@ -54,9 +54,13 @@ class ReportRepository:
         if user_section_id is not None:
             query = query.filter(Appeal.user_section_id == user_section_id)
         if start_date:
-            query = query.filter(Appeal.reg_date >= start_date)
+            from datetime import datetime
+            start_dt = datetime.combine(start_date, datetime.min.time())
+            query = query.filter(Appeal.reg_date >= start_dt)
         if end_date:
-            query = query.filter(Appeal.reg_date <= end_date)
+            from datetime import datetime, time
+            end_dt = datetime.combine(end_date, time.max)
+            query = query.filter(Appeal.reg_date <= end_dt)
 
         return query.all()
 
@@ -93,6 +97,7 @@ class ReportRepository:
             joinedload(Appeal.status_rel),
             joinedload(Appeal.instruction_rel),
             joinedload(Appeal.control_rel),
+            joinedload(Appeal.official_rel),
             joinedload(Appeal.region_rel)
         )
         

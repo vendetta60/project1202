@@ -110,6 +110,11 @@ class Appeal(Base, AuditMixin):
         primaryjoin="Appeal.who_control_id == foreign(WhoControl.id)",
         viewonly=True
     )
+    official_rel: Mapped["DepOfficial"] = relationship(
+        "DepOfficial",
+        primaryjoin="Appeal.official_id == foreign(DepOfficial.id)",
+        viewonly=True
+    )
     region_rel: Mapped["Region"] = relationship(
         "Region",
         primaryjoin="Appeal.region_id == foreign(Region.id)",

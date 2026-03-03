@@ -17,9 +17,19 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_access_token(subject: str, expires_minutes: int | None = None) -> str:
+    """Short-lived access token used for API calls."""
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=expires_minutes or settings.access_token_expire_minutes
     )
-    payload = {"sub": subject, "exp": expire}
+    payload = {"sub": subject, "exp": expire, "type": "access"}
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+
+def create_refresh_token(subject: str, expires_minutes: int | None = None) -> str:
+    """Long-lived refresh token used only to obtain new access tokens."""
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=expires_minutes or settings.refresh_token_expire_minutes
+    )
+    payload = {"sub": subject, "exp": expire, "type": "refresh"}
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 

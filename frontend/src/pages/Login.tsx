@@ -19,7 +19,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { login, LoginRequest } from '../api/auth';
 import { setToken } from '../utils/auth';
 import { getErrorMessage } from '../utils/errors';
-import logo from '../assets/logo.svg';
+import logo from '../assets/logo.png';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -46,7 +46,7 @@ export default function Login() {
     try {
       const { rememberMe, ...loginData } = data;
       const response = await login(loginData);
-      setToken(response.access_token);
+      setToken(response.access_token, response.refresh_token);
       queryClient.clear();
       navigate('/');
     } catch (err) {
@@ -122,8 +122,8 @@ export default function Login() {
           {/* Circular Logo Container */}
           <Box 
             sx={{ 
-              width: 100, 
-              height: 100, 
+              width: 140, 
+              height: 140, 
               borderRadius: '50%', 
               border: `2px solid ${isDark ? 'rgba(148,163,184,0.7)' : 'rgba(148,163,184,0.6)'}`,
               display: 'flex',

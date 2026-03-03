@@ -23,7 +23,7 @@ import {
   TextField,
   Alert,
 } from '@mui/material';
-import logo from '../assets/logo.svg';
+import logo from '../assets/logo.png';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { removeToken } from '../utils/auth';
@@ -44,6 +44,7 @@ import PaletteIcon from '@mui/icons-material/Palette';
 import { useTheme } from '../context/ThemeContext';
 import { PRESET_COLORS } from '../context/ThemeContext';
 import { usePermissions } from '../hooks/usePermissions';
+import { getPublicMaintenanceStatus } from '../api/users';
 
 const SIDEBAR_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -68,9 +69,10 @@ export default function Layout({ children }: LayoutProps) {
   const muiTheme = useMuiTheme();
   const queryClient = useQueryClient();
   const {
-    isAdmin, user,
+    isAdmin, user, isSuperAdmin,
     canViewAppeals, canExportAppeals, canViewUsers,
   } = usePermissions();
+  const [maintenanceSecondsLeft, setMaintenanceSecondsLeft] = useState<number | null>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -154,6 +156,50 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     document.body.setAttribute('data-theme', mode);
   }, [mode]);
+
+  // Texniki rejim aktiv olanda admin olmayan istifadəçilərə əvvəlcə xəbərdarlıq + timer göstər,
+  // grace period bitəndə isə avtomatik texniki səhifəyə yönləndir.
+  useEffect(() => {
+    let interval: number | undefined;
+
+    if (user && !isAdmin && !isSuperAdmin) {
+      interval = window.setInterval(async () => {
+        try {
+          const status = await getPublicMaintenanceStatus();
+          if (status.enabled && typeof status.seconds_until_logout === 'number') {
+            if (status.seconds_until_logout <= 0) {
+              queryClient.clear();
+              removeToken();
+              window.location.href = '/maintenance';
+            } else {
+              setMaintenanceSecondsLeft(status.seconds_until_logout);
+            }
+          } else {
+            setMaintenanceSecondsLeft(null);
+          }
+        } catch {
+          // status endpointi əlçatan olmasa, sadəcə sus
+        }
+      }, 1000);
+    } else {
+      setMaintenanceSecondsLeft(null);
+    }
+
+    return () => {
+      if (interval !== undefined) {
+        window.clearInterval(interval);
+      }
+    };
+  }, [user, isAdmin, isSuperAdmin, queryClient]);
+
+  const formatCountdown = (totalSeconds: number) => {
+    const s = Math.max(0, totalSeconds);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    const mm = m.toString().padStart(2, '0');
+    const ss = sec.toString().padStart(2, '0');
+    return `${mm}:${ss}`;
+  };
 
   const sidebarBg = isDark ? '#020617' : '#ffffff';
   const sidebarBorder = isDark ? 'rgba(15,23,42,0.9)' : 'rgba(203,213,225,0.9)';
@@ -487,10 +533,28 @@ export default function Layout({ children }: LayoutProps) {
             WebkitBackdropFilter: isDark ? 'blur(18px)' : 'none',
           }}
         >
-          <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 } }}>
+          <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 }, gap: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 800, color: appBarColor, fontSize: '0.95rem', letterSpacing: '-0.01em' }}>
               Müraciət Qeydiyyat Sistemi
             </Typography>
+            {maintenanceSecondsLeft !== null && maintenanceSecondsLeft > 0 && !isAdmin && !isSuperAdmin && (
+              <Box
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 999,
+                  bgcolor: 'rgba(248, 250, 252, 0.06)',
+                  border: '1px solid rgba(248, 250, 252, 0.25)',
+                  color: appBarColor,
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Texniki təmir: {formatCountdown(maintenanceSecondsLeft)} sonra sistemdən çıxacaqsınız
+              </Box>
+            )}
           </Toolbar>
         </AppBar>
 

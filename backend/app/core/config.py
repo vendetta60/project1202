@@ -9,7 +9,8 @@ class Settings(BaseSettings):
 
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 480
+    access_token_expire_minutes: int = 60
+    refresh_token_expire_minutes: int = 7 * 24 * 60
 
     # CORS (comma-separated origins). Use "*" only in dev.
     cors_allow_origins: str = "*"

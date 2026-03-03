@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.maintenance import is_maintenance_active_now, get_maintenance_message
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.appeal import AppealRepository
@@ -31,7 +32,9 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         username: str | None = payload.get("sub")
-        if not username:
+        token_type: str | None = payload.get("type")
+        # Only accept access tokens here
+        if not username or (token_type is not None and token_type != "access"):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
@@ -39,6 +42,14 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise credentials_exception
+
+    # Texniki rejim tam aktivdirsə (grace period bitibsə), yalnız admin və super adminlər daxil ola bilsin
+    if is_maintenance_active_now() and not (user.is_admin or user.is_super_admin):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=get_maintenance_message(),
+        )
+
     return user
 
 

@@ -57,3 +57,27 @@ export const toggleBlockUser = async (userId: number): Promise<User> => {
 export const deleteUser = async (userId: number): Promise<void> => {
     await apiClient.delete(`/users/${userId}`);
 };
+
+export interface MaintenanceStatus {
+  enabled: boolean;
+  message: string;
+  seconds_until_logout?: number | null;
+}
+
+export const startMaintenance = async (): Promise<void> => {
+  await apiClient.post('/users/maintenance/start');
+};
+
+export const stopMaintenance = async (): Promise<void> => {
+  await apiClient.post('/users/maintenance/stop');
+};
+
+export const getMaintenanceStatus = async (): Promise<MaintenanceStatus> => {
+  const response = await apiClient.get('/users/maintenance/status');
+  return response.data;
+};
+
+export const getPublicMaintenanceStatus = async (): Promise<MaintenanceStatus> => {
+  const response = await apiClient.get('/users/maintenance/public-status');
+  return response.data;
+};

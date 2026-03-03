@@ -1,8 +1,10 @@
 import hashlib
 
 from fastapi import HTTPException
+from jose import JWTError, jwt
 
-from app.core.security import create_access_token
+from app.core.security import create_access_token, create_refresh_token
+from app.core.config import settings
 from app.repositories.user import UserRepository
 from app.services.audit import AuditService
 
@@ -12,7 +14,7 @@ class AuthService:
         self.users = users
         self.audit = audit
 
-    def login(self, username: str, password: str) -> str:
+    def login(self, username: str, password: str) -> tuple[str, str]:
         user = self.users.get_by_username(username)
         if not user:
             raise HTTPException(status_code=400, detail="İstifadəçi adı və ya şifrə yanlışdır")
@@ -33,10 +35,31 @@ class AuthService:
                     entity_id=user.id,
                     action="LOGIN",
                     current_user=user,
-                    description=f"İstifadəçi sistemə giriş etdi",
+                    description="İstifadəçi sistemə giriş etdi",
                 )
             except Exception as e:
                 # Don't fail login if logging fails
                 print(f"Failed to log login: {e}")
 
-        return create_access_token(subject=user.username)
+        access = create_access_token(subject=user.username)
+        refresh = create_refresh_token(subject=user.username)
+        return access, refresh
+
+    def refresh(self, refresh_token: str) -> tuple[str, str]:
+        """Validate refresh token and issue a new access/refresh pair."""
+        try:
+            payload = jwt.decode(refresh_token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+            token_type = payload.get("type")
+            username = payload.get("sub")
+            if token_type != "refresh" or not username:
+                raise HTTPException(status_code=401, detail="Refresh token etibarsızdır")
+        except JWTError:
+            raise HTTPException(status_code=401, detail="Refresh token etibarsızdır")
+
+        user = self.users.get_by_username(username)
+        if not user or not user.is_active:
+            raise HTTPException(status_code=401, detail="İstifadəçi aktiv deyil")
+
+        access = create_access_token(subject=user.username)
+        new_refresh = create_refresh_token(subject=user.username)
+        return access, new_refresh

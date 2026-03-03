@@ -13,6 +13,10 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
 @router.post("/login", response_model=TokenOut)
 async def login(
     request: Request,
@@ -35,5 +39,14 @@ async def login(
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="username and password required")
 
-    token = auth_service.login(username, password)
-    return TokenOut(access_token=token)
+    access, refresh = auth_service.login(username, password)
+    return TokenOut(access_token=access, refresh_token=refresh)
+
+
+@router.post("/refresh", response_model=TokenOut)
+def refresh_token(
+    payload: RefreshRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    access, refresh = auth_service.refresh(payload.refresh_token)
+    return TokenOut(access_token=access, refresh_token=refresh)

@@ -7,6 +7,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
 }
 
@@ -37,6 +38,19 @@ export interface User {
 
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const response = await apiClient.post('/auth/login', data);
+  return response.data;
+};
+
+export interface RefreshTokenRequest {
+  refresh_token: string;
+}
+
+export type RefreshTokenResponse = LoginResponse;
+
+export const refreshToken = async (refreshTokenValue: string): Promise<RefreshTokenResponse> => {
+  const response = await apiClient.post('/auth/refresh', {
+    refresh_token: refreshTokenValue,
+  } as RefreshTokenRequest);
   return response.data;
 };
 

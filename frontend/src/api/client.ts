@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { getToken, getRefreshToken, setToken, removeToken } from '../utils/auth';
+import { refreshToken as refreshTokenApi } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://172.22.111.156:8000/api/v1';
 
@@ -11,8 +13,9 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = getToken();
     if (token) {
+      config.headers = config.headers ?? {};
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -24,24 +27,53 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Handle specific status codes
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('access_token');
+  async (error) => {
+    const status = error.response?.status;
+    const originalRequest = error.config;
+
+    if (status === 503) {
+      // Texniki təmir rejimi: bütün istifadəçiləri sistemdən çıxar və
+      // xüsusi səhifəyə yönləndir
+      removeToken();
+      window.location.href = '/maintenance';
+      return Promise.reject(error);
+    }
+
+    if (status === 401) {
+      const isAuthEndpoint =
+        typeof originalRequest?.url === 'string' &&
+        (originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refresh'));
+
+      const refresh = getRefreshToken();
+
+      if (!isAuthEndpoint && refresh && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          const data = await refreshTokenApi(refresh);
+          setToken(data.access_token, data.refresh_token);
+
+          originalRequest.headers = originalRequest.headers ?? {};
+          originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
+
+          return apiClient(originalRequest);
+        } catch (refreshError) {
+          removeToken();
+          window.location.href = '/login';
+          return Promise.reject(refreshError);
+        }
+      }
+
+      // If no refresh token or refresh failed/auth endpoint, force logout
+      removeToken();
       window.location.href = '/login';
-    } else if (error.response?.status === 403) {
-      // Forbidden - user doesn't have permission
+    } else if (status === 403) {
       console.error('Access denied - user does not have permission', error.response?.data);
-    } else if (error.response?.status === 404) {
-      // Not found
+    } else if (status === 404) {
       console.error('Resource not found', error.response?.data);
-    } else if (error.response?.status === 500) {
-      // Server error
+    } else if (status === 500) {
       console.error('Server error', error.response?.data);
     }
 
-    // Always reject the error for the calling code to handle
     return Promise.reject(error);
   }
 );

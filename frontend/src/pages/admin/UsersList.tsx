@@ -31,10 +31,11 @@ import {
     Block as BlockIcon,
     CheckCircle as UnblockIcon,
     Delete as DeleteIcon,
+    PowerSettingsNew as PowerIcon,
 } from '@mui/icons-material';
 import Layout from '../../components/Layout';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { getUsers, resetUserPassword, toggleBlockUser, deleteUser } from '../../api/users';
+import { getUsers, resetUserPassword, toggleBlockUser, deleteUser, startMaintenance, stopMaintenance, getMaintenanceStatus } from '../../api/users';
 import { useToast } from '../../components/Toast';
 import { usePermissions } from '../../hooks/usePermissions';
 
@@ -107,6 +108,8 @@ export default function UsersList() {
     const [blockDialogOpen, setBlockDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<{ id: number, username: string, is_blocked?: boolean } | null>(null);
+    const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
+    const [maintenanceLoading, setMaintenanceLoading] = useState(false);
 
     const { isAdmin, isSuperAdmin, canCreateUser, canEditUser, canDeleteUser, canBlockUser, canResetPassword: canResetPw, rank: currentRank } = usePermissions();
     void isAdmin;
@@ -126,9 +129,38 @@ export default function UsersList() {
             }),
     });
 
+    // Texniki rejim statusunu yüklə (yalnız admin/super admin üçündür)
+    useQuery({
+        queryKey: ['maintenance-status'],
+        queryFn: async () => {
+            const data = await getMaintenanceStatus();
+            setMaintenanceEnabled(data.enabled);
+            return data;
+        },
+    });
+
     const handleOpenResetDialog = (id: number, username: string) => {
         setSelectedUser({ id, username });
         setResetDialogOpen(true);
+    };
+
+    const handleToggleMaintenance = async () => {
+        try {
+            setMaintenanceLoading(true);
+            if (maintenanceEnabled) {
+                await stopMaintenance();
+                setMaintenanceEnabled(false);
+                showToast('Texniki rejim deaktiv edildi. İstifadəçilər yenidən daxil ola bilər.', 'success');
+            } else {
+                await startMaintenance();
+                setMaintenanceEnabled(true);
+                showToast('Texniki rejim aktiv edildi. Digər istifadəçilər sistemdən çıxarıldı.', 'warning');
+            }
+        } catch (e: any) {
+            showToast(e.response?.data?.detail || 'Texniki rejimi dəyişmək mümkün olmadı', 'error');
+        } finally {
+            setMaintenanceLoading(false);
+        }
     };
 
     const handleOpenBlockDialog = (id: number, username: string, is_blocked: boolean) => {
@@ -209,10 +241,31 @@ export default function UsersList() {
     return (
         <Layout>
             <Box sx={{ mb: 4 }} className="animate-fade-in">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, justifyContent: 'space-between', flexWrap: 'wrap' }}>
                     <Typography variant="h4" component="h1" fontWeight="900" color="primary">
                         İstifadəçi İdarəetməsi
                     </Typography>
+                    {(isAdmin || isSuperAdmin) && (
+                        <Button
+                            variant={maintenanceEnabled ? 'outlined' : 'contained'}
+                            color={maintenanceEnabled ? 'inherit' : 'error'}
+                            startIcon={<PowerIcon />}
+                            onClick={handleToggleMaintenance}
+                            disabled={maintenanceLoading}
+                            sx={{
+                                fontWeight: 700,
+                                borderRadius: 2,
+                                px: 2.5,
+                                textTransform: 'none',
+                            }}
+                        >
+                            {maintenanceLoading
+                                ? 'Gözləyin...'
+                                : maintenanceEnabled
+                                    ? 'Texniki rejimi söndür'
+                                    : 'Texniki rejimi aktiv et'}
+                        </Button>
+                    )}
                 </Box>
                 <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
                     Sistemdəki istifadəçiləri idarə edin

@@ -13,6 +13,7 @@ import Parameters from './pages/admin/Parameters';
 import Reports from './pages/Reports';
 import Logs from './pages/Logs';
 import SystemAdmin from './pages/admin/SystemAdmin';
+import Maintenance from './pages/Maintenance';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import PermissionRoute from './components/PermissionRoute';
@@ -158,6 +159,7 @@ function AppContent() {
             path="/login"
             element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
           />
+          <Route path="/maintenance" element={<Maintenance />} />
           <Route
             path="/dashboard"
             element={

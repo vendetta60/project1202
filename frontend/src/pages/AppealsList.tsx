@@ -157,11 +157,11 @@ export default function AppealsList() {
                 startIcon={<AddIcon />}
                 onClick={() => navigate('/appeals/new')}
                 sx={{
-                  px: 3.5, py: 1.3, fontSize: '0.88rem', borderRadius: '12px',
-                  background: `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`,
-                  boxShadow: `0 6px 22px ${primary}40`,
-                  '&:hover': { background: `linear-gradient(135deg, ${primary}ee 0%, ${primary} 100%)`, boxShadow: `0 10px 28px ${primary}55`, transform: 'translateY(-2px)' },
-                  transition: 'all 0.25s ease',
+                  px: 3.5, py: 1.3, fontSize: '0.88rem', borderRadius: '10px',
+                  bgcolor: primary,
+                  boxShadow: `0 6px 18px ${primary}35`,
+                  '&:hover': { bgcolor: muiTheme.palette.primary.dark, boxShadow: `0 8px 22px ${primary}45` },
+                  transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
                 }}
               >
                 Yeni Müraciət

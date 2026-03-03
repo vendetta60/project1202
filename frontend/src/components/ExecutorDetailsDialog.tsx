@@ -87,9 +87,10 @@ export function ExecutorDetailsDialog({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ 
         fontWeight: 800, 
-        color: 'white',
-        background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
-        pb: 2
+        color: '#0f172a',
+        bgcolor: '#f9fafb',
+        pb: 2,
+        borderBottom: '1px solid #e5e7eb',
       }}>
         İcraçı Təfsilatları
       </DialogTitle>
@@ -402,13 +403,10 @@ export function ExecutorDetailsDialog({
           variant="contained"
           disabled={loading}
           sx={{
-            background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
             textTransform: 'none',
             fontWeight: 700,
             borderRadius: '50px',
             px: 4,
-            boxShadow: '0 4px 6px -1px rgb(79 70 229 / 0.4)',
-            '&:hover': { filter: 'brightness(1.05)', boxShadow: '0 10px 15px -3px rgb(79 70 229 / 0.4)' },
           }}
         >
           Yadda saxla

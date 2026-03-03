@@ -7,6 +7,8 @@ from datetime import date, datetime
 from docx import Document
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.section import WD_ORIENT
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -227,25 +229,88 @@ class ReportService:
         user_section_id = None if user.is_admin else user.section_id
         results = self.reports.get_forma_4_data(start_date, end_date, user_section_id)
         rows = self._prepare_forma_4_rows(results)
-        
+
         doc = Document()
-        doc.add_heading('Daxil olan vətəndaş müraciətlərinin qeydiyyatı JURNALI', 0)
-        
-        table = doc.add_table(rows=1, cols=18)
-        table.style = 'Table Grid'
-        hdr_cells = table.rows[0].cells
-        headers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"]
-        for i, h in enumerate(headers):
-            hdr_cells[i].text = h
-            
+
+        # Page setup: A4 landscape (album forması)
+        section = doc.sections[0]
+        section.orientation = WD_ORIENT.LANDSCAPE
+        # Swap width / height to apply orientation
+        section.page_width, section.page_height = section.page_height, section.page_width
+        # Tighter margins so cədvəl A4-ə yaxşı sığsın
+        section.left_margin = Inches(0.5)
+        section.right_margin = Inches(0.5)
+        section.top_margin = Inches(0.6)
+        section.bottom_margin = Inches(0.5)
+
+        # Base font for whole document
+        style = doc.styles["Normal"]
+        style.font.name = "Calibri"
+        style.font.size = Pt(9)
+
+        title_para = doc.add_paragraph("Daxil olan vətəndaş müraciətlərinin qeydiyyatı JURNALI")
+        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        title_para.runs[0].font.bold = True
+        title_para.runs[0].font.size = Pt(12)
+
+        # Column headers – eyni Excel forması ilə
+        headers = [
+            "Qeydəalınma №-si", "Qeydəalınma tarixi", "Daxil olan müraciətin №-si",
+            "Daxil olan müraciətin tarixi", "Müraciət haradan (kimdən) gəlib",
+            "Müraciətin qısa məzmunu", "Müraciətin indeksi", "Vərəq sayı",
+            "Hesabat indeksi", "Müraciətin növü", "Kim baxmışdır və dərkənar",
+            "Müraciət hansı struktur bölməyə icraya verilib", "İcraçının adı və soyadı",
+            "Müraciət hansı sənədlə icra edilib", "Müraciətin baxılması vəziyyəti",
+            "Tikildiyi iş №-si", "İşdəki vərəq №-si", "Sənədin göndərilməsi barədə qeyd",
+        ]
+
+        table = doc.add_table(rows=2, cols=18)
+        table.style = "Table Grid"
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+        # 1-ci sətr: başlıq mətnləri (qalın, mərkəzdə)
+        header_row = table.rows[0]
+        for i, text in enumerate(headers):
+            cell = header_row.cells[i]
+            cell.text = text
+            for p in cell.paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in p.runs:
+                    run.font.bold = True
+                    run.font.size = Pt(8)
+
+        # 2-ci sətr: sütun nömrələri 1–18
+        number_row = table.rows[1]
+        for i in range(18):
+            number_row.cells[i].text = str(i + 1)
+            for p in number_row.cells[i].paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in p.runs:
+                    run.font.bold = True
+                    run.font.size = Pt(8)
+
         if not results:
-            table.add_row().cells[0].text = "Məlumat tapılmadı"
+            data_row = table.add_row()
+            data_row.cells[0].text = "Məlumat tapılmadı"
         else:
             for r in rows:
                 row_cells = table.add_row().cells
                 for i in range(18):
-                    row_cells[i].text = str(r[str(i+1)])
-        
+                    row_cells[i].text = str(r.get(str(i + 1), "")) or ""
+
+        # Sütun enləri – Excel col_widths-dən təxmini çevrilmə
+        col_widths = [15, 12, 15, 12, 25, 30, 10, 8, 10, 15, 25, 20, 20, 20, 15, 12, 12, 15]
+        for i, width in enumerate(col_widths):
+            # 1 Excel vahidini təxminən 0.12 inch kimi götürək
+            table.columns[i].width = Inches(width * 0.12)
+
+        # Hüceyrə align və vertical align
+        for row in table.rows:
+            for cell in row.cells:
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP
+                for paragraph in cell.paragraphs:
+                    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
         output = io.BytesIO()
         doc.save(output)
         output.seek(0)

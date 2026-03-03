@@ -18,7 +18,7 @@ interface ThemeContextValue {
   toggleMode: () => void;
 }
 
-const defaultPrimary = '#3e4a21';
+const defaultPrimary = '#4f46e5';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
@@ -79,11 +79,11 @@ export function useTheme() {
 }
 
 export const PRESET_COLORS = [
-  '#3e4a21',
-  '#1565c0',
-  '#2e7d32',
-  '#c62828',
-  '#6a1b9a',
-  '#ef6c00',
-  '#00838f',
+  '#4f46e5', // indigo
+  '#0ea5e9', // sky
+  '#22c55e', // green
+  '#f97316', // orange
+  '#ef4444', // red
+  '#6366f1', // indigo softer
+  '#14b8a6', // teal
 ] as const;

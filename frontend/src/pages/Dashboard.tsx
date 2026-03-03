@@ -36,38 +36,29 @@ interface MetricProps {
 
 function StatCard({ label, value, trend, icon, iconBg, iconColor, staggerClass = '' }: MetricProps) {
   return (
-    <Paper
-      elevation={0}
-      className={`glass-card animate-slide-up ${staggerClass}`}
-      sx={{
-        p: 3,
-        borderRadius: '20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2.5,
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: '100%',
-          height: '3px',
-          background: `linear-gradient(90deg, transparent, ${iconColor}, transparent)`,
-          opacity: 0.7,
-        },
-      }}
-    >
+      <Paper
+        elevation={0}
+        className={`glass-card animate-slide-up ${staggerClass}`}
+        sx={{
+          p: 3,
+          borderRadius: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2.5,
+          position: 'relative',
+          overflow: 'hidden',
+          borderBottom: `2px solid ${iconColor}33`,
+        }}
+      >
       <Box sx={{
         width: { xs: 48, sm: 56 },
         height: { xs: 48, sm: 56 },
         borderRadius: '18px',
-        background: `linear-gradient(135deg, ${iconBg} 0%, ${iconBg}80 100%)`,
+        backgroundColor: iconBg,
         color: iconColor,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: { xs: 24, sm: 28 }, flexShrink: 0,
-        boxShadow: `0 8px 20px ${iconColor}30`,
+        boxShadow: `0 8px 20px ${iconColor}20`,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
         {icon}
@@ -102,7 +93,16 @@ function StatCard({ label, value, trend, icon, iconBg, iconColor, staggerClass =
 }
 
 // ─── Chart Tooltip ────────────────────────────────────────────────────────────
-const CHART_PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#14b8a6', '#f43f5e'];
+const CHART_PALETTE = [
+  '#4f46e5', // indigo
+  '#22c55e', // green
+  '#0ea5e9', // sky
+  '#f97316', // orange
+  '#6366f1', // soft indigo
+  '#a855f7', // purple
+  '#14b8a6', // teal
+  '#facc15', // amber
+];
 
 const ChartTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
@@ -172,18 +172,15 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <Box sx={{ maxWidth: 1600, mx: 'auto' }} className="page-enter">
+        <Box sx={{ maxWidth: 1600, mx: 'auto' }} className="page-enter">
 
         {/* ── Header ─────────────────────────────────────────────── */}
         <Box sx={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           mb: 4, p: 3, borderRadius: '20px',
-          background: isDark
-            ? 'linear-gradient(135deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%)'
-            : 'linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(139,92,246,0.04) 100%)',
-          backdropFilter: 'blur(10px)',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(99,102,241,0.1)'}`,
-          boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.3)' : '0 8px 32px rgba(99,102,241,0.06)',
+          bgcolor: isDark ? '#020617' : '#ffffff',
+          border: `1px solid ${borderColor}`,
+          boxShadow: isDark ? '0 8px 24px rgba(15,23,42,0.6)' : '0 8px 24px rgba(15,23,42,0.06)',
         }}
           className="animate-slide-up animate-stagger-1"
         >
@@ -194,10 +191,7 @@ export default function Dashboard() {
                 fontWeight: 900,
                 letterSpacing: '-0.03em',
                 mb: 0.5,
-                background: `linear-gradient(135deg, ${textPrimary} 0%, ${primary} 120%)`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                color: textPrimary,
               }}
             >
               Xoş gəlmisiniz!
@@ -213,18 +207,17 @@ export default function Dashboard() {
             onClick={() => navigate('/appeals/new')}
             sx={{
               px: 3.5, py: 1.3,
-              borderRadius: '14px',
+              borderRadius: '12px',
               fontWeight: 700,
               fontSize: '0.9rem',
               textTransform: 'none',
-              background: `linear-gradient(135deg, ${primary} 0%, #8b5cf6 100%)`,
-              boxShadow: `0 8px 24px ${primary}50`,
+              bgcolor: primary,
+              boxShadow: `0 8px 20px ${primary}35`,
               '&:hover': {
-                background: `linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)`,
-                boxShadow: `0 12px 32px ${primary}60`,
-                transform: 'translateY(-2px)',
+                bgcolor: muiTheme.palette.primary.dark,
+                boxShadow: `0 10px 26px ${primary}45`,
               },
-              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
             }}
           >
             Yeni Müraciət
@@ -376,7 +369,17 @@ export default function Dashboard() {
             justifyContent: 'space-between',
             borderBottom: `1px solid ${borderColor}`,
           }}>
-            <Typography sx={{ fontWeight: 800, fontSize: '0.95rem', color: textPrimary }}>
+            <Typography
+              sx={{
+                fontWeight: 900,
+                fontSize: '0.95rem',
+                letterSpacing: '-0.02em',
+                background: `linear-gradient(135deg, ${primary}, #8b5cf6)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
               Son Müraciətlər
             </Typography>
             <Button
@@ -399,10 +402,13 @@ export default function Dashboard() {
                     <TableCell
                       key={h}
                       sx={{
-                        fontWeight: 700, fontSize: '0.72rem', color: 'white',
-                        textTransform: 'uppercase', letterSpacing: '0.06em',
-                        background: `linear-gradient(135deg, ${primary}, #8b5cf6)`,
-                        borderBottom: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.78rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        color: textSecondary,
+                        bgcolor: isDark ? '#020617' : '#ffffff',
+                        borderBottom: `1px solid ${borderColor}`,
                       }}
                     >
                       {h}

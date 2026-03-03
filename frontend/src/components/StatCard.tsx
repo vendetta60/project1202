@@ -41,9 +41,10 @@ export default function StatCard({ title, value, icon, color = '#1976d2', onClic
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '6px',
+          width: '4px',
           height: '100%',
-          background: `linear-gradient(to bottom, ${color}, ${color}dd)`,
+          backgroundColor: color,
+          opacity: 0.85,
           zIndex: 2,
         }
       }}
@@ -92,7 +93,7 @@ export default function StatCard({ title, value, icon, color = '#1976d2', onClic
           <Box
             className="stat-icon-bg"
             sx={{
-              background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
+              backgroundColor: `${color}12`,
               color: color,
               p: 2.5,
               borderRadius: '20px',
@@ -109,12 +110,11 @@ export default function StatCard({ title, value, icon, color = '#1976d2', onClic
           <Box sx={{ height: '6px', bgcolor: 'action.hover', borderRadius: 3, overflow: 'hidden' }}>
             <Box
               sx={{
-                width: '100%',
+                width: '60%',
                 height: '100%',
-                background: `linear-gradient(to right, ${color}30, ${color})`,
+                backgroundColor: `${color}66`,
                 borderRadius: 3,
-                opacity: 0.6,
-                transform: 'translateX(-60%)', // Just for visual flair
+                opacity: 0.7,
               }}
             />
           </Box>

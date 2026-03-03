@@ -113,8 +113,8 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                     onClick={() => setIsAdding(true)}
                     sx={{
                         mb: 2,
-                        bgcolor: '#4a5d23',
-                        '&:hover': { bgcolor: '#3a4a1b' },
+                        bgcolor: '#0ea5e9',
+                        '&:hover': { bgcolor: '#0284c7' },
                         fontWeight: 600,
                         textTransform: 'none',
                         borderRadius: 1.5
@@ -135,7 +135,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                             borderRadius: 2
                         }}
                     >
-                        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#4a5d23' }}>Yeni Məlumat</Typography>
+                        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#0ea5e9' }}>Yeni Məlumat</Typography>
                         {columns.filter(c => c.id !== 'id').map(col => (
                             <TextField
                                 key={col.id}
@@ -150,7 +150,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                     mb: 2,
                                     bgcolor: 'white',
                                     '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
                                 }}
                             />
                         ))}
@@ -158,7 +158,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                             <Button
                                 variant="contained"
                                 onClick={handleAdd}
-                                sx={{ bgcolor: '#4a5d23', '&:hover': { bgcolor: '#3a4a1b' }, fontWeight: 600, textTransform: 'none' }}
+                                sx={{ bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' }, fontWeight: 600, textTransform: 'none' }}
                             >
                                 Yadda Saxla
                             </Button>
@@ -184,8 +184,8 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                     startIcon={<AddIcon />}
                     onClick={() => setIsAdding(true)}
                     sx={{
-                        bgcolor: '#4a5d23',
-                        '&:hover': { bgcolor: '#3a4a1b' },
+                        bgcolor: '#0ea5e9',
+                        '&:hover': { bgcolor: '#0284c7' },
                         fontWeight: 600,
                         textTransform: 'none',
                         borderRadius: 1.5
@@ -207,7 +207,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                         borderRadius: 2
                     }}
                 >
-                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#4a5d23' }}>Yeni Məlumat</Typography>
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#0ea5e9' }}>Yeni Məlumat</Typography>
                     {columns.filter(c => c.id !== 'id').map(col => (
                         <TextField
                             key={col.id}
@@ -222,7 +222,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                 mb: 2,
                                 bgcolor: 'white',
                                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
                             }}
                         />
                     ))}
@@ -230,7 +230,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                         <Button
                             variant="contained"
                             onClick={handleAdd}
-                            sx={{ bgcolor: '#4a5d23', '&:hover': { bgcolor: '#3a4a1b' }, fontWeight: 600, textTransform: 'none' }}
+                            sx={{ bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' }, fontWeight: 600, textTransform: 'none' }}
                         >
                             Yadda Saxla
                         </Button>
@@ -248,7 +248,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
             <TableContainer sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                 <Table size="small">
                     <TableHead>
-                        <TableRow sx={{ bgcolor: '#3e4a21' }}>
+                        <TableRow sx={{ bgcolor: '#0ea5e9' }}>
                             {columns.map(col => (
                                 <TableCell key={col.id} sx={{ fontWeight: 700, color: 'white', py: 1.5 }}>{col.label}</TableCell>
                             ))}
@@ -256,8 +256,8 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {items.map((item) => (
-                            <TableRow key={item.id} hover sx={{ '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.04)' } }}>
+                            {items.map((item) => (
+                                <TableRow key={item.id} hover sx={{ '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.06)' } }}>
                                 {editingId === item.id ? (
                                     <>
                                         {columns.filter(c => c.id !== 'id').map(col => (
@@ -269,7 +269,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                                     size="small"
                                                     fullWidth
                                                     sx={{
-                                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
                                                     }}
                                                 />
                                             </TableCell>
@@ -279,7 +279,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                                 size="small"
                                                 variant="contained"
                                                 onClick={handleSaveEdit}
-                                                sx={{ bgcolor: '#4a5d23', mr: 1, '&:hover': { bgcolor: '#3a4a1b' } }}
+                                                sx={{ bgcolor: '#0ea5e9', mr: 1, '&:hover': { bgcolor: '#0284c7' } }}
                                             >
                                                 Yadda Saxla
                                             </Button>
@@ -503,11 +503,11 @@ export default function Parameters() {
                         '& .MuiTab-root': {
                             fontWeight: 600,
                             textTransform: 'none',
-                            color: '#666',
-                            '&.Mui-selected': { color: '#4a5d23' }
+                            color: '#64748b',
+                            '&.Mui-selected': { color: '#0ea5e9' }
                         },
                         '& .MuiTabs-indicator': {
-                            backgroundColor: '#4a5d23',
+                            backgroundColor: '#0ea5e9',
                             height: 3,
                             borderRadius: '3px 3px 0 0'
                         }

@@ -186,9 +186,10 @@ export function ExecutorDialog({
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
             <DialogTitle sx={{ 
                 fontWeight: 800, 
-                color: 'white',
-                background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
-                pb: 2
+                color: '#0f172a',
+                bgcolor: '#f9fafb',
+                pb: 2,
+                borderBottom: '1px solid #e5e7eb'
             }}>
                 Yeni İcraçı Təyin Et
             </DialogTitle>
@@ -359,13 +360,10 @@ export function ExecutorDialog({
                     variant="contained"
                     disabled={isLoading || !directionId || executorIds.length === 0}
                     sx={{
-                        background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
                         textTransform: 'none',
                         borderRadius: '50px',
                         px: 4,
                         fontWeight: 700,
-                        boxShadow: '0 4px 6px -1px rgb(79 70 229 / 0.4)',
-                        '&:hover': { filter: 'brightness(1.05)', boxShadow: '0 10px 15px -3px rgb(79 70 229 / 0.4)' },
                     }}
                 >
                     {isLoading ? 'Əlavə Edilir...' : 'Əlavə Et'}

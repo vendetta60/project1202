@@ -114,17 +114,17 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--military-olive) 0%, var(--military-olive-dark) 100%);
+  background: var(--military-olive);
   color: white;
 }
 
 .btn-success {
-  background: linear-gradient(135deg, var(--military-green) 0%, #1a3a17 100%);
+  background: var(--military-green);
   color: white;
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, var(--military-red) 0%, #600000 100%);
+  background: var(--military-red);
   color: white;
 }
 
@@ -153,7 +153,7 @@
 }
 
 .data-table thead th {
-  background: linear-gradient(180deg, var(--military-olive) 0%, var(--military-olive-dark) 100%);
+  background: var(--military-olive);
   color: white;
   padding: 16px;
   text-align: left;

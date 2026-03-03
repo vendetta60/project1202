@@ -13,17 +13,22 @@ import {
   FormControlLabel,
   InputAdornment,
 } from '@mui/material';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { login, LoginRequest } from '../api/auth';
 import { setToken } from '../utils/auth';
 import { getErrorMessage } from '../utils/errors';
+import logo from '../assets/logo.svg';
 
 export default function Login() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const muiTheme = useMuiTheme();
+  const isDark = muiTheme.palette.mode === 'dark';
+  const primary = muiTheme.palette.primary.main;
 
   const {
     register,
@@ -59,7 +64,7 @@ export default function Login() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'radial-gradient(circle at center, #64d4d4 0%, #299e9e 100%)',
+        backgroundColor: isDark ? '#020617' : '#eff3fb',
         position: 'relative',
         overflow: 'hidden',
         '&::before': {
@@ -67,45 +72,73 @@ export default function Login() {
           position: 'absolute',
           width: '150%',
           height: '150%',
-          background: 'radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 60%)',
-          filter: 'blur(100px)',
+          opacity: 0,
           pointerEvents: 'none',
         }
       }}
     >
+      <Box className="login-blob login-blob-1" />
+      <Box className="login-blob login-blob-2" />
+      <Box className="login-blob login-blob-3" />
       <Container maxWidth="xs" sx={{ position: 'relative', zIndex: 1 }}>
         <Box 
           sx={{ 
-            bgcolor: '#34495e',
+            bgcolor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.96)',
             p: { xs: 4, sm: 6 },
-            borderRadius: '4px',
-            boxShadow: '0 30px 60px rgba(0,0,0,0.3)',
-            border: '8px solid rgba(255,255,255,0.1)',
+            borderRadius: '24px',
+            boxShadow: isDark
+              ? '0 24px 80px rgba(0,0,0,0.75)'
+              : '0 22px 60px rgba(15,23,42,0.18)',
+            border: isDark
+              ? '1px solid rgba(148,163,184,0.25)'
+              : '1px solid rgba(148,163,184,0.35)',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center'
+            alignItems: 'center',
+            position: 'relative',
+            overflow: 'hidden'
           }}
         >
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background: isDark
+                ? 'radial-gradient(circle at top left, rgba(129,140,248,0.24) 0, transparent 55%)'
+                : 'radial-gradient(circle at top left, rgba(129,140,248,0.16) 0, transparent 55%)',
+              opacity: 0.9,
+              pointerEvents: 'none',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 1,
+              borderRadius: '22px',
+              border: `1px solid ${primary}33`,
+              pointerEvents: 'none',
+            }}
+          />
           {/* Circular Logo Container */}
           <Box 
             sx={{ 
               width: 100, 
               height: 100, 
               borderRadius: '50%', 
-              border: '2px solid rgba(255,255,255,0.4)',
+              border: `2px solid ${isDark ? 'rgba(148,163,184,0.7)' : 'rgba(148,163,184,0.6)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               mb: 3,
               p: 1.5,
-              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.2))',
-              bgcolor: 'rgba(255,255,255,0.05)'
+              filter: 'drop-shadow(0 10px 24px rgba(15,23,42,0.4))',
+              bgcolor: isDark ? 'rgba(15,23,42,0.9)' : 'rgba(15,23,42,0.02)'
             }}
           >
             <Box 
               component="img"
-              src="/logo.png" 
-              alt="Logo" 
+              src={logo} 
+              alt="Müraciət Qeydiyyat Sistemi" 
               sx={{ 
                 maxWidth: '90%', 
                 maxHeight: '90%',
@@ -117,16 +150,27 @@ export default function Login() {
           <Typography
             variant="h5"
             sx={{
-              color: '#fff',
-              fontWeight: 300,
-              letterSpacing: '0.2rem',
-              mb: 5,
+              color: isDark ? '#e5e7eb' : '#0f172a',
+              fontWeight: 800,
+              letterSpacing: '0.24rem',
+              mb: 2.5,
               textTransform: 'uppercase',
               fontSize: '1.25rem',
               textAlign: 'center'
             }}
           >
             İSTİFADƏÇİ GİRİŞİ
+          </Typography>
+          <Typography
+            sx={{
+              color: isDark ? 'rgba(148,163,184,0.9)' : 'rgba(71,85,105,0.9)',
+              fontSize: '0.85rem',
+              mb: 4,
+              textAlign: 'center',
+              maxWidth: 260,
+            }}
+          >
+            Sistemə təhlükəsiz giriş üçün məlumatlarınızı daxil edin.
           </Typography>
 
           {error && (
@@ -158,23 +202,23 @@ export default function Login() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PersonOutlineIcon sx={{ color: '#fff', opacity: 0.7 }} />
+                      <PersonOutlineIcon sx={{ color: isDark ? 'rgba(226,232,240,0.8)' : 'rgba(15,23,42,0.8)' }} />
                     </InputAdornment>
                   ),
                 }}
                 sx={{
                   '& .MuiInput-root': {
-                    color: '#fff',
+                    color: isDark ? '#e5e7eb' : '#0f172a',
                     paddingY: 0.5,
-                    '&:before': { borderColor: 'rgba(255,255,255,0.3)' },
-                    '&:hover:not(.Mui-disabled):before': { borderColor: 'rgba(255,255,255,0.6)' },
-                    '&:after': { borderColor: '#fff' },
+                    '&:before': { borderColor: isDark ? 'rgba(148,163,184,0.6)' : 'rgba(148,163,184,0.8)' },
+                    '&:hover:not(.Mui-disabled):before': { borderColor: primary },
+                    '&:after': { borderColor: primary },
                   },
                   '& .MuiInputLabel-root': { 
-                    color: 'rgba(255,255,255,0.5)',
+                    color: isDark ? 'rgba(148,163,184,0.85)' : 'rgba(100,116,139,0.9)',
                     ml: 4
                   },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#fff', ml: 0 },
+                  '& .MuiInputLabel-root.Mui-focused': { color: primary, ml: 0 },
                   '& .MuiInputLabel-shrink': { ml: 0 }
                 }}
               />
@@ -192,23 +236,23 @@ export default function Login() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockOutlinedIcon sx={{ color: '#fff', opacity: 0.7 }} />
+                      <LockOutlinedIcon sx={{ color: isDark ? 'rgba(226,232,240,0.8)' : 'rgba(15,23,42,0.8)' }} />
                     </InputAdornment>
                   ),
                 }}
                 sx={{
                   '& .MuiInput-root': {
-                    color: '#fff',
+                    color: isDark ? '#e5e7eb' : '#0f172a',
                     paddingY: 0.5,
-                    '&:before': { borderColor: 'rgba(255,255,255,0.3)' },
-                    '&:hover:not(.Mui-disabled):before': { borderColor: 'rgba(255,255,255,0.6)' },
-                    '&:after': { borderColor: '#fff' },
+                    '&:before': { borderColor: isDark ? 'rgba(148,163,184,0.6)' : 'rgba(148,163,184,0.8)' },
+                    '&:hover:not(.Mui-disabled):before': { borderColor: primary },
+                    '&:after': { borderColor: primary },
                   },
                   '& .MuiInputLabel-root': { 
-                    color: 'rgba(255,255,255,0.5)',
+                    color: isDark ? 'rgba(148,163,184,0.85)' : 'rgba(100,116,139,0.9)',
                     ml: 4
                   },
-                  '& .MuiInputLabel-root.Mui-focused': { color: '#fff', ml: 0 },
+                  '& .MuiInputLabel-root.Mui-focused': { color: primary, ml: 0 },
                   '& .MuiInputLabel-shrink': { ml: 0 }
                 }}
               />
@@ -221,11 +265,14 @@ export default function Login() {
                     checked={rememberMe}
                     {...register('rememberMe')}
                     size="small" 
-                    sx={{ color: 'rgba(255,255,255,0.4)', '&.Mui-checked': { color: '#fff' } }} 
+                    sx={{
+                      color: isDark ? 'rgba(148,163,184,0.7)' : 'rgba(148,163,184,0.9)',
+                      '&.Mui-checked': { color: primary }
+                    }} 
                   />
                 }
                 label={
-                  <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
+                  <Typography sx={{ color: isDark ? 'rgba(226,232,240,0.9)' : 'rgba(71,85,105,0.9)', fontSize: '0.85rem' }}>
                     Məni xatırla
                   </Typography>
                 }
@@ -239,17 +286,19 @@ export default function Login() {
               disabled={loading}
               sx={{
                 py: 2,
-                bgcolor: '#0d161d',
+                bgcolor: primary,
                 color: '#fff',
-                borderRadius: '2px',
+                borderRadius: '999px',
                 textTransform: 'uppercase',
                 fontWeight: 600,
                 letterSpacing: '0.15rem',
                 '&:hover': {
-                  bgcolor: '#000',
-                  boxShadow: '0 8px 25px rgba(0,0,0,0.5)'
+                  bgcolor: muiTheme.palette.primary.dark,
+                  boxShadow: `0 12px 35px ${primary}60`,
+                  transform: 'translateY(-2px)',
                 },
-                transition: 'all 0.3s'
+                transition: 'all 0.3s',
+                boxShadow: `0 10px 30px ${primary}55`,
               }}
             >
               {loading ? 'DAXİL OLUNUR...' : 'DAXİL OL'}

@@ -23,6 +23,7 @@ import {
   TextField,
   Alert,
 } from '@mui/material';
+import logo from '../assets/logo.svg';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { removeToken } from '../utils/auth';
@@ -153,14 +154,17 @@ export default function Layout({ children }: LayoutProps) {
   useEffect(() => {
     document.body.setAttribute('data-theme', mode);
   }, [mode]);
-  const sidebarBg = isDark
-    ? 'linear-gradient(175deg, #0f172a 0%, #0f172a 60%, #1e293b 100%)'
-    : `linear-gradient(175deg, ${primaryColor} 0%, ${primaryColor}ee 50%, ${primaryColor}cc 100%)`;
-  const appBarBg = isDark
-    ? 'rgba(15,23,42,0.96)'
-    : 'rgba(255,255,255,0.92)';
-  const appBarColor = isDark ? '#f8fafc' : '#1a1f36';
-  const contentBg = isDark ? '#0f172a' : '#f0f2f8';
+
+  const sidebarBg = isDark ? '#020617' : '#ffffff';
+  const sidebarBorder = isDark ? 'rgba(15,23,42,0.9)' : 'rgba(203,213,225,0.9)';
+  const sidebarText = isDark ? '#e5e7eb' : '#111827';
+  const sidebarSecondaryText = isDark ? 'rgba(148,163,184,0.9)' : 'rgba(100,116,139,0.95)';
+  const sidebarActiveBg = isDark ? 'rgba(148,163,184,0.16)' : `${primaryColor}1A`;
+  const sidebarHoverBg = isDark ? 'rgba(148,163,184,0.12)' : '#f3f4f6';
+
+  const appBarBg = isDark ? '#0b1120' : '#ffffff';
+  const appBarColor = isDark ? '#f8fafc' : '#111827';
+  const contentBg = isDark ? '#020617' : '#f3f4f6';
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: contentBg }}>
@@ -174,9 +178,9 @@ export default function Layout({ children }: LayoutProps) {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            background: sidebarBg,
-            borderRight: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
+            backgroundColor: sidebarBg,
+            borderRight: `1px solid ${sidebarBorder}`,
+            color: sidebarText,
             pt: 2,
             transition: 'width 0.25s ease',
             overflowX: 'hidden',
@@ -198,13 +202,12 @@ export default function Layout({ children }: LayoutProps) {
           >
             <Box
               component="img"
-              src="/logo.png"
-              alt="Logo"
+              src={logo}
+              alt="Müraciət Qeydiyyat Sistemi"
               sx={{
                 height: 36,
                 width: 'auto',
                 flexShrink: 0,
-                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'
               }}
             />
             {!sidebarCollapsed && (
@@ -213,9 +216,9 @@ export default function Layout({ children }: LayoutProps) {
                   variant="h6"
                   sx={{
                     fontWeight: 900,
-                    fontSize: '0.75rem',
+                    fontSize: '0.8rem',
                     lineHeight: 1.2,
-                    color: '#fff',
+                    color: sidebarText,
                     letterSpacing: '0.02em',
                     whiteSpace: 'nowrap',
                     textTransform: 'uppercase'
@@ -237,33 +240,33 @@ export default function Layout({ children }: LayoutProps) {
               <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   onClick={() => navigate(item.path)}
-                  className={active ? 'sidebar-active-pulse' : ''}
                   sx={{
                     borderRadius: '12px',
                     justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                    color: '#fff',
-                    bgcolor: active ? 'rgba(255,255,255,0.2)' : 'transparent',
-                    boxShadow: active
-                      ? '0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15)'
-                      : 'none',
-                    borderLeft: active && !sidebarCollapsed ? '3px solid rgba(255,255,255,0.8)' : '3px solid transparent',
-                    opacity: active ? 1 : 0.72,
+                    color: sidebarText,
+                    bgcolor: active ? sidebarActiveBg : 'transparent',
+                    borderLeft: active && !sidebarCollapsed ? `3px solid ${primaryColor}` : '3px solid transparent',
+                    opacity: active ? 1 : 0.9,
                     '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.15)',
+                      bgcolor: sidebarHoverBg,
                       opacity: 1,
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.2)',
                     },
-                    transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
-                    py: 1.1,
+                    transition: 'background-color 0.18s ease, border-color 0.18s ease',
+                    py: 1.05,
                   }}
                 >
-                  <ListItemIcon sx={{ color: 'inherit', minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center', fontSize: 20 }}>
+                  <ListItemIcon sx={{ color: active ? primaryColor : sidebarSecondaryText, minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center', fontSize: 20 }}>
                     {item.icon}
                   </ListItemIcon>
                   {!sidebarCollapsed && (
                     <ListItemText
                       primary={item.label}
-                      primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: active ? 800 : 600, letterSpacing: '0.4px' }}
+                      primaryTypographyProps={{
+                        fontSize: '0.8rem',
+                        fontWeight: active ? 800 : 600,
+                        letterSpacing: '0.04em',
+                        color: active ? sidebarText : sidebarSecondaryText,
+                      }}
                     />
                   )}
                 </ListItemButton>
@@ -274,9 +277,18 @@ export default function Layout({ children }: LayoutProps) {
 
         {showAdminSection && (
           <>
-            <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', my: 2 }} />
+            <Divider sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(226,232,240,0.9)', my: 2 }} />
             {!sidebarCollapsed && (
-              <Typography variant="caption" sx={{ px: 2.5, fontWeight: 800, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.5px' }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 2.5,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  color: sidebarSecondaryText,
+                  letterSpacing: '0.5px',
+                }}
+              >
                 Admin
               </Typography>
             )}
@@ -287,30 +299,33 @@ export default function Layout({ children }: LayoutProps) {
                   <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
                     <ListItemButton
                       onClick={() => navigate(item.path)}
-                      className={active ? 'sidebar-active-pulse' : ''}
                       sx={{
                         borderRadius: '12px',
                         justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                        color: '#fff',
-                        bgcolor: active ? 'rgba(255,255,255,0.18)' : 'transparent',
-                        borderLeft: active && !sidebarCollapsed ? '3px solid rgba(255,255,255,0.7)' : '3px solid transparent',
-                        boxShadow: active ? '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
-                        opacity: active ? 1 : 0.65,
+                        color: sidebarText,
+                        bgcolor: active ? sidebarActiveBg : 'transparent',
+                        borderLeft: active && !sidebarCollapsed ? `3px solid ${primaryColor}` : '3px solid transparent',
+                        opacity: active ? 1 : 0.9,
                         '&:hover': {
-                          bgcolor: 'rgba(255,255,255,0.12)',
+                          bgcolor: sidebarHoverBg,
                           opacity: 1,
                         },
-                        transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition: 'background-color 0.18s ease, border-color 0.18s ease',
                         py: 1,
                       }}
                     >
-                      <ListItemIcon sx={{ color: 'inherit', minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center' }}>
+                      <ListItemIcon sx={{ color: active ? primaryColor : sidebarSecondaryText, minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center' }}>
                         {item.icon}
                       </ListItemIcon>
                       {!sidebarCollapsed && (
                         <ListItemText
                           primary={item.label}
-                          primaryTypographyProps={{ fontSize: '0.78rem', fontWeight: active ? 800 : 600, letterSpacing: '0.3px' }}
+                          primaryTypographyProps={{
+                            fontSize: '0.78rem',
+                            fontWeight: active ? 800 : 600,
+                            letterSpacing: '0.04em',
+                            color: active ? sidebarText : sidebarSecondaryText,
+                          }}
                         />
                       )}
                     </ListItemButton>
@@ -326,12 +341,20 @@ export default function Layout({ children }: LayoutProps) {
         {/* Theme: Dark/Light + Color */}
         <Box sx={{ px: sidebarCollapsed ? 1 : 2, py: 1, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}>
           <Tooltip title={isDark ? 'Açıq rejim' : 'Qaranlıq rejim'}>
-            <IconButton size="small" onClick={toggleMode} sx={{ color: 'rgba(255,255,255,0.9)' }}>
+            <IconButton
+              size="small"
+              onClick={toggleMode}
+              sx={{ color: isDark ? 'rgba(248,250,252,0.9)' : 'rgba(15,23,42,0.7)' }}
+            >
               {isDark ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
           </Tooltip>
           <Tooltip title="Rəngi dəyiş">
-            <IconButton size="small" onClick={handleColorMenuOpen} sx={{ color: 'rgba(255,255,255,0.9)' }}>
+            <IconButton
+              size="small"
+              onClick={handleColorMenuOpen}
+              sx={{ color: isDark ? 'rgba(248,250,252,0.9)' : 'rgba(15,23,42,0.7)' }}
+            >
               <PaletteIcon />
             </IconButton>
           </Tooltip>
@@ -361,20 +384,26 @@ export default function Layout({ children }: LayoutProps) {
 
         {user && (
           <>
-            <Divider sx={{ bgcolor: 'rgba(255,255,255,0.08)' }} />
+            <Divider sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(226,232,240,0.9)' }} />
             <Box sx={{ p: sidebarCollapsed ? 1.5 : 2.5 }}>
               <Button
                 fullWidth
                 color="inherit"
                 startIcon={!sidebarCollapsed && (
-                  <Box sx={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    border: '2px solid rgba(255,255,255,0.5)',
-                    boxShadow: '0 0 0 3px rgba(255,255,255,0.15), 0 0 10px rgba(255,255,255,0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'box-shadow 0.2s ease',
-                    '&:hover': { boxShadow: '0 0 0 4px rgba(255,255,255,0.25), 0 0 16px rgba(255,255,255,0.2)' },
-                  }}>
+                    <Box
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: '50%',
+                        border: `2px solid ${isDark ? 'rgba(248,250,252,0.6)' : 'rgba(148,163,184,0.85)'}`,
+                        boxShadow: isDark
+                          ? '0 0 0 3px rgba(15,23,42,0.8)'
+                          : '0 0 0 2px rgba(255,255,255,0.8)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
                     <AccountCircleIcon sx={{ fontSize: 20 }} />
                   </Box>
                 )}
@@ -386,7 +415,7 @@ export default function Layout({ children }: LayoutProps) {
                   justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                   minWidth: 0,
                   borderRadius: '10px',
-                  '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+                  '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6' },
                 }}
               >
                 {sidebarCollapsed ? <AccountCircleIcon /> : getUserName()}
@@ -454,18 +483,8 @@ export default function Layout({ children }: LayoutProps) {
           sx={{
             bgcolor: appBarBg,
             borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(26,31,54,0.07)'}`,
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              width: '100%',
-              height: '2px',
-              background: `linear-gradient(90deg, transparent, ${primaryColor}60, ${primaryColor}, ${primaryColor}60, transparent)`,
-              opacity: 0.6,
-            },
+            backdropFilter: isDark ? 'blur(18px)' : 'none',
+            WebkitBackdropFilter: isDark ? 'blur(18px)' : 'none',
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 } }}>

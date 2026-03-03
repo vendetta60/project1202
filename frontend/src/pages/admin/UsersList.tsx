@@ -86,7 +86,7 @@ function PasswordResetDialog({ open, onClose, userId, username }: PasswordResetD
                     onClick={() => mutation.mutate()}
                     variant="contained"
                     disabled={!password || mutation.isPending}
-                    sx={{ bgcolor: '#4a5d23', '&:hover': { bgcolor: '#3a4a1b' }, fontWeight: 700 }}
+                    sx={{ bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' }, fontWeight: 700 }}
                 >
                     {mutation.isPending ? 'Sıfırlanır...' : 'Sıfırla'}
                 </Button>
@@ -197,7 +197,7 @@ export default function UsersList() {
                     <Button
                         variant="contained"
                         onClick={() => window.location.reload()}
-                        sx={{ bgcolor: '#4a5d23' }}
+                        sx={{ bgcolor: '#0ea5e9', '&:hover': { bgcolor: '#0284c7' } }}
                     >
                         Yenidən yüklə
                     </Button>
@@ -243,14 +243,14 @@ export default function UsersList() {
                             maxWidth: 400,
                             bgcolor: 'white',
                             borderRadius: 1.5,
-                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(74, 93, 35, 0.2)' },
-                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(74, 93, 35, 0.4)' },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4a5d23' }
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(148, 163, 184, 0.5)' },
+                            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
+                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
                         }}
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon fontSize="small" sx={{ color: '#4a5d23' }} />
+                                    <SearchIcon fontSize="small" sx={{ color: '#0ea5e9' }} />
                                 </InputAdornment>
                             ),
                         }}
@@ -263,8 +263,8 @@ export default function UsersList() {
                             sx={{
                                 borderRadius: 1.5,
                                 fontWeight: 700,
-                                bgcolor: '#4a5d23',
-                                '&:hover': { bgcolor: '#3a4a1b' },
+                                bgcolor: '#0ea5e9',
+                                '&:hover': { bgcolor: '#0284c7' },
                                 textTransform: 'none',
                                 px: 3
                             }}
@@ -287,7 +287,7 @@ export default function UsersList() {
                 <TableContainer sx={{ bgcolor: 'white' }}>
                     <Table>
                         <TableHead>
-                            <TableRow sx={{ bgcolor: '#3e4a21' }}>
+                            <TableRow sx={{ bgcolor: '#0ea5e9' }}>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>İstifadəçi adı</TableCell>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Soyad</TableCell>
                                 <TableCell sx={{ color: 'white', fontWeight: 700, py: 2 }}>Ad</TableCell>
@@ -302,7 +302,7 @@ export default function UsersList() {
                                     key={user.id}
                                     hover
                                     sx={{
-                                        '&:hover': { bgcolor: 'rgba(62, 74, 33, 0.04)' },
+                                        '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.06)' },
                                         borderBottom: '1px solid rgba(0,0,0,0.05)'
                                     }}
                                 >
@@ -311,7 +311,7 @@ export default function UsersList() {
                                     </TableCell>
                                     <TableCell sx={{ fontSize: '0.875rem', color: '#444' }}>{user.surname || '-'}</TableCell>
                                     <TableCell sx={{ fontSize: '0.875rem', color: '#444' }}>{user.name || '-'}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#4a5d23' }}>
+                                    <TableCell sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#0ea5e9' }}>
                                         {user.section_name || user.section_id || '-'}
                                     </TableCell>
                                     <TableCell>
@@ -320,7 +320,7 @@ export default function UsersList() {
                                                 label={user.is_super_admin ? 'SUPER ADMIN' : user.is_admin ? 'ADMIN' : 'USER'}
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: user.is_super_admin ? '#8e44ad' : user.is_admin ? '#4a5d23' : 'rgba(0,0,0,0.08)',
+                                                    bgcolor: user.is_super_admin ? '#6366f1' : user.is_admin ? '#0ea5e9' : 'rgba(0,0,0,0.08)',
                                                     color: (user.is_super_admin || user.is_admin) ? 'white' : '#666',
                                                     fontWeight: 700,
                                                     fontSize: '0.7rem',
@@ -367,8 +367,8 @@ export default function UsersList() {
                                                         size="small"
                                                         onClick={() => navigate(`/admin/users/${user.id}`)}
                                                         sx={{
-                                                            color: '#4a5d23',
-                                                            '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' }
+                                                            color: '#0ea5e9',
+                                                            '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.08)' }
                                                         }}
                                                     >
                                                         <EditIcon fontSize="small" />

@@ -1376,49 +1376,38 @@ export default function AppealForm() {
                   }}>
                     <Table size="small" sx={{ minWidth: 800 }}>
                       <TableHead>
-                        <TableRow sx={{
-                          background: 'linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%)',
-                        }}>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>İCRAÇININ STRUKTUR BÖLMƏSİ</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>SOYADI, ADI</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>HANSI SƏNƏDLƏ İCRA EDİLİB</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>SƏNƏDİN TARİXİ</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>TİKDİYİ İŞİN NÖMRƏSİ</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>İŞDƏKİ VƏRƏQ NÖMRƏSİ</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>GÖNDƏRİLMƏ NÖMRƏSİ</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>GÖNDƏRİLMƏ TARİXİ</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            borderRight: '1px solid rgba(255,255,255,0.1)'
-                          }}>HARA (KİMƏ) GÖNDƏRİLİB</TableCell>
-                          <TableCell sx={{
-                            fontWeight: 700, py: 1.2, fontSize: '0.7rem', color: 'white',
-                            textAlign: 'center'
-                          }}>ƏSAS İCRAÇI</TableCell>
+                        <TableRow
+                          sx={{
+                            bgcolor: '#0ea5e9',
+                          }}
+                        >
+                          {[
+                            'İCRAÇININ STRUKTUR BÖLMƏSİ',
+                            'SOYADI, ADI',
+                            'HANSI SƏNƏDLƏ İCRA EDİLİB',
+                            'SƏNƏDİN TARİXİ',
+                            'TİKDİYİ İŞİN NÖMRƏSİ',
+                            'İŞDƏKİ VƏRƏQ NÖMRƏSİ',
+                            'GÖNDƏRİLMƏ NÖMRƏSİ',
+                            'GÖNDƏRİLMƏ TARİXİ',
+                            'HARA (KİMƏ) GÖNDƏRİLİB',
+                            'ƏSAS İCRAÇI',
+                          ].map((label, idx) => (
+                            <TableCell
+                              key={label}
+                              sx={{
+                                fontWeight: 700,
+                                py: 1.1,
+                                fontSize: '0.72rem',
+                                color: '#ffffff !important',
+                                borderBottom: 'none',
+                                ...(idx < 9 && { borderRight: '1px solid rgba(255,255,255,0.25)' }),
+                                ...(idx === 9 && { textAlign: 'center' }),
+                              }}
+                            >
+                              {label}
+                            </TableCell>
+                          ))}
                         </TableRow>
                       </TableHead>
                       <TableBody>

@@ -78,7 +78,11 @@ class AppealService:
         # Decide which section to use for generation
         section_id = data.get("user_section_id") or current_user.section_id
         if not section_id:
-            raise HTTPException(status_code=400, detail="Bölmə məlumatı tapılmadı")
+            # Admin və ya istifadəçi heç bir idarəyə qoşulmayıbsa, yeni müraciət yarada bilməz
+            raise HTTPException(
+                status_code=400,
+                detail="Heç bir idarəyə qoşulmadığınız üçün yeni müraciət yarada bilməzsiniz."
+            )
 
         reg_date = data.get("reg_date") or datetime.utcnow()
         year = reg_date.year
@@ -174,6 +178,13 @@ class AppealService:
         return obj
 
     def update(self, current_user: User, appeal_id: int, payload: AppealUpdate) -> Appeal:
+        # İdarəyə qoşulmamış istifadəçi (o cümlədən admin) müraciəti redaktə edə bilməz
+        if not current_user.section_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Heç bir idarəyə qoşulmadığınız üçün müraciəti redaktə edə bilməzsiniz."
+            )
+
         obj = self.appeals.get(appeal_id)
         if not obj:
             raise HTTPException(status_code=404, detail="Müraciət tapılmadı")

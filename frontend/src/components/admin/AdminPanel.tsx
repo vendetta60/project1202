@@ -3,9 +3,10 @@ import { PermissionsManagement } from './PermissionsManagement';
 import { RolesManagement } from './RolesManagement';
 import { PermissionGroupsManagement } from './PermissionGroupsManagement';
 import { UserPermissionsManagement } from './UserPermissionsManagement';
+import { FeedbackInbox } from './FeedbackInbox';
 import './AdminPanel.css';
 
-type AdminTab = 'permissions' | 'roles' | 'groups' | 'users';
+type AdminTab = 'permissions' | 'roles' | 'groups' | 'users' | 'feedback';
 
 export function AdminPanel() {
   const [activeTab, setActiveTab] = useState<AdminTab>('users'); // Default to users for easier onboarding
@@ -28,6 +29,13 @@ export function AdminPanel() {
           >
             <span className="tab-icon">👤</span>
             İstifadəçi İcazələri
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'feedback' ? 'active' : ''}`}
+            onClick={() => setActiveTab('feedback')}
+          >
+            <span className="tab-icon">💬</span>
+            Təklif və İradlar
           </button>
           <button
             className={`tab-button ${activeTab === 'roles' ? 'active' : ''}`}
@@ -58,6 +66,7 @@ export function AdminPanel() {
         {activeTab === 'roles' && <RolesManagement />}
         {activeTab === 'groups' && <PermissionGroupsManagement />}
         {activeTab === 'users' && <UserPermissionsManagement />}
+        {activeTab === 'feedback' && <FeedbackInbox />}
       </div>
 
       <style>{`
@@ -140,15 +149,32 @@ export function AdminPanel() {
           letter-spacing: 0.5px;
         }
 
+        body[data-theme="dark"] .tab-button {
+          color: rgba(248, 250, 252, 0.75);
+        }
+
         .tab-button:hover {
           color: var(--app-primary);
           background: var(--app-border);
+        }
+
+        body[data-theme="dark"] .tab-button:hover {
+          color: var(--app-primary);
+          background: rgba(255, 255, 255, 0.08);
         }
 
         .tab-button.active {
           color: var(--app-primary);
           border-bottom-color: var(--app-primary);
           background: var(--app-border);
+        }
+
+        body[data-theme="dark"] .tab-button.active {
+          color: white;
+          border-bottom-color: var(--app-primary);
+          background: var(--app-primary);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-bottom-width: 4px;
         }
 
         .tab-icon {

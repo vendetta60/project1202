@@ -1,5 +1,5 @@
 import React, { useEffect, useState, FormEvent } from 'react';
-import { userPermissionApi, roleApi, permissionGroupApi, usersApi, User } from '../../api/index';
+import { userPermissionApi, roleApi, permissionGroupApi, permissionApi, usersApi, User } from '../../api/index';
 import { usePermissions } from '../../hooks/usePermissions';
 
 interface Permission {
@@ -38,6 +38,7 @@ export function UserPermissionsManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [groups, setGroups] = useState<PermissionGroup[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -61,14 +62,16 @@ export function UserPermissionsManagement() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersRes, rolesRes, groupsRes] = await Promise.all([
+      const [usersRes, rolesRes, groupsRes, permissionsRes] = await Promise.all([
         usersApi.getUsers({ limit: 200, offset: 0 }),
         roleApi.listAll(),
         permissionGroupApi.listAll(true),
+        permissionApi.listAll(),
       ]);
       setUsers(usersRes.items);
       setRoles(rolesRes.data);
       setGroups(groupsRes.data);
+      setPermissions(permissionsRes.data);
       setError(null);
     } catch (err: any) {
       setError('Məlumatların yüklənməsi zamanı xəta baş verdi');
@@ -128,6 +131,24 @@ export function UserPermissionsManagement() {
       await permissionGroupApi.applyToUser(groupId, selectedUser.id);
       await handleSelectUser(selectedUser);
       setSuccess('Şablon qrup uğurla tətbiq edildi');
+    } catch (err: any) {
+      setError(getErrorMessage(err));
+    }
+  };
+
+  const handleRemovePermissionFromUser = async (code: string) => {
+    if (!selectedUser) return;
+    const perm = permissions.find((p) => p.code === code);
+    if (!perm) {
+      setError('Bu icazə sistemi üzrə tapılmadı');
+      return;
+    }
+    if (!confirm(`"${code}" icazəsini bu istifadəçidən silmək istədiyinizə əminsiniz?`)) return;
+    try {
+      // Deny permission so that hətta rollardan gəlsə belə bu istifadəçidə deaktiv olsun
+      await userPermissionApi.denyPermission(selectedUser.id, perm.id);
+      await handleSelectUser(selectedUser);
+      setSuccess('İcazə istifadəçidən silindi');
     } catch (err: any) {
       setError(getErrorMessage(err));
     }
@@ -286,6 +307,14 @@ export function UserPermissionsManagement() {
                   {userPermissions.permission_codes.sort().map((code) => (
                     <div key={code} className="permission-item">
                       <code>{code}</code>
+                      <button
+                        type="button"
+                        className="btn-close-badge"
+                        onClick={() => handleRemovePermissionFromUser(code)}
+                        title="Bu icazəni istifadəçidən sil"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -422,7 +451,8 @@ export function UserPermissionsManagement() {
         }
         .user-avatar {
           font-size: 24px;
-          background: #f1f5f9;
+          background: var(--app-bg);
+          color: var(--app-text);
           width: 40px;
           height: 40px;
           display: flex;
@@ -432,6 +462,7 @@ export function UserPermissionsManagement() {
         }
         .user-item.active .user-avatar {
           background: rgba(255,255,255,0.2);
+          color: white;
         }
         .permissions-detail {
           min-height: 400px;
@@ -443,10 +474,10 @@ export function UserPermissionsManagement() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          color: #94a3b8;
+          color: var(--app-text-secondary);
           text-align: center;
           padding: 40px;
-          background: rgba(255,255,255,0.3);
+          background: var(--app-paper);
           border-radius: 12px;
           border: 2px dashed var(--app-border);
         }
@@ -462,7 +493,7 @@ export function UserPermissionsManagement() {
         }
         .panel-header h3 small {
           font-weight: 500;
-          color: #64748b;
+          color: var(--app-text-secondary);
         }
         .group-btn-content {
           text-align: left;
@@ -481,7 +512,7 @@ export function UserPermissionsManagement() {
         .add-role-form {
           margin-top: 24px;
           padding-top: 16px;
-          border-top: 1px solid rgba(0,0,0,0.05);
+          border-top: 1px solid var(--app-border);
         }
         .wide-modal {
           max-width: 800px !important;
@@ -511,8 +542,8 @@ export function UserPermissionsManagement() {
           max-height: 200px;
           overflow-y: auto;
           padding: 12px;
-          background: white;
-          border: 1.5px solid #d1d5db;
+          background: var(--app-paper);
+          border: 1.5px solid var(--app-border);
           border-radius: 6px;
         }
         .checkbox-item {
@@ -523,6 +554,7 @@ export function UserPermissionsManagement() {
           font-size: 13px;
           text-transform: none !important;
           cursor: pointer;
+          color: var(--app-text);
         }
         .checkbox-item input {
           width: 16px;

@@ -3,7 +3,8 @@ from sqlalchemy import func, and_, or_
 from app.models.appeal import Appeal
 from app.models.department import Department
 from app.models.region import Region
-from app.models.lookup import ApStatus, ApIndex, InSection
+from app.models.lookup import ApStatus, ApIndex, InSection, AccountIndex, ContentType
+from app.models.executor import Executor, Direction
 from datetime import date
 
 class ReportRepository:
@@ -19,7 +20,7 @@ class ReportRepository:
     ):
         # Base query: count appeals
         query = self.db.query(func.count(Appeal.id).label("count"))
-
+        
         # Define joins and labels based on group_by
         if group_by == "department":
             query = query.add_columns(Appeal.dep_id.label("id"), Department.department.label("name"))
@@ -41,6 +42,21 @@ class ReportRepository:
             query = query.add_columns(Appeal.InSection.label("id"), InSection.section.label("name"))
             query = query.outerjoin(InSection, Appeal.InSection == InSection.id)
             query = query.group_by(Appeal.InSection, InSection.section)
+        elif group_by == "account_index":
+            query = query.add_columns(Appeal.account_index_id.label("id"), AccountIndex.account_index.label("name"))
+            query = query.outerjoin(AccountIndex, Appeal.account_index_id == AccountIndex.id)
+            query = query.group_by(Appeal.account_index_id, AccountIndex.account_index)
+        elif group_by == "content_type":
+            query = query.add_columns(Appeal.content_type_id.label("id"), ContentType.content_type.label("name"))
+            query = query.outerjoin(ContentType, Appeal.content_type_id == ContentType.id)
+            query = query.group_by(Appeal.content_type_id, ContentType.content_type)
+        elif group_by == "exec_direction":
+            # Count DISTINCT appeals per icra istiqaməti
+            query = self.db.query(func.count(func.distinct(Appeal.id)).label("count"))
+            query = query.add_columns(Direction.id.label("id"), Direction.direction.label("name"))
+            query = query.join(Executor, Executor.appeal_id == Appeal.id)
+            query = query.join(Direction, Executor.direction_id == Direction.id)
+            query = query.group_by(Direction.id, Direction.direction)
         else:
             # Fallback or default
             query = query.add_columns(Appeal.status.label("id"), ApStatus.status.label("name"))

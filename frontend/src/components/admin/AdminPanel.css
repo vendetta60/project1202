@@ -44,8 +44,12 @@
   letter-spacing: 1px;
 }
 
+body[data-theme="dark"] .section-header h2 {
+  color: var(--app-primary);
+}
+
 .form-card {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--app-paper);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
   padding: 24px;
@@ -66,15 +70,20 @@
   letter-spacing: 0.5px;
 }
 
+body[data-theme="dark"] .form-group label {
+  color: var(--app-text-secondary);
+}
+
 .form-group input,
 .form-group textarea,
 .form-group select {
   width: 100%;
   padding: 12px;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--app-border);
   border-radius: 6px;
   font-size: 14px;
-  background: white;
+  background: var(--app-paper);
+  color: var(--app-text);
   transition: all 0.2s ease;
 }
 
@@ -162,14 +171,20 @@
   letter-spacing: 1px;
 }
 
+body[data-theme="dark"] .data-table thead th {
+  background: var(--app-primary);
+  color: white;
+}
+
 .data-table thead th:first-child { border-radius: 8px 0 0 8px; }
 .data-table thead th:last-child { border-radius: 0 8px 8px 0; }
 
 .data-table tbody td {
-  background: white;
+  background: var(--app-paper);
   padding: 16px;
   border-top: 1px solid var(--glass-border);
   border-bottom: 1px solid var(--glass-border);
+  color: var(--app-text);
 }
 
 .data-table tbody td:first-child {
@@ -183,8 +198,13 @@
 }
 
 .data-table tbody tr:hover td {
-  background: #fdfdfd;
+  background: var(--app-bg);
   border-color: var(--military-olive);
+}
+
+body[data-theme="dark"] .data-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--app-primary);
 }
 
 /* Badges */
@@ -241,7 +261,8 @@
   display: flex;
   align-items: center;
   padding: 16px;
-  background: white;
+  background: var(--app-paper);
+  color: var(--app-text);
   border: 1.5px solid var(--glass-border);
   border-radius: 8px;
   cursor: pointer;
@@ -269,13 +290,13 @@
 .permission-name {
   font-weight: 700;
   font-size: 14px;
-  color: var(--military-charcoal);
+  color: var(--app-text);
 }
 
 .permission-code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: var(--military-steel);
+  color: var(--app-text-secondary);
 }
 
 /* User Management */
@@ -296,7 +317,8 @@
 
 .user-item {
   padding: 16px;
-  background: white;
+  background: var(--app-paper);
+  color: var(--app-text, #0f172a);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
   margin-bottom: 12px;
@@ -304,14 +326,29 @@
   transition: all 0.2s ease;
 }
 
+.user-item small {
+  color: var(--app-text-secondary, #64748b);
+}
+
 .user-item:hover {
   border-color: var(--military-olive);
   background: var(--military-bone);
 }
 
+body[data-theme="dark"] .user-item:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: var(--app-primary);
+}
+
 .user-item.active {
   background: var(--military-olive);
   border-color: var(--military-olive);
+  color: white;
+}
+
+body[data-theme="dark"] .user-item.active {
+  background: var(--app-primary);
+  border-color: var(--app-primary);
   color: white;
 }
 
@@ -344,7 +381,7 @@
 
 .modal-footer {
   padding: 16px 24px;
-  background: white;
+  background: var(--app-paper);
   border-top: 1px solid var(--glass-border);
 }
 

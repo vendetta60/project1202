@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,12 +40,43 @@ export default function Login() {
 
   const rememberMe = watch('rememberMe', false);
 
+  // Load remembered credentials (if any) on first render
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('mq_remember_login_v1');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { username?: string; password?: string } | null;
+      if (parsed?.username) {
+        setValue('username', parsed.username);
+      }
+      if (parsed?.password) {
+        setValue('password', parsed.password);
+      }
+      setValue('rememberMe', true);
+    } catch {
+      // ignore corrupt storage
+    }
+  }, [setValue]);
+
   const onSubmit = async (data: LoginRequest & { rememberMe: boolean }) => {
     setError('');
     setLoading(true);
     try {
       const { rememberMe, ...loginData } = data;
       const response = await login(loginData);
+      // Persist or clear remembered credentials
+      try {
+        if (rememberMe) {
+          localStorage.setItem(
+            'mq_remember_login_v1',
+            JSON.stringify({ username: loginData.username, password: loginData.password }),
+          );
+        } else {
+          localStorage.removeItem('mq_remember_login_v1');
+        }
+      } catch {
+        // storage might be disabled; ignore
+      }
       setToken(response.access_token, response.refresh_token);
       queryClient.clear();
       navigate('/');

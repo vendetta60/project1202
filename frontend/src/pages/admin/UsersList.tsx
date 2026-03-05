@@ -22,6 +22,7 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
+    useTheme,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -98,6 +99,8 @@ function PasswordResetDialog({ open, onClose, userId, username }: PasswordResetD
 
 export default function UsersList() {
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const { ToastComponent } = useToast();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -278,8 +281,9 @@ export default function UsersList() {
                     p: 3,
                     mb: 4,
                     borderRadius: 2,
-                    bgcolor: 'rgba(255,255,255,0.9)',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+                    bgcolor: 'background.paper',
+                    boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.05)',
+                    border: isDark ? '1px solid rgba(255,255,255,0.08)' : 'none',
                 }}
             >
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -294,9 +298,9 @@ export default function UsersList() {
                         sx={{
                             flexGrow: 1,
                             maxWidth: 400,
-                            bgcolor: 'white',
+                            bgcolor: 'background.default',
                             borderRadius: 1.5,
-                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(148, 163, 184, 0.5)' },
+                            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
                             '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' },
                             '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
                         }}
@@ -333,11 +337,12 @@ export default function UsersList() {
                 sx={{
                     borderRadius: 2,
                     overflow: 'hidden',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                    border: '1px solid rgba(0,0,0,0.05)'
+                    bgcolor: 'background.paper',
+                    boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.05)',
+                    border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)',
                 }}
             >
-                <TableContainer sx={{ bgcolor: 'white' }}>
+                <TableContainer sx={{ bgcolor: 'background.paper' }}>
                     <Table>
                         <TableHead>
                             <TableRow sx={{ bgcolor: '#0ea5e9' }}>
@@ -355,15 +360,16 @@ export default function UsersList() {
                                     key={user.id}
                                     hover
                                     sx={{
-                                        '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.06)' },
-                                        borderBottom: '1px solid rgba(0,0,0,0.05)'
+                                        '&:hover': { bgcolor: isDark ? 'rgba(14, 165, 233, 0.12)' : 'rgba(14, 165, 233, 0.06)' },
+                                        borderBottom: '1px solid',
+                                        borderColor: 'divider',
                                     }}
                                 >
-                                    <TableCell sx={{ fontSize: '0.9rem', fontWeight: 600, color: '#2c3e50' }}>
+                                    <TableCell sx={{ fontSize: '0.9rem', fontWeight: 600, color: 'text.primary' }}>
                                         {user.username}
                                     </TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem', color: '#444' }}>{user.surname || '-'}</TableCell>
-                                    <TableCell sx={{ fontSize: '0.875rem', color: '#444' }}>{user.name || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{user.surname || '-'}</TableCell>
+                                    <TableCell sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>{user.name || '-'}</TableCell>
                                     <TableCell sx={{ fontSize: '0.875rem', fontWeight: 600, color: '#0ea5e9' }}>
                                         {user.section_name || user.section_id || '-'}
                                     </TableCell>
@@ -373,13 +379,14 @@ export default function UsersList() {
                                                 label={user.is_super_admin ? 'SUPER ADMIN' : user.is_admin ? 'ADMIN' : 'USER'}
                                                 size="small"
                                                 sx={{
-                                                    bgcolor: user.is_super_admin ? '#6366f1' : user.is_admin ? '#0ea5e9' : 'rgba(0,0,0,0.08)',
-                                                    color: (user.is_super_admin || user.is_admin) ? 'white' : '#666',
+                                                    bgcolor: user.is_super_admin ? '#6366f1' : user.is_admin ? '#0ea5e9' : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'),
+                                                    color: (user.is_super_admin || user.is_admin) ? 'white' : 'text.secondary',
                                                     fontWeight: 700,
                                                     fontSize: '0.7rem',
                                                     borderRadius: 1,
                                                     height: 24,
-                                                    border: (user.is_super_admin || user.is_admin) ? 'none' : '1px solid rgba(0,0,0,0.1)'
+                                                    border: (user.is_super_admin || user.is_admin) ? 'none' : '1px solid',
+                                                    borderColor: 'divider',
                                                 }}
                                             />
                                             {user.is_blocked && (
@@ -482,11 +489,12 @@ export default function UsersList() {
                     labelRowsPerPage="Səhifədə sətir:"
                     labelDisplayedRows={({ from, to, count }) => `${from}–${to} / ${count}`}
                     sx={{
-                        bgcolor: 'white',
-                        borderTop: '1px solid rgba(0,0,0,0.05)',
+                        bgcolor: 'background.paper',
+                        borderTop: '1px solid',
+                        borderColor: 'divider',
                         '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
                             fontWeight: 600,
-                            color: '#555',
+                            color: 'text.secondary',
                         }
                     }}
                 />

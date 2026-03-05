@@ -28,12 +28,16 @@ import { getAppealReport, ReportParams, exportForma4, exportAppealStats } from '
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { getSelectStyles } from '../utils/formStyles';
+import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
 const groupByOptions = [
     { value: 'department', label: 'İdarə üzrə' },
     { value: 'region', label: 'Region üzrə' },
-    { value: 'status', label: 'Status üzrə' },
-    { value: 'index', label: 'İndeks üzrə' },
+    { value: 'status', label: 'Müraciətin baxılması vəziyyətinə görə' },
+    { value: 'index', label: 'Müraciətin indeksi üzrə' },
+    { value: 'account_index', label: 'Hesabat indeksi üzrə' },
+    { value: 'exec_direction', label: 'İcra struktur bölmə üzrə' },
+    { value: 'content_type', label: 'Müraciətin növü üzrə' },
     { value: 'insection', label: 'Hərbi hissə üzrə' },
 ];
 
@@ -78,8 +82,11 @@ export default function Reports() {
         switch (val) {
             case 'department': return 'İdarə';
             case 'region': return 'Region';
-            case 'status': return 'Status';
-            case 'index': return 'Müraciət İndeksi';
+            case 'status': return 'Müraciətin baxılması vəziyyəti';
+            case 'index': return 'Müraciətin indeksi';
+            case 'account_index': return 'Hesabat indeksi';
+            case 'exec_direction': return 'İcra struktur bölmə';
+            case 'content_type': return 'Müraciətin növü';
             case 'insection': return 'Hərbi hissə (Bölmə)';
             default: return 'Kateqoriya';
         }
@@ -108,7 +115,9 @@ export default function Reports() {
                     {getGroupLabel(params.group_by || 'department')} ÜZRƏ BÖLGÜ
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    Hesabat dövrü: {params.start_date || 'ƏVVƏLDƏN'} — {params.end_date || 'BUGÜNƏDƏK'}
+                    Hesabat dövrü:{' '}
+                    {params.start_date ? formatDateToDDMMYYYY(params.start_date) : 'ƏVVƏLDƏN'} —{' '}
+                    {params.end_date ? formatDateToDDMMYYYY(params.end_date) : 'BUGÜNƏDƏK'}
                 </Typography>
             </Box>
 
@@ -170,7 +179,7 @@ export default function Reports() {
                             onChange={(dates) => setParams({ ...params, start_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',
-                                dateFormat: 'Y-m-d',
+                                dateFormat: 'd.m.Y',
                                 locale: {
                                     ...Azerbaijan,
                                     firstDayOfWeek: 1
@@ -196,7 +205,7 @@ export default function Reports() {
                             onChange={(dates) => setParams({ ...params, end_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',
-                                dateFormat: 'Y-m-d',
+                                dateFormat: 'd.m.Y',
                                 locale: {
                                     ...Azerbaijan,
                                     firstDayOfWeek: 1
@@ -401,7 +410,11 @@ export default function Reports() {
                         <Flatpickr
                             value={params.start_date ? new Date(params.start_date) : undefined}
                             onChange={(dates) => setParams({ ...params, start_date: dates[0]?.toISOString().split('T')[0] || '' })}
-                            options={{ mode: 'single', dateFormat: 'Y-m-d', locale: Azerbaijan }}
+                            options={{
+                                mode: 'single',
+                                dateFormat: 'd.m.Y',
+                                locale: { ...Azerbaijan, firstDayOfWeek: 1 },
+                            }}
                             className="w-full"
                             style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0, 0, 0, 0.23)', backgroundColor: 'white' }}
                         />
@@ -411,7 +424,11 @@ export default function Reports() {
                         <Flatpickr
                             value={params.end_date ? new Date(params.end_date) : undefined}
                             onChange={(dates) => setParams({ ...params, end_date: dates[0]?.toISOString().split('T')[0] || '' })}
-                            options={{ mode: 'single', dateFormat: 'Y-m-d', locale: Azerbaijan }}
+                            options={{
+                                mode: 'single',
+                                dateFormat: 'd.m.Y',
+                                locale: { ...Azerbaijan, firstDayOfWeek: 1 },
+                            }}
                             className="w-full"
                             style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(0, 0, 0, 0.23)', backgroundColor: 'white' }}
                         />

@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.executor import Executor, ExecutorList
 
@@ -8,24 +8,27 @@ class ExecutorRepository:
         self.db = db
 
     def list_by_appeal(self, appeal_id: int) -> list[Executor]:
-        from app.models.executor import ExecutorList, Direction
-        query = self.db.query(
-            Executor,
-            ExecutorList.executor.label("executor_name"),
-            Direction.direction.label("direction_name")
-        ).outerjoin(
-            ExecutorList, Executor.executor_id == ExecutorList.id
-        ).outerjoin(
-            Direction, Executor.direction_id == Direction.id
-        ).filter(Executor.appeal_id == appeal_id)
-        
-        results = query.all()
-        executors = []
-        for executor, exec_name, dir_name in results:
-            executor.executor_name = exec_name
-            executor.direction_name = dir_name
-            executors.append(executor)
-        return executors
+        """
+        Return all executors for a given appeal.
+
+        Executor model already has relationships + properties:
+        - executor_name -> ExecutorList.executor
+        - direction_name -> Direction.direction
+
+        Ona görə ayrıca manual field yazmağa ehtiyac yoxdur, yalnız
+        joinedload ilə əlaqələri eager-load etmək kifayətdir.
+        """
+        from app.models.executor import Direction
+
+        query = (
+            self.db.query(Executor)
+            .options(
+                joinedload(Executor.executor_list),
+                joinedload(Executor.direction),
+            )
+            .filter(Executor.appeal_id == appeal_id)
+        )
+        return query.all()
 
     def get(self, executor_id: int) -> Executor | None:
         return self.db.get(Executor, executor_id)

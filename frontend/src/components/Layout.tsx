@@ -22,6 +22,8 @@ import {
   DialogActions,
   TextField,
   Alert,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import logo from '../assets/logo.png';
 import { useState, useEffect } from 'react';
@@ -41,6 +43,9 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import PaletteIcon from '@mui/icons-material/Palette';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TuneIcon from '@mui/icons-material/Tune';
 import { useTheme } from '../context/ThemeContext';
 import { PRESET_COLORS } from '../context/ThemeContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -48,6 +53,20 @@ import { getPublicMaintenanceStatus } from '../api/users';
 
 const SIDEBAR_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
+
+type NavItemConfig = {
+  id: string;
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  always?: boolean;
+  show?: boolean;
+};
+
+const MENU_VISIBILITY_KEY = 'app_menu_visible_ids_v1';
+const ADMIN_VISIBILITY_KEY = 'app_admin_visible_ids_v1';
+const MAIN_COLLAPSE_KEY = 'app_menu_main_collapsed_v1';
+const ADMIN_COLLAPSE_KEY = 'app_menu_admin_collapsed_v1';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -65,7 +84,7 @@ export default function Layout({ children }: LayoutProps) {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const { sidebarCollapsed, toggleSidebar, mode, toggleMode, primaryColor, setPrimaryColor } = useTheme();
+  const { sidebarCollapsed, mode, toggleMode, primaryColor, setPrimaryColor } = useTheme();
   const muiTheme = useMuiTheme();
   const queryClient = useQueryClient();
   const {
@@ -73,6 +92,37 @@ export default function Layout({ children }: LayoutProps) {
     canViewAppeals, canExportAppeals, canViewUsers,
   } = usePermissions();
   const [maintenanceSecondsLeft, setMaintenanceSecondsLeft] = useState<number | null>(null);
+  const [menuSettingsOpen, setMenuSettingsOpen] = useState(false);
+
+  const [visibleMenuIds, setVisibleMenuIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = window.localStorage.getItem(MENU_VISIBILITY_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [visibleAdminIds, setVisibleAdminIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = window.localStorage.getItem(ADMIN_VISIBILITY_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [mainSectionCollapsed, setMainSectionCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(MAIN_COLLAPSE_KEY) === '1';
+  });
+
+  const [adminSectionCollapsed, setAdminSectionCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(ADMIN_COLLAPSE_KEY) === '1';
+  });
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -133,25 +183,92 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   // Filter menu items based on permissions
-  const allMenuItems = [
-    { label: 'ANA SƏHİFƏ', path: '/', icon: <DashboardIcon />, always: true },
-    { label: 'MÜRACİƏTLƏR', path: '/appeals', icon: <DescriptionIcon />, show: canViewAppeals },
-    { label: 'HESABATLAR', path: '/reports', icon: <AssessmentIcon />, show: canExportAppeals },
+  const allMenuItems: NavItemConfig[] = [
+    { id: 'dashboard', label: 'ANA SƏHİFƏ', path: '/dashboard', icon: <DashboardIcon />, always: true },
+    { id: 'appeals', label: 'MÜRACİƏTLƏR', path: '/appeals', icon: <DescriptionIcon />, show: canViewAppeals },
+    { id: 'reports', label: 'HESABATLAR', path: '/reports', icon: <AssessmentIcon />, show: canExportAppeals },
+    { id: 'feedback', label: 'TƏKLİF VƏ İRADLAR', path: '/feedback', icon: <DescriptionIcon />, always: true },
   ];
-  const menuItems = allMenuItems.filter(i => i.always || i.show);
+  const permittedMenuItems = allMenuItems.filter(i => i.always || i.show);
 
   // Admin sidebar items
-  const allAdminItems = [
-    { label: 'MERKEZİ İDARƏETMƏ', path: '/admin', icon: <SettingsIcon />, show: isAdmin },
-    { label: 'İSTİFADƏÇİLƏR', path: '/admin/users', icon: <PeopleIcon />, show: canViewUsers },
-    { label: 'LOGLAR', path: '/admin/logs', icon: <HistoryIcon />, show: isAdmin },
-    { label: 'PARAMETRLƏR', path: '/admin/parameters', icon: <SettingsIcon />, show: isAdmin },
+  const allAdminItems: NavItemConfig[] = [
+    { id: 'admin-center', label: 'MERKEZİ İDARƏETMƏ', path: '/admin', icon: <SettingsIcon />, show: isAdmin },
+    { id: 'admin-users', label: 'İSTİFADƏÇİLƏR', path: '/admin/users', icon: <PeopleIcon />, show: canViewUsers },
+    { id: 'admin-logs', label: 'LOGLAR', path: '/admin/logs', icon: <HistoryIcon />, show: isAdmin },
+    { id: 'admin-parameters', label: 'PARAMETRLƏR', path: '/admin/parameters', icon: <SettingsIcon />, show: isAdmin },
   ];
-  const adminItems = allAdminItems.filter(i => i.show);
+  const permittedAdminItems = allAdminItems.filter(i => i.show);
+
+  const menuItems = permittedMenuItems.filter((item) => {
+    if (visibleMenuIds.length === 0) return true;
+    return visibleMenuIds.includes(item.id);
+  });
+
+  const adminItems = permittedAdminItems.filter((item) => {
+    if (visibleAdminIds.length === 0) return true;
+    return visibleAdminIds.includes(item.id);
+  });
   const showAdminSection = adminItems.length > 0;
 
   const drawerWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
   const isDark = mode === 'dark';
+
+  const handleToggleMenuVisibility = (id: string, section: 'main' | 'admin') => {
+    if (section === 'main') {
+      const baseIds = permittedMenuItems.map(i => i.id);
+      const current = visibleMenuIds.length === 0 ? baseIds : visibleMenuIds;
+      const targetItem = permittedMenuItems.find(i => i.id === id);
+      if (targetItem?.always) {
+        return;
+      }
+      const exists = current.includes(id);
+      const next = exists ? current.filter(x => x !== id) : [...current, id];
+      setVisibleMenuIds(next);
+    } else {
+      const baseIds = permittedAdminItems.map(i => i.id);
+      const current = visibleAdminIds.length === 0 ? baseIds : visibleAdminIds;
+      const exists = current.includes(id);
+      const next = exists ? current.filter(x => x !== id) : [...current, id];
+      setVisibleAdminIds(next);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(MENU_VISIBILITY_KEY, JSON.stringify(visibleMenuIds));
+    } catch {
+      // ignore
+    }
+  }, [visibleMenuIds]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(ADMIN_VISIBILITY_KEY, JSON.stringify(visibleAdminIds));
+    } catch {
+      // ignore
+    }
+  }, [visibleAdminIds]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(MAIN_COLLAPSE_KEY, mainSectionCollapsed ? '1' : '0');
+    } catch {
+      // ignore
+    }
+  }, [mainSectionCollapsed]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(ADMIN_COLLAPSE_KEY, adminSectionCollapsed ? '1' : '0');
+    } catch {
+      // ignore
+    }
+  }, [adminSectionCollapsed]);
 
   useEffect(() => {
     document.body.setAttribute('data-theme', mode);
@@ -163,6 +280,7 @@ export default function Layout({ children }: LayoutProps) {
     let interval: number | undefined;
 
     if (user && !isAdmin && !isSuperAdmin) {
+      // Texniki statusu 5 dəqiqədən bir yoxla
       interval = window.setInterval(async () => {
         try {
           const status = await getPublicMaintenanceStatus();
@@ -180,7 +298,7 @@ export default function Layout({ children }: LayoutProps) {
         } catch {
           // status endpointi əlçatan olmasa, sadəcə sus
         }
-      }, 1000);
+      }, 300000);
     } else {
       setMaintenanceSecondsLeft(null);
     }
@@ -234,7 +352,7 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         {/* Logo / Title + Toggle */}
-        <Box sx={{ px: sidebarCollapsed ? 1 : 2, mb: 3, mt: 1, display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}>
+        <Box sx={{ px: sidebarCollapsed ? 1 : 2, mb: 1.5, mt: 1, display: 'flex', alignItems: 'center', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}>
           <Box
             sx={{
               display: 'flex',
@@ -277,114 +395,166 @@ export default function Layout({ children }: LayoutProps) {
           </Box>
         </Box>
 
-        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mb: 2 }} />
+        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.1)', mb: 1.5 }} />
 
-        <List sx={{ px: 1.5 }}>
-          {menuItems.map((item) => {
-            const active = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-            return (
-              <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    borderRadius: '12px',
-                    justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                    color: sidebarText,
-                    bgcolor: active ? sidebarActiveBg : 'transparent',
-                    borderLeft: active && !sidebarCollapsed ? `3px solid ${primaryColor}` : '3px solid transparent',
-                    opacity: active ? 1 : 0.9,
-                    '&:hover': {
-                      bgcolor: sidebarHoverBg,
-                      opacity: 1,
-                    },
-                    transition: 'background-color 0.18s ease, border-color 0.18s ease',
-                    py: 1.05,
-                  }}
-                >
-                  <ListItemIcon sx={{ color: active ? primaryColor : sidebarSecondaryText, minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center', fontSize: 20 }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  {!sidebarCollapsed && (
-                    <ListItemText
-                      primary={item.label}
-                      primaryTypographyProps={{
-                        fontSize: '0.8rem',
-                        fontWeight: active ? 800 : 600,
-                        letterSpacing: '0.04em',
-                        color: active ? sidebarText : sidebarSecondaryText,
-                      }}
-                    />
-                  )}
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
+        {/* Main navigation section header */}
+        <Box
+          sx={{
+            px: sidebarCollapsed ? 1.5 : 2.5,
+            mb: mainSectionCollapsed ? 0 : 0.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+          }}
+        >
+          {!sidebarCollapsed && (
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                color: sidebarSecondaryText,
+                letterSpacing: '0.5px',
+              }}
+            >
+              Əsas menyu
+            </Typography>
+          )}
+          <IconButton
+            size="small"
+            onClick={() => setMainSectionCollapsed(prev => !prev)}
+            sx={{ color: sidebarSecondaryText }}
+          >
+            {mainSectionCollapsed ? <ExpandMoreIcon fontSize="small" /> : <ExpandLessIcon fontSize="small" />}
+          </IconButton>
+        </Box>
+
+        {!mainSectionCollapsed && (
+          <List sx={{ px: 1.5 }}>
+            {menuItems.map((item) => {
+              const active = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+              return (
+                <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+                  <ListItemButton
+                    onClick={() => navigate(item.path)}
+                    sx={{
+                      borderRadius: '12px',
+                      justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                      color: sidebarText,
+                      bgcolor: active ? sidebarActiveBg : 'transparent',
+                      borderLeft: active && !sidebarCollapsed ? `3px solid ${primaryColor}` : '3px solid transparent',
+                      opacity: active ? 1 : 0.9,
+                      '&:hover': {
+                        bgcolor: sidebarHoverBg,
+                        opacity: 1,
+                      },
+                      transition: 'background-color 0.18s ease, border-color 0.18s ease',
+                      py: 1.05,
+                    }}
+                  >
+                    <ListItemIcon sx={{ color: active ? primaryColor : sidebarSecondaryText, minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center', fontSize: 20 }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    {!sidebarCollapsed && (
+                      <ListItemText
+                        primary={item.label}
+                        primaryTypographyProps={{
+                          fontSize: '0.8rem',
+                          fontWeight: active ? 800 : 600,
+                          letterSpacing: '0.04em',
+                          color: active ? sidebarText : sidebarSecondaryText,
+                        }}
+                      />
+                    )}
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        )}
 
         {showAdminSection && (
           <>
             <Divider sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(226,232,240,0.9)', my: 2 }} />
-            {!sidebarCollapsed && (
-              <Typography
-                variant="caption"
-                sx={{
-                  px: 2.5,
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  color: sidebarSecondaryText,
-                  letterSpacing: '0.5px',
-                }}
+            <Box
+              sx={{
+                px: sidebarCollapsed ? 1.5 : 2.5,
+                mt: 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+              }}
+            >
+              {!sidebarCollapsed && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    color: sidebarSecondaryText,
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Admin
+                </Typography>
+              )}
+              <IconButton
+                size="small"
+                onClick={() => setAdminSectionCollapsed(prev => !prev)}
+                sx={{ color: sidebarSecondaryText }}
               >
-                Admin
-              </Typography>
+                {adminSectionCollapsed ? <ExpandMoreIcon fontSize="small" /> : <ExpandLessIcon fontSize="small" />}
+              </IconButton>
+            </Box>
+            {!adminSectionCollapsed && (
+              <List sx={{ px: 1.5, mt: 1 }}>
+                {adminItems.map((item) => {
+                  const active = location.pathname === item.path;
+                  return (
+                    <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+                      <ListItemButton
+                        onClick={() => navigate(item.path)}
+                        sx={{
+                          borderRadius: '12px',
+                          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                          color: sidebarText,
+                          bgcolor: active ? sidebarActiveBg : 'transparent',
+                          borderLeft: active && !sidebarCollapsed ? `3px solid ${primaryColor}` : '3px solid transparent',
+                          opacity: active ? 1 : 0.9,
+                          '&:hover': {
+                            bgcolor: sidebarHoverBg,
+                            opacity: 1,
+                          },
+                          transition: 'background-color 0.18s ease, border-color 0.18s ease',
+                          py: 1,
+                        }}
+                      >
+                        <ListItemIcon sx={{ color: active ? primaryColor : sidebarSecondaryText, minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center' }}>
+                          {item.icon}
+                        </ListItemIcon>
+                        {!sidebarCollapsed && (
+                          <ListItemText
+                            primary={item.label}
+                            primaryTypographyProps={{
+                              fontSize: '0.78rem',
+                              fontWeight: active ? 800 : 600,
+                              letterSpacing: '0.04em',
+                              color: active ? sidebarText : sidebarSecondaryText,
+                            }}
+                          />
+                        )}
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
             )}
-            <List sx={{ px: 1.5, mt: 1 }}>
-              {adminItems.map((item) => {
-                const active = location.pathname === item.path;
-                return (
-                  <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-                    <ListItemButton
-                      onClick={() => navigate(item.path)}
-                      sx={{
-                        borderRadius: '12px',
-                        justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                        color: sidebarText,
-                        bgcolor: active ? sidebarActiveBg : 'transparent',
-                        borderLeft: active && !sidebarCollapsed ? `3px solid ${primaryColor}` : '3px solid transparent',
-                        opacity: active ? 1 : 0.9,
-                        '&:hover': {
-                          bgcolor: sidebarHoverBg,
-                          opacity: 1,
-                        },
-                        transition: 'background-color 0.18s ease, border-color 0.18s ease',
-                        py: 1,
-                      }}
-                    >
-                      <ListItemIcon sx={{ color: active ? primaryColor : sidebarSecondaryText, minWidth: sidebarCollapsed ? 0 : 38, justifyContent: 'center' }}>
-                        {item.icon}
-                      </ListItemIcon>
-                      {!sidebarCollapsed && (
-                        <ListItemText
-                          primary={item.label}
-                          primaryTypographyProps={{
-                            fontSize: '0.78rem',
-                            fontWeight: active ? 800 : 600,
-                            letterSpacing: '0.04em',
-                            color: active ? sidebarText : sidebarSecondaryText,
-                          }}
-                        />
-                      )}
-                    </ListItemButton>
-                  </ListItem>
-                );
-              })}
-            </List>
           </>
         )}
 
         <Box sx={{ flex: 1 }} />
 
-        {/* Theme: Dark/Light + Color */}
+        {/* Theme: Dark/Light + Color + Menu settings */}
         <Box sx={{ px: sidebarCollapsed ? 1 : 2, py: 1, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', justifyContent: sidebarCollapsed ? 'center' : 'flex-start' }}>
           <Tooltip title={isDark ? 'Açıq rejim' : 'Qaranlıq rejim'}>
             <IconButton
@@ -402,6 +572,15 @@ export default function Layout({ children }: LayoutProps) {
               sx={{ color: isDark ? 'rgba(248,250,252,0.9)' : 'rgba(15,23,42,0.7)' }}
             >
               <PaletteIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Menyunu şəxsiləşdir">
+            <IconButton
+              size="small"
+              onClick={() => setMenuSettingsOpen(true)}
+              sx={{ color: isDark ? 'rgba(248,250,252,0.9)' : 'rgba(15,23,42,0.7)' }}
+            >
+              <TuneIcon />
             </IconButton>
           </Tooltip>
           <Menu anchorEl={colorMenuEl} open={Boolean(colorMenuEl)} onClose={handleColorMenuClose} PaperProps={{ sx: { mt: 1.5, p: 1 } }}>
@@ -519,6 +698,69 @@ export default function Layout({ children }: LayoutProps) {
               <Button variant="contained" onClick={handleChangePassword} disabled={passwordLoading}>{passwordLoading ? 'Göndərilir...' : 'Dəyişdir'}</Button>
             </DialogActions>
           )}
+        </Dialog>
+        <Dialog
+          open={menuSettingsOpen}
+          onClose={() => setMenuSettingsOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 2 } }}
+        >
+          <DialogTitle sx={{ fontWeight: 700 }}>Menyu tənzimləmələri</DialogTitle>
+          <DialogContent dividers>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+              Əsas menyu
+            </Typography>
+            {permittedMenuItems.map((item) => {
+              const allIds = permittedMenuItems.map(i => i.id);
+              const baseVisible = visibleMenuIds.length === 0 ? allIds : visibleMenuIds;
+              const checked = item.always ? true : baseVisible.includes(item.id);
+              return (
+                <FormControlLabel
+                  key={item.id}
+                  control={
+                    <Checkbox
+                      size="small"
+                      checked={checked}
+                      onChange={() => handleToggleMenuVisibility(item.id, 'main')}
+                      disabled={item.always}
+                    />
+                  }
+                  label={item.label}
+                />
+              );
+            })}
+
+            {permittedAdminItems.length > 0 && (
+              <>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+                  Admin menyusu
+                </Typography>
+                {permittedAdminItems.map((item) => {
+                  const allIds = permittedAdminItems.map(i => i.id);
+                  const baseVisible = visibleAdminIds.length === 0 ? allIds : visibleAdminIds;
+                  const checked = baseVisible.includes(item.id);
+                  return (
+                    <FormControlLabel
+                      key={item.id}
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={checked}
+                          onChange={() => handleToggleMenuVisibility(item.id, 'admin')}
+                        />
+                      }
+                      label={item.label}
+                    />
+                  );
+                })}
+              </>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 1.5 }}>
+            <Button onClick={() => setMenuSettingsOpen(false)}>Bağla</Button>
+          </DialogActions>
         </Dialog>
       </Drawer>
 

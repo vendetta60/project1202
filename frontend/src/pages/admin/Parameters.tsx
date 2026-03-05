@@ -15,7 +15,11 @@ import {
     Button,
     TextField,
     IconButton,
+    useTheme,
 } from '@mui/material';
+import Flatpickr from 'react-flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import { Azerbaijan } from 'flatpickr/dist/l10n/az';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -81,6 +85,8 @@ interface EditableTableProps {
 }
 
 function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: EditableTableProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editData, setEditData] = useState<any>({});
     const [isAdding, setIsAdding] = useState(false);
@@ -130,29 +136,59 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                         sx={{
                             p: 3,
                             mb: 2,
-                            bgcolor: '#fcfcfc',
-                            border: '1px solid rgba(74, 93, 35, 0.1)',
+                            bgcolor: 'background.default',
+                            border: '1px solid',
+                            borderColor: 'divider',
                             borderRadius: 2
                         }}
                     >
                         <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#0ea5e9' }}>Yeni Məlumat</Typography>
                         {columns.filter(c => c.id !== 'id').map(col => (
-                            <TextField
-                                key={col.id}
-                                label={col.label}
-                                type={col.type || 'text'}
-                                value={newData[col.id] || ''}
-                                onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
-                                fullWidth
-                                size="small"
-                                InputLabelProps={col.type === 'date' ? { shrink: true } : undefined}
-                                sx={{
-                                    mb: 2,
-                                    bgcolor: 'white',
-                                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
-                                }}
-                            />
+                            col.type === 'date' ? (
+                                <Box key={col.id} sx={{ mb: 2 }}>
+                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, mb: 0.5 }}>
+                                        {col.label}
+                                    </Typography>
+                                    <Flatpickr
+                                        value={newData[col.id] ? new Date(newData[col.id]) : undefined}
+                                        onChange={(dates) => {
+                                            const iso = dates && dates[0]
+                                                ? dates[0].toISOString().split('T')[0]
+                                                : '';
+                                            setNewData({ ...newData, [col.id]: iso });
+                                        }}
+                                        options={{
+                                            dateFormat: 'd.m.Y',
+                                            locale: { ...Azerbaijan, firstDayOfWeek: 1 },
+                                        }}
+                                        placeholder="dd.mm.yyyy"
+                                        style={{
+                                            width: '100%',
+                                            padding: '8px 12px',
+                                            borderRadius: 8,
+                                            border: '1px solid rgba(148,163,184,0.6)',
+                                            backgroundColor: 'var(--app-paper, #fff)',
+                                            fontSize: '0.9rem',
+                                        }}
+                                    />
+                                </Box>
+                            ) : (
+                                <TextField
+                                    key={col.id}
+                                    label={col.label}
+                                    type={col.type || 'text'}
+                                    value={newData[col.id] || ''}
+                                    onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
+                                    fullWidth
+                                    size="small"
+                                    sx={{
+                                        mb: 2,
+                                        bgcolor: 'background.paper',
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
+                                    }}
+                                />
+                            )
                         ))}
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button
@@ -165,7 +201,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                             <Button
                                 variant="outlined"
                                 onClick={() => setIsAdding(false)}
-                                sx={{ color: '#666', borderColor: '#ccc', textTransform: 'none' }}
+                                sx={{ color: 'text.secondary', borderColor: 'divider', textTransform: 'none' }}
                             >
                                 İmtina Et
                             </Button>
@@ -209,22 +245,51 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                 >
                     <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 700, color: '#0ea5e9' }}>Yeni Məlumat</Typography>
                     {columns.filter(c => c.id !== 'id').map(col => (
-                        <TextField
-                            key={col.id}
-                            label={col.label}
-                            type={col.type || 'text'}
-                            value={newData[col.id] || ''}
-                            onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
-                            fullWidth
-                            size="small"
-                            InputLabelProps={col.type === 'date' ? { shrink: true } : undefined}
-                            sx={{
-                                mb: 2,
-                                bgcolor: 'white',
-                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
-                            }}
-                        />
+                        col.type === 'date' ? (
+                            <Box key={col.id} sx={{ mb: 2 }}>
+                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, mb: 0.5 }}>
+                                    {col.label}
+                                </Typography>
+                                <Flatpickr
+                                    value={newData[col.id] ? new Date(newData[col.id]) : undefined}
+                                    onChange={(dates) => {
+                                        const iso = dates && dates[0]
+                                            ? dates[0].toISOString().split('T')[0]
+                                            : '';
+                                        setNewData({ ...newData, [col.id]: iso });
+                                    }}
+                                    options={{
+                                        dateFormat: 'd.m.Y',
+                                        locale: { ...Azerbaijan, firstDayOfWeek: 1 },
+                                    }}
+                                    placeholder="dd.mm.yyyy"
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px',
+                                        borderRadius: 8,
+                                        border: '1px solid rgba(148,163,184,0.6)',
+                                        backgroundColor: '#ffffff',
+                                        fontSize: '0.9rem',
+                                    }}
+                                />
+                            </Box>
+                        ) : (
+                            <TextField
+                                key={col.id}
+                                label={col.label}
+                                type={col.type || 'text'}
+                                value={newData[col.id] || ''}
+                                onChange={(e) => setNewData({ ...newData, [col.id]: e.target.value })}
+                                fullWidth
+                                size="small"
+                                sx={{
+                                    mb: 2,
+                                    bgcolor: 'white',
+                                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(0,0,0,0.1)' },
+                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
+                                }}
+                            />
+                        )
                     ))}
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
@@ -245,7 +310,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                 </Paper>
             )}
 
-            <TableContainer sx={{ bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+            <TableContainer sx={{ bgcolor: 'background.paper', borderRadius: 2, boxShadow: isDark ? '0 2px 10px rgba(0,0,0,0.3)' : '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden', border: isDark ? '1px solid' : undefined, borderColor: isDark ? 'divider' : undefined }}>
                 <Table size="small">
                     <TableHead>
                         <TableRow sx={{ bgcolor: '#0ea5e9' }}>
@@ -257,21 +322,46 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                     </TableHead>
                     <TableBody>
                             {items.map((item) => (
-                                <TableRow key={item.id} hover sx={{ '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.06)' } }}>
+                                <TableRow key={item.id} hover sx={{ '&:hover': { bgcolor: isDark ? 'rgba(14, 165, 233, 0.12)' : 'rgba(14, 165, 233, 0.06)' } }}>
                                 {editingId === item.id ? (
                                     <>
                                         {columns.filter(c => c.id !== 'id').map(col => (
                                             <TableCell key={col.id}>
-                                                <TextField
-                                                    type={col.type || 'text'}
-                                                    value={col.type === 'date' && editData[col.id] ? editData[col.id].substring(0, 10) : (editData[col.id] || '')}
-                                                    onChange={(e) => setEditData({ ...editData, [col.id]: e.target.value })}
-                                                    size="small"
-                                                    fullWidth
-                                                    sx={{
-                                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
-                                                    }}
-                                                />
+                                                {col.type === 'date' ? (
+                                                    <Flatpickr
+                                                        value={editData[col.id] ? new Date(editData[col.id]) : undefined}
+                                                        onChange={(dates) => {
+                                                            const iso = dates && dates[0]
+                                                                ? dates[0].toISOString().split('T')[0]
+                                                                : '';
+                                                            setEditData({ ...editData, [col.id]: iso });
+                                                        }}
+                                                        options={{
+                                                            dateFormat: 'd.m.Y',
+                                                            locale: { ...Azerbaijan, firstDayOfWeek: 1 },
+                                                        }}
+                                                        placeholder="dd.mm.yyyy"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '6px 10px',
+                                                            borderRadius: 8,
+                                                            border: '1px solid #0ea5e9',
+                                                            backgroundColor: 'var(--app-paper, #fff)',
+                                                            fontSize: '0.85rem',
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <TextField
+                                                        type={col.type || 'text'}
+                                                        value={editData[col.id] || ''}
+                                                        onChange={(e) => setEditData({ ...editData, [col.id]: e.target.value })}
+                                                        size="small"
+                                                        fullWidth
+                                                        sx={{
+                                                            '& .MuiOutlinedInput-notchedOutline': { borderColor: '#0ea5e9' }
+                                                        }}
+                                                    />
+                                                )}
                                             </TableCell>
                                         ))}
                                         <TableCell align="right">
@@ -283,7 +373,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                             >
                                                 Yadda Saxla
                                             </Button>
-                                            <Button size="small" variant="outlined" onClick={() => setEditingId(null)} sx={{ color: '#666', borderColor: '#ccc' }}>
+                                            <Button size="small" variant="outlined" onClick={() => setEditingId(null)} sx={{ color: 'text.secondary', borderColor: 'divider' }}>
                                                 İmtina Et
                                             </Button>
                                         </TableCell>
@@ -291,7 +381,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                 ) : (
                                     <>
                                         {columns.map(col => (
-                                            <TableCell key={col.id} sx={{ color: '#333' }}>
+                                            <TableCell key={col.id} sx={{ color: 'text.primary' }}>
                                                 {col.type === 'date' && item[col.id]
                                                     ? new Date(item[col.id]).toLocaleDateString('az-AZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
                                                     : item[col.id]}
@@ -301,7 +391,7 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
                                             <IconButton
                                                 size="small"
                                                 onClick={() => handleStartEdit(item)}
-                                                sx={{ color: '#4a5d23', mr: 1, '&:hover': { bgcolor: 'rgba(74, 93, 35, 0.1)' } }}
+                                                sx={{ color: '#0ea5e9', mr: 1, '&:hover': { bgcolor: 'rgba(14, 165, 233, 0.12)' } }}
                                             >
                                                 <EditIcon fontSize="small" />
                                             </IconButton>
@@ -327,6 +417,8 @@ function EditableTable({ items, columns, onAdd, onEdit, onDelete, hideDelete }: 
 }
 
 export default function Parameters() {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const [tab, setTab] = useState(0);
     const queryClient = useQueryClient();
     const { dialogState, showConfirm, hideConfirm, handleConfirm } = useConfirmDialog();
@@ -486,10 +578,11 @@ export default function Parameters() {
             <Paper
                 className="animate-slide-up glass-card"
                 sx={{
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    bgcolor: 'rgba(255,255,255,0.9)',
+                    border: '1px solid',
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                    bgcolor: 'background.paper',
                     borderRadius: 2,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                    boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.05)',
                     overflow: 'hidden'
                 }}
             >
@@ -499,11 +592,12 @@ export default function Parameters() {
                     variant="scrollable"
                     scrollButtons="auto"
                     sx={{
-                        borderBottom: '1px solid rgba(0,0,0,0.05)',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                         '& .MuiTab-root': {
                             fontWeight: 600,
                             textTransform: 'none',
-                            color: '#64748b',
+                            color: 'text.secondary',
                             '&.Mui-selected': { color: '#0ea5e9' }
                         },
                         '& .MuiTabs-indicator': {

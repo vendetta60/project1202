@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Logs from './pages/Logs';
 import SystemAdmin from './pages/admin/SystemAdmin';
 import Maintenance from './pages/Maintenance';
+import FeedbackPage from './pages/Feedback';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import PermissionRoute from './components/PermissionRoute';
@@ -198,6 +199,14 @@ function AppContent() {
               <PermissionRoute permission="export_appeals">
                 <Reports />
               </PermissionRoute>
+            }
+          />
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <FeedbackPage />
+              </ProtectedRoute>
             }
           />
           <Route

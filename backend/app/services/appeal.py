@@ -90,21 +90,14 @@ class AppealService:
         ap_index_id = data.get("ap_index_id") or 0
         dep_id = data.get("dep_id")
 
-        # 1. Calculate ap_count (repeats)
+        # 1. Calculate ap_count (repeats for this person in the same il və bölmə)
         ap_count = self.appeals.get_ap_count_for_person(person, year, section_id)
         
-        # 2. Calculate num and rep_num
+        # 2. Calculate num (qeyd alınma nömrəsinin ardıcıllıq hissəsi)
         max_num = self.appeals.get_max_num_for_year(year, section_id)
-        if max_num == 0:
-            num = 1
-        elif ap_count > 0:
-            num = max_num
-        else:
-            num = max_num + 1
-            
-        rep_num = None
-        if ap_count > 0:
-            rep_num = self.appeals.get_original_num_for_person(person, year, section_id)
+        # Təkrar müraciət olsa belə ardıcıllıq pozulmasın:
+        # həmişə son nömrədən 1 böyük götürürük.
+        num = 1 if max_num == 0 else max_num + 1
 
         # 3. Get Department sign and Section index
         dept = self.appeals.db.query(Department).filter(Department.id == dep_id).first()
@@ -131,8 +124,8 @@ class AppealService:
         else:
             middle = person_initial
             
-        # Num part: case when @rep_num is null then CAST(@num as nvarchar) else CAST(@rep_num as nvarchar) end
-        num_part = str(rep_num if rep_num is not None else num)
+        # Num part: həmişə yeni ardıcıl nömrə istifadə olunur
+        num_part = str(num)
         
         # Suffix: case when @ap_count > 0 then '/'+CAST(@ap_count+1 as nvarchar)+'-' else '-' end
         suffix = f"/{ap_count+1}-" if ap_count > 0 else "-"

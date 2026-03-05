@@ -45,6 +45,7 @@ const ENTITY_TYPE_OPTIONS = [
     { value: 'Contact', label: 'Əlaqə' },
     { value: 'Department', label: 'İdarə' },
     { value: 'Region', label: 'Region' },
+    { value: 'Feedback', label: 'Təklif / İrad' },
 ];
 
 const ACTION_OPTIONS = [
@@ -121,7 +122,7 @@ export default function Logs() {
             {/* Filters Section */}
             <Paper
                 className="animate-fade-in glass-card"
-                sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.7)' }}
+                sx={{ p: 4, mb: 4, borderRadius: 4, bgcolor: 'background.paper', border: theme.palette.mode === 'dark' ? '1px solid rgba(255,255,255,0.08)' : undefined }}
             >
                 <Grid container spacing={3} alignItems="flex-start">
                     <Grid item xs={12} sm={6} md={3}>

@@ -299,7 +299,7 @@ export function PermissionGroupsManagement() {
           max-height: 400px;
           overflow-y: auto;
           padding: 8px;
-          background: rgba(0,0,0,0.02);
+          background: var(--app-bg);
           border-radius: 8px;
         }
         .permission-item-card {
@@ -307,21 +307,21 @@ export function PermissionGroupsManagement() {
           align-items: center;
           gap: 12px;
           padding: 12px;
-          background: white;
-          border: 1.5px solid #e2e8f0;
+          background: var(--app-paper);
+          border: 1.5px solid var(--app-border);
           border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
         .permission-item-card.selected {
-          border-color: #3e4a21;
-          background: rgba(62, 74, 33, 0.05);
-          box-shadow: 0 2px 4px rgba(62, 74, 33, 0.1);
+          border-color: var(--app-primary);
+          background: rgba(99, 102, 241, 0.08);
+          box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15);
         }
         .permission-item-card input {
           width: 18px;
           height: 18px;
-          accent-color: #3e4a21;
+          accent-color: var(--app-primary);
         }
         .perm-info {
           display: flex;
@@ -329,11 +329,11 @@ export function PermissionGroupsManagement() {
         }
         .perm-info strong {
           font-size: 13px;
-          color: #1a1f16;
+          color: var(--app-text);
         }
         .perm-info code {
           font-size: 11px;
-          color: #64748b;
+          color: var(--app-text-secondary);
         }
         .mt-4 { margin-top: 1rem; }
         .text-success { color: #2d5a27; font-weight: bold; }

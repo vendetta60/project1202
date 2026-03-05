@@ -118,6 +118,14 @@ class ReportService:
             tikildiyi_is = "\n".join(tikildiyi_is_parts)
             isdeki_vereq = "\n".join(isdeki_vereq_parts)
 
+            # Column 10: müraciətin növü + təkrar olub-olmaması
+            content_type_parts = []
+            if ap.content_type_rel and ap.content_type_rel.content_type:
+                content_type_parts.append(ap.content_type_rel.content_type)
+            if getattr(ap, "repetition", None):
+                content_type_parts.append("Təkrar")
+            content_type_value = "\n".join(content_type_parts)
+
             row = {
                 "1": ap.reg_num or "",
                 "2": ap.reg_date.strftime("%d.%m.%Y") if ap.reg_date else "",
@@ -125,10 +133,12 @@ class ReportService:
                 "4": ap.in_ap_date.strftime("%d.%m.%Y") if ap.in_ap_date else "",
                 "5": haradan,
                 "6": ap.content or "",
-                "7": ap.ap_index_rel.ap_index if ap.ap_index_rel else "",
+                # Müraciətin indeksi sahəsində tam ad yox, yalnız indeks nömrəsi göstərilsin
+                "7": str(ap.ap_index_rel.ap_index_id) if ap.ap_index_rel and ap.ap_index_rel.ap_index_id is not None else "",
                 "8": ap.paper_count or "",
-                "9": ap.account_index_rel.account_index if ap.account_index_rel else "",
-                "10": ap.content_type_rel.content_type if ap.content_type_rel else "",
+                # Hesabat indeksi sahəsində də yalnız indeks nömrəsi göstərilsin
+                "9": str(ap.account_index_id) if getattr(ap, "account_index_id", None) is not None else "",
+                "10": content_type_value,
                 "11": derkenar,
                 "12": directions,
                 "13": executor_names,
@@ -326,27 +336,44 @@ class ReportService:
         elements = []
         
         styles = getSampleStyleSheet()
-        elements.append(Paragraph("Daxil olan vətəndaş müraciətlərinin qeydiyyatı JURNALI", styles['Title']))
+        # Başlıq – Forma 4-ün üst hissəsi
+        title_style = styles['Title']
+        title_style.fontName = DEFAULT_FONT
+        elements.append(Paragraph("Daxil olan vətəndaş müraciətlərinin qeydiyyatı JURNALI", title_style))
         elements.append(Spacer(1, 12))
         
-        data = [["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"]]
+        # Sütun başlıqları – Excel və Word-dəki kimi
+        headers = [
+            "Qeydəalınma №-si", "Qeydəalınma tarixi", "Daxil olan müraciətin №-si",
+            "Daxil olan müraciətin tarixi", "Müraciət haradan (kimdən) gəlib",
+            "Müraciətin qısa məzmunu", "Müraciətin indeksi", "Vərəq sayı",
+            "Hesabat indeksi", "Müraciətin növü", "Kim baxmışdır və dərkənar",
+            "Müraciət hansı struktur bölməyə icraya verilib", "İcraçının adı və soyadı",
+            "Müraciət hansı sənədlə icra edilib", "Müraciətin baxılması vəziyyəti",
+            "Tikildiyi iş №-si", "İşdəki vərəq №-si", "Sənədin göndərilməsi barədə qeyd",
+        ]
+
+        # 1-ci sətr: mətn başlıqları, 2-ci sətr: sütun nömrələri
+        data = [headers, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"]]
         if not results:
             data.append(["Məlumat tapılmadı"] + [""] * 17)
         else:
             for r in rows:
                 data.append([str(r[str(i+1)]) for i in range(1, 19)])
             
-        t = Table(data, repeatRows=1)
+        t = Table(data, repeatRows=2)
         t.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            # Başlıq sətrləri
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 1), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('FONTNAME', (0, 0), (-1, 0), f'{DEFAULT_FONT}-Bold'),
-            ('FONTNAME', (0, 1), (-1, -1), DEFAULT_FONT),
+            ('FONTNAME', (0, 0), (-1, 1), f'{DEFAULT_FONT}-Bold'),
+            ('FONTNAME', (0, 2), (-1, -1), DEFAULT_FONT),
             ('FONTSIZE', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('BOTTOMPADDING', (0, 0), (-1, 1), 6),
+            ('BACKGROUND', (0, 2), (-1, -1), colors.white),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
         ]))
         

@@ -225,13 +225,14 @@ export default function Dashboard() {
         </Box>
 
         {/* ── Stats Row ──────────────────────────────────────────── */}
-        <Grid contasoniner spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
               label="Cəmi Müraciət" value={globalTotal}
               icon={<DescriptionOutlinedIcon fontSize="inherit" />}
               iconBg={`${primary}22`} iconColor={primary}
-              trend="+12% bu ay" staggerClass="animate-stagger-1"
+              // trend="+12% bu ay" 
+              staggerClass="animate-stagger-1"
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>

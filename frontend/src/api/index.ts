@@ -5,5 +5,6 @@ export * as citizensApi from './citizens';
 export * as reportsApi from './reports';
 export * as lookupsApi from './lookups';
 export * as logsApi from './logs';
+export * as feedbackApi from './feedback';
 export * from './permissions';
 export type { User } from './auth';

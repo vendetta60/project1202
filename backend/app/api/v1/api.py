@@ -10,6 +10,7 @@ from app.api.v1.routers import (
     audit,
     citizens,
     permissions,
+    feedback,
 )
 
 api_router = APIRouter()
@@ -22,3 +23,4 @@ api_router.include_router(lookups.router)
 api_router.include_router(reports.router)
 api_router.include_router(audit.router)
 api_router.include_router(citizens.router)
+api_router.include_router(feedback.router)

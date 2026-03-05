@@ -497,11 +497,11 @@ export default function AppealForm() {
               direction_id: ex.direction_id,
               is_primary: ex.is_primary || false,
               out_num: ex.out_num,
-              out_date: ex.out_date,
+              out_date: ex.out_date ? formatDateToISO(ex.out_date) || undefined : undefined,
               attach_num: ex.attach_num,
               attach_paper_num: ex.attach_paper_num,
               r_num: ex.r_num,
-              r_date: ex.r_date,
+              r_date: ex.r_date ? formatDateToISO(ex.r_date) || undefined : undefined,
               posted_sec: ex.posted_sec,
             });
           } catch (err) {
@@ -586,7 +586,13 @@ export default function AppealForm() {
   const addExecutorToAppealMutation = useMutation({
     mutationFn: (data: Partial<ExecutorAssignment>) => {
       if (!id) throw new Error("Appeal ID not found");
-      return addAppealExecutor(Number(id), data);
+      const payload: Partial<ExecutorAssignment> = {
+        ...data,
+        out_date: data.out_date ? formatDateToISO(data.out_date) || undefined : undefined,
+        r_date: data.r_date ? formatDateToISO(data.r_date) || undefined : undefined,
+        PC_Tarixi: data.PC_Tarixi ? formatDateToISO(data.PC_Tarixi) || undefined : undefined,
+      };
+      return addAppealExecutor(Number(id), payload);
     },
     onSuccess: () => {
       if (id) {
@@ -610,7 +616,13 @@ export default function AppealForm() {
   const updateExecutorDetailsMutation = useMutation({
     mutationFn: ({ executorId, data }: { executorId: number; data: Partial<ExecutorAssignment> }) => {
       if (!id) throw new Error("Appeal ID not found");
-      return updateAppealExecutor(Number(id), executorId, data);
+      const payload: Partial<ExecutorAssignment> = {
+        ...data,
+        out_date: data.out_date ? formatDateToISO(data.out_date) || undefined : undefined,
+        r_date: data.r_date ? formatDateToISO(data.r_date) || undefined : undefined,
+        PC_Tarixi: data.PC_Tarixi ? formatDateToISO(data.PC_Tarixi) || undefined : undefined,
+      };
+      return updateAppealExecutor(Number(id), executorId, payload);
     },
     onSuccess: () => {
       if (id) {

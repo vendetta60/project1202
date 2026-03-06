@@ -200,11 +200,16 @@ class AppealRepository:
         ).scalar() or 0
 
     def get_original_num_for_person(self, person: str, year: int, user_section_id: int) -> int | None:
-        from sqlalchemy import extract, func
+        """İlk (orijinal) müraciətin num-unu qaytarır — təkrar müraciətlərdə eyni qeydalınma nömrəsi üçün."""
+        from sqlalchemy import extract, func, or_, and_
+        person_val = person.strip() if person else ""
         return self.db.query(func.min(Appeal.num)).filter(
-            Appeal.person == person,
+            func.trim(Appeal.person).ilike(person_val),
             Appeal.person != None,
-            extract('year', Appeal.reg_date) == year,
+            or_(
+                and_(Appeal.reg_date != None, extract('year', Appeal.reg_date) == year),
+                and_(Appeal.reg_date == None, extract('year', Appeal.created_at) == year),
+            ),
             Appeal.user_section_id == user_section_id,
             Appeal.is_deleted == False
         ).scalar()

@@ -94,10 +94,14 @@ class AppealService:
         ap_count = self.appeals.get_ap_count_for_person(person, year, section_id)
         
         # 2. Calculate num (qeyd alınma nömrəsinin ardıcıllıq hissəsi)
+        # Köhnə məntiq: təkrar müraciətdə eyni qeydalınma nömrəsi saxlanılır (ilk müraciətin num-u),
+        # müraciət indeksi (ap_index_id) dəyişir, suffix-da neçənci təkrar (/2-, /3-...) göstərilir.
         max_num = self.appeals.get_max_num_for_year(year, section_id)
-        # Təkrar müraciət olsa belə ardıcıllıq pozulmasın:
-        # həmişə son nömrədən 1 böyük götürürük.
-        num = 1 if max_num == 0 else max_num + 1
+        if ap_count > 0:
+            original_num = self.appeals.get_original_num_for_person(person, year, section_id)
+            num = original_num if original_num is not None else (1 if max_num == 0 else max_num + 1)
+        else:
+            num = 1 if max_num == 0 else max_num + 1
 
         # 3. Get Department sign and Section index
         dept = self.appeals.db.query(Department).filter(Department.id == dep_id).first()

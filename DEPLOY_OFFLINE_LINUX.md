@@ -109,6 +109,89 @@ Nəticə:
 
 ---
 
+### 4. MSSQL verilənlər bazası (offline mühit)
+
+Backend yalnız **MSSQL** ilə işləyir. `backend/database.db` faylı **yalnız lokal SQLite test üçündür**, serverdə istifadə olunmur və deploy zamanı lazımsızdır.
+
+İki əsas ssenari var:
+
+1. **Mövcut MSSQL server qalır** (məsələn, ofisdə Windows MSSQL server)
+2. **MSSQL bazasını eyni Linux serverə köçürürsünüz** (APPEALS bazasının `.bak` faylı ilə)
+
+#### 4.1. Mövcut MSSQL serverdən istifadə (tövsiyə olunan)
+
+Bu halda yalnız **connection string** yazmaq kifayətdir.
+
+1. APPEALS bazası olan MSSQL server şəbəkədə əlçatan olmalıdır (LAN daxilində).
+2. Backend konfiq faylında (məsələn, `backend/.env`) aşağıdakı kimi `DATABASE_URL` yazın:
+
+   ```env
+   DATABASE_URL=mssql+pyodbc://db_user:DbParol123@192.168.0.50/APPEALS?driver=ODBC+Driver+17+for+SQL+Server
+   ```
+
+   Burada:
+   - `192.168.0.50` – MSSQL serverin LAN IP ünvanı
+   - `APPEALS` – verilənlər bazasının adı
+   - `db_user` / `DbParol123` – SQL login məlumatları (DBA tərəfindən yaradılıb)
+3. Linux serverdə backend bu dəyişəni oxuyacaq və həmin MSSQL serverə bağlanacaq.  
+   Heç bir backup/restore əməliyyatına ehtiyac yoxdur; baza öz yerində qalır.
+
+> **Qeyd:** Offline mühit o deməkdir ki, internet yoxdur; lokal şəbəkədə MSSQL serverin olması problem deyil.
+
+#### 4.2. Bazanı Linux MSSQL serverinə köçürmək (.bak ilə)
+
+Əgər ayrı MSSQL serverində işlətmək istəmirsinizsə, APPEALS bazasının backup faylını Linux MSSQL-ə restore edə bilərsiniz.
+
+**1. Mövcud MSSQL-dən backup çıxar (DBA tərəfindən):**
+
+```sql
+BACKUP DATABASE APPEALS
+TO DISK = 'C:\backup\APPEALS_full.bak'
+WITH FORMAT, INIT, NAME = 'APPEALS-Full Backup';
+```
+
+Bu `.bak` faylını flashkartla Linux serverə aparın.
+
+**2. Linux MSSQL server (əgər artıq quraşdırılıbsa bu addımı keçin):**
+
+Offline mühitdə MSSQL-i quraşdırmaq üçün ISO/DVD və ya lokal repo lazımdır – bu artıq sistem administratorun məsuliyyətidir. Quraşdırıldıqdan sonra `mssql-server` servisi işləməlidir.
+
+**3. Backup faylını Linux MSSQL-ə kopyalayın:**
+
+```bash
+sudo mkdir -p /var/opt/mssql/backup
+sudo chown mssql:mssql /var/opt/mssql/backup
+sudo cp /media/FLASH/APPEALS_full.bak /var/opt/mssql/backup/
+```
+
+**4. `sqlcmd` ilə bazanı restore edin:**
+
+```bash
+/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'SA_PAROLUNUZ' \
+  -Q "RESTORE DATABASE APPEALS FROM DISK = '/var/opt/mssql/backup/APPEALS_full.bak' WITH REPLACE"
+```
+
+Əgər logical fayl adları fərqli olarsa, DBA `RESTORE FILELISTONLY` və `WITH MOVE` istifadə etməlidir, amma tipik halda bu kifayətdir.
+
+**5. Backend üçün `DATABASE_URL` (Linux MSSQL üçün):**
+
+`backend/.env` faylında:
+
+```env
+DATABASE_URL=mssql+pyodbc://appuser:AppParol123@127.0.0.1/APPEALS?driver=ODBC+Driver+17+for+SQL+Server
+```
+
+Burada:
+- `appuser` – yalnız tətbiq üçün yaradılmış SQL login,
+- `AppParol123` – həmin login üçün parol,
+- baza adı `APPEALS` – restore etdiyi bazanın adı.
+
+> **Vacib:** MSSQL-də `CREATE LOGIN` / `CREATE USER` edilib `appuser`-ə `APPEALS` üzərində `SELECT/INSERT/UPDATE/DELETE` icazələri verilməlidir. Bu SQL tərəfi DBA/sistem admin tərəfindən qurulmalıdır.
+
+Bu addımlardan sonra backend `systemd` servisi çalışanda MSSQL bazasına ya ayrı serverdən, ya da lokal MSSQL-dən qoşulacaq.
+
+---
+
 ### 4. Backend – virtualenv və asılılıqlar (OFFLINE)
 
 ```bash
@@ -122,7 +205,7 @@ pip install --no-index --find-links=/opt/project1202/wheelhouse -r requirements.
 
 > **Qeyd:** `requirements.txt` dəyişərsə, development maşınında `wheelhouse`-u yenidən yaratmalısınız.
 
-#### 4.1. Konfiq (env)
+#### 5.1. Konfiq (env)
 
 Backend konfiqi aşağıdakı yollardan biri ilə verilir:
 
@@ -139,7 +222,7 @@ Bu faylları **heç vaxt** repoya və ya internetə qoymayın; yalnız serverdə
 
 ---
 
-### 5. Backend üçün systemd servisi
+### 6. Backend üçün systemd servisi
 
 `/etc/systemd/system/project1202-backend.service` yaradın:
 
@@ -177,7 +260,7 @@ Backend indi `127.0.0.1:8000` ünvanında işləməlidir.
 
 ---
 
-### 6. Frontend – Nginx konfiqurasiyası
+### 7. Frontend – Nginx konfiqurasiyası
 
 Frontend artıq build olunub (`frontend/dist`). Serverdə Node lazım deyil.
 

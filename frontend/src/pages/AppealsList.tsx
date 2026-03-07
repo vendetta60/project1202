@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, TablePagination, IconButton, Tooltip,
   Dialog, DialogTitle, DialogContent, DialogContentText,
-  DialogActions, Paper, useTheme as useMuiTheme,
+  DialogActions, Paper, useTheme as useMuiTheme, Checkbox,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -16,7 +16,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import HourglassTopIcon from '@mui/icons-material/HourglassTop';
 import InboxIcon from '@mui/icons-material/Inbox';
 
-import { getAppeals, deleteAppeal, restoreAppeal } from '../api/appeals';
+import { getAppeals, deleteAppeal, restoreAppeal, updateAppeal } from '../api/appeals';
 import { getDepartments, getApStatuses, getRegions } from '../api/lookups';
 import { getCurrentUser } from '../api/auth';
 import Layout from '../components/Layout';
@@ -93,6 +93,24 @@ export default function AppealsList() {
   const restoreMutation = useMutation({
     mutationFn: (id: number) => restoreAppeal(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['appeals'] }); setRestoreTargetId(null); },
+  });
+
+  const resolvedStatusId = (statuses || []).find(
+    (s) => (s.status || '').toLowerCase().includes('həll')
+  )?.id;
+
+  const toggleExecutedMutation = useMutation({
+    mutationFn: ({ id }: { id: number }) => {
+      const payload: any = { IsExecuted: true };
+      if (resolvedStatusId) {
+        payload.status = resolvedStatusId;
+      }
+      return updateAppeal(id, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appeals'] });
+      queryClient.invalidateQueries({ queryKey: ['reports', 'status'] });
+    },
   });
 
   const items = appealsData?.items ?? [];
@@ -242,9 +260,10 @@ export default function AppealsList() {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: headBg }}>
+              <TableRow sx={{ bgcolor: headBg }}>
                   {[
                     { label: '№', w: 50, center: true },
+                    { label: 'Həll olunub', w: 90, center: true },
                     { label: 'Qeydalınma nömrəsi', w: 150 },
                     { label: 'Qeydalınma tarixi', w: 120 },
                     { label: 'Müraciət edənin SAA', w: 220 },
@@ -268,7 +287,7 @@ export default function AppealsList() {
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={canDelete ? 9 : 8} sx={{ borderBottom: 'none', py: 10 }}>
+                    <TableCell colSpan={canDelete ? 10 : 9} sx={{ borderBottom: 'none', py: 10 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
                         <InboxIcon sx={{ fontSize: 52, color: textSecondary, opacity: 0.3 }} />
                         <Typography sx={{ fontSize: '0.9rem', fontWeight: 600, color: textSecondary, opacity: 0.6 }}>
@@ -291,6 +310,24 @@ export default function AppealsList() {
                     .filter(Boolean);
                   const executorsDisplay = allNames.join(', ');
 
+                  const statusNameLower = (() => {
+                    const s = (statuses || []).find(st => st.id === appeal.status)?.status;
+                    return s ? s.toLowerCase() : '';
+                  })();
+                  const hasResolvedStatus = statusNameLower.includes('həll');
+                  const isCompleted = hasResolvedStatus;
+                  const checkboxDisabled = toggleExecutedMutation.isPending;
+                  const baseBg = appeal.is_deleted
+                    ? (isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.06)')
+                    : isCompleted
+                      ? (isDark ? 'rgba(34,197,94,0.16)' : 'rgba(34,197,94,0.12)')
+                      : (appeal.control ? 'rgba(255, 235, 59, 0.12)' : 'transparent');
+                  const hoverBg = appeal.is_deleted
+                    ? (isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)')
+                    : isCompleted
+                      ? (isDark ? 'rgba(34,197,94,0.22)' : 'rgba(34,197,94,0.18)')
+                      : (appeal.control ? 'rgba(255, 235, 59, 0.18)' : rowHover);
+
                   return (
                     <TableRow key={appeal.id} hover={!appeal.control}
                       onClick={() => canViewAppealDetails && navigate(`/appeals/${appeal.id}`)}
@@ -298,9 +335,9 @@ export default function AppealsList() {
                         cursor: 'pointer',
                         borderBottom: `1px solid ${borderColor}`,
                         '&:last-child': { borderBottom: 'none' },
-                        bgcolor: appeal.is_deleted ? (isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.06)') : (appeal.control ? 'rgba(255, 235, 59, 0.12)' : 'transparent'),
+                        bgcolor: baseBg,
                         opacity: appeal.is_deleted ? 0.9 : 1,
-                        '&:hover': { bgcolor: appeal.is_deleted ? (isDark ? 'rgba(239,68,68,0.18)' : 'rgba(239,68,68,0.1)') : (appeal.control ? 'rgba(255, 235, 59, 0.18)' : rowHover) },
+                        '&:hover': { bgcolor: hoverBg },
                         '& td': { py: 1.6, fontSize: '0.83rem', borderBottom: 'none', textDecoration: appeal.is_deleted ? 'line-through' : 'none' },
                       }}
                     >
@@ -309,6 +346,24 @@ export default function AppealsList() {
                         <Typography sx={{ fontSize: '0.73rem', fontWeight: 700, color: textSecondary }}>
                           {page * rowsPerPage + idx + 1}
                         </Typography>
+                      </TableCell>
+
+                      {/* Həll olunub checkbox */}
+                      <TableCell sx={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          size="small"
+                          checked={isCompleted}
+                          onChange={() => {
+                            if (!checkboxDisabled && !isCompleted) {
+                              toggleExecutedMutation.mutate({ id: appeal.id });
+                            }
+                          }}
+                          disabled={checkboxDisabled}
+                          sx={{
+                            color: isCompleted ? '#22c55e' : textSecondary,
+                            '&.Mui-checked': { color: '#22c55e' },
+                          }}
+                        />
                       </TableCell>
 
                       {/* Qeydalınma nömrəsi */}

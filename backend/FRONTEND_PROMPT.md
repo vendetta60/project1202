@@ -1,7 +1,7 @@
 # Frontend Development Prompt (Qısa Versiya)
 
 ## Məqsəd
-**Müraciət Qeydiyyat Sistemi** üçün gözəl dizayn edilmiş, modern React frontend hazırla. İlkin versiya - sadə, amma professional görünüşlü.
+**Vətəndaş müraciətlərinin elektron qeydiyyatı** üçün gözəl dizayn edilmiş, modern React frontend hazırla. İlkin versiya - sadə, amma professional görünüşlü.
 
 ## Texnologiya
 - **React 18+ + TypeScript**

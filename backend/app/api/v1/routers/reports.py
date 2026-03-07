@@ -56,6 +56,23 @@ def export_appeal_stats_pdf(
         headers={"Content-Disposition": f"attachment; filename=appeal_stats_{datetime.now().strftime('%Y%m%d')}.pdf"}
     )
 
+@router.get("/appeals/export/word")
+def export_appeal_stats_word(
+    group_by: str = Query("department"),
+    start_date: date | None = None,
+    end_date: date | None = None,
+    current_user: User = Depends(get_current_user),
+    service: ReportService = Depends(get_report_service)
+):
+    from fastapi.responses import StreamingResponse
+    params = ReportParams(group_by=group_by, start_date=start_date, end_date=end_date)
+    output = service.generate_appeal_stats_word(params, current_user)
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=appeal_stats_{datetime.now().strftime('%Y%m%d')}.docx"}
+    )
+
 @router.get("/forma-4/excel")
 def export_forma_4_excel(
     start_date: date | None = None,

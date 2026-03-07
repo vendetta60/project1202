@@ -1,6 +1,6 @@
-# Müraciət Qeydiyyat Sistemi - Frontend
+# Vətəndaş müraciətlərinin elektron qeydiyyatı - Frontend
 
-Modern və gözəl dizayn edilmiş müraciət qeydiyyat sistemi üçün React frontend tətbiqi.
+Modern və gözəl dizayn edilmiş vətəndaş müraciətlərinin elektron qeydiyyatı sistemi üçün React frontend tətbiqi.
 
 ## Texnologiyalar
 

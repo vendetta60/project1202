@@ -386,8 +386,11 @@ class ReportService:
         labels = {
             "department": "İdarə",
             "region": "Region",
-            "status": "Status",
-            "index": "Müraciət İndeksi",
+            "status": "Müraciətin baxılması vəziyyəti",
+            "index": "Müraciətin indeksi",
+            "account_index": "Hesabat indeksi",
+            "exec_direction": "İcra struktur bölmə",
+            "content_type": "Müraciətin növü",
             "insection": "Hərbi hissə (Bölmə)"
         }
         return labels.get(group_by, "Kateqoriya")
@@ -436,6 +439,62 @@ class ReportService:
                 
         output = io.BytesIO()
         wb.save(output)
+        output.seek(0)
+        return output
+
+    def generate_appeal_stats_word(self, params: ReportParams, user: User) -> io.BytesIO:
+        report = self.get_appeal_report(params, user)
+        group_label = self._get_group_label(params.group_by)
+        period = f"{params.start_date or 'Əvvəldən'} — {params.end_date or 'Bugünədək'}"
+
+        doc = Document()
+        style = doc.styles["Normal"]
+        style.font.name = "Calibri"
+        style.font.size = Pt(11)
+
+        title = doc.add_paragraph("MÜRACİƏTLƏRİN STATİSTİK HESABATI")
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        title.runs[0].font.bold = True
+        title.runs[0].font.size = Pt(14)
+
+        doc.add_paragraph(f"Qruplaşdırma: {group_label} üzrə")
+        doc.add_paragraph(f"Hesabat dövrü: {period}")
+        doc.add_paragraph()
+
+        table = doc.add_table(rows=1, cols=3)
+        table.style = "Table Grid"
+        hdr = table.rows[0].cells
+        hdr[0].text = group_label
+        hdr[1].text = "Sayı"
+        hdr[2].text = "Nisbət (%)"
+        for c in hdr:
+            for p in c.paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                for run in p.runs:
+                    run.font.bold = True
+
+        for item in report.items:
+            row = table.add_row().cells
+            pct = (item.count / report.total * 100) if report.total > 0 else 0
+            row[0].text = item.name
+            row[1].text = str(item.count)
+            row[2].text = f"{pct:.1f}%"
+            for c in row:
+                for p in c.paragraphs:
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        total_row = table.add_row().cells
+        total_row[0].text = "CƏMİ"
+        total_row[1].text = str(report.total)
+        total_row[2].text = "100.0%"
+        for c in total_row:
+            for p in c.paragraphs:
+                p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in c.paragraphs[0].runs:
+                run.font.bold = True
+
+        output = io.BytesIO()
+        doc.save(output)
         output.seek(0)
         return output
 

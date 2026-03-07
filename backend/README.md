@@ -1,6 +1,6 @@
-# Backend (FastAPI) — Müraciət Qeydiyyatı
+# Backend (FastAPI) — Vətəndaş müraciətlərinin elektron qeydiyyatı
 
-Bu backend bir müəssisəyə gələn vətəndaş müraciətlərinin qeydiyyatı üçün ilkin skeleton-dur.
+Bu backend vətəndaş müraciətlərinin elektron qeydiyyatı üçün ilkin skeleton-dur.
 
 ## İşə salmaq (local)
 

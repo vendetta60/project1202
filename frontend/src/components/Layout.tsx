@@ -274,41 +274,62 @@ export default function Layout({ children }: LayoutProps) {
     document.body.setAttribute('data-theme', mode);
   }, [mode]);
 
-  // Texniki rejim aktiv olanda admin olmayan istifadəçilərə əvvəlcə xəbərdarlıq + timer göstər,
-  // grace period bitəndə isə avtomatik texniki səhifəyə yönləndir.
+  // Texniki rejim: hər səhifə dəyişikliyində statusu yoxla (real‑time yox, amma dərhal reaksiya).
   useEffect(() => {
-    let interval: number | undefined;
-
-    if (user && !isAdmin && !isSuperAdmin) {
-      // Texniki statusu 5 dəqiqədən bir yoxla
-      interval = window.setInterval(async () => {
-        try {
-          const status = await getPublicMaintenanceStatus();
-          if (status.enabled && typeof status.seconds_until_logout === 'number') {
-            if (status.seconds_until_logout <= 0) {
-              queryClient.clear();
-              removeToken();
-              window.location.href = '/maintenance';
-            } else {
-              setMaintenanceSecondsLeft(status.seconds_until_logout);
-            }
-          } else {
-            setMaintenanceSecondsLeft(null);
-          }
-        } catch {
-          // status endpointi əlçatan olmasa, sadəcə sus
-        }
-      }, 300000);
-    } else {
+    if (!user || isAdmin || isSuperAdmin) {
       setMaintenanceSecondsLeft(null);
+      return;
     }
 
-    return () => {
-      if (interval !== undefined) {
-        window.clearInterval(interval);
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const status = await getPublicMaintenanceStatus();
+        if (cancelled) return;
+
+        if (status.enabled && typeof status.seconds_until_logout === 'number') {
+          if (status.seconds_until_logout <= 0) {
+            queryClient.clear();
+            removeToken();
+            window.location.href = '/maintenance';
+          } else {
+            setMaintenanceSecondsLeft(status.seconds_until_logout);
+          }
+        } else {
+          setMaintenanceSecondsLeft(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setMaintenanceSecondsLeft(null);
+        }
       }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-  }, [user, isAdmin, isSuperAdmin, queryClient]);
+  }, [user, isAdmin, isSuperAdmin, queryClient, location.pathname]);
+
+  // Texniki rejim taymeri: serverdən gələn saniyə dəyərini frontda hər saniyə azaldırıq.
+  useEffect(() => {
+    if (maintenanceSecondsLeft === null) return;
+
+    if (maintenanceSecondsLeft <= 0) {
+      if (user && !isAdmin && !isSuperAdmin) {
+        queryClient.clear();
+        removeToken();
+        window.location.href = '/maintenance';
+      }
+      return;
+    }
+
+    const id = window.setInterval(() => {
+      setMaintenanceSecondsLeft(prev => (prev === null ? prev : prev - 1));
+    }, 1000);
+
+    return () => window.clearInterval(id);
+  }, [maintenanceSecondsLeft, user, isAdmin, isSuperAdmin, queryClient]);
 
   const formatCountdown = (totalSeconds: number) => {
     const s = Math.max(0, totalSeconds);
@@ -367,7 +388,7 @@ export default function Layout({ children }: LayoutProps) {
             <Box
               component="img"
               src={logo}
-              alt="Müraciət Qeydiyyat Sistemi"
+              alt="Vətəndaş müraciətlərinin elektron qeydiyyatı"
               sx={{
                 height: 36,
                 width: 'auto',
@@ -388,7 +409,7 @@ export default function Layout({ children }: LayoutProps) {
                     textTransform: 'uppercase'
                   }}
                 >
-                  Müraciətlərin<br />Qeydiyyatı
+                  Vətəndaş müraciətlərinin<br />elektron qeydiyyatı
                 </Typography>
               </Box>
             )}
@@ -777,7 +798,6 @@ export default function Layout({ children }: LayoutProps) {
         >
           <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 }, gap: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 800, color: appBarColor, fontSize: '0.95rem', letterSpacing: '-0.01em' }}>
-              Müraciət Qeydiyyat Sistemi
             </Typography>
             {maintenanceSecondsLeft !== null && maintenanceSecondsLeft > 0 && !isAdmin && !isSuperAdmin && (
               <Box
@@ -800,8 +820,24 @@ export default function Layout({ children }: LayoutProps) {
           </Toolbar>
         </AppBar>
 
-        <Box sx={{ flex: 1, p: { xs: 2, md: 3 }, overflowY: 'auto' }}>
-          {children}
+        <Box sx={{ flex: 1, p: { xs: 2, md: 3 }, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flex: 1 }}>{children}</Box>
+          <Box
+            className="no-print"
+            sx={{
+              mt: 2,
+              pt: 1.5,
+              borderTop: `1px solid ${isDark ? 'rgba(148,163,184,0.35)' : 'rgba(148,163,184,0.4)'}`,
+              textAlign: 'center',
+            }}
+          >
+            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: 'text.secondary' }}>
+              Bizimlə əlaqə: Telefon (012) 123 45 67
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+              Proqramı yazan: Program təminatı şöbəsi
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>

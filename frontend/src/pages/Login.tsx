@@ -8,14 +8,10 @@ import {
   Button,
   Typography,
   Alert,
-  Container,
   Checkbox,
   FormControlLabel,
-  InputAdornment,
 } from '@mui/material';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { login, LoginRequest } from '../api/auth';
 import { setToken } from '../utils/auth';
 import { getErrorMessage } from '../utils/errors';
@@ -40,21 +36,16 @@ export default function Login() {
 
   const rememberMe = watch('rememberMe', false);
 
-  // Load remembered credentials (if any) on first render
   useEffect(() => {
     try {
       const raw = localStorage.getItem('mq_remember_login_v1');
       if (!raw) return;
       const parsed = JSON.parse(raw) as { username?: string; password?: string } | null;
-      if (parsed?.username) {
-        setValue('username', parsed.username);
-      }
-      if (parsed?.password) {
-        setValue('password', parsed.password);
-      }
+      if (parsed?.username) setValue('username', parsed.username);
+      if (parsed?.password) setValue('password', parsed.password);
       setValue('rememberMe', true);
     } catch {
-      // ignore corrupt storage
+      // ignore
     }
   }, [setValue]);
 
@@ -64,18 +55,14 @@ export default function Login() {
     try {
       const { rememberMe, ...loginData } = data;
       const response = await login(loginData);
-      // Persist or clear remembered credentials
       try {
         if (rememberMe) {
-          localStorage.setItem(
-            'mq_remember_login_v1',
-            JSON.stringify({ username: loginData.username, password: loginData.password }),
-          );
+          localStorage.setItem('mq_remember_login_v1', JSON.stringify({ username: loginData.username, password: loginData.password }));
         } else {
           localStorage.removeItem('mq_remember_login_v1');
         }
       } catch {
-        // storage might be disabled; ignore
+        // ignore
       }
       setToken(response.access_token, response.refresh_token);
       queryClient.clear();
@@ -93,250 +80,188 @@ export default function Login() {
         minHeight: '100vh',
         width: '100vw',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: isDark ? '#020617' : '#eff3fb',
-        position: 'relative',
+        flexDirection: { xs: 'column', md: 'row' },
         overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          width: '150%',
-          height: '150%',
-          opacity: 0,
-          pointerEvents: 'none',
-        }
       }}
     >
-      <Box className="login-blob login-blob-1" />
-      <Box className="login-blob login-blob-2" />
-      <Box className="login-blob login-blob-3" />
-      <Container maxWidth="xs" sx={{ position: 'relative', zIndex: 1 }}>
-        <Box 
-          sx={{ 
-            bgcolor: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.96)',
-            p: { xs: 4, sm: 6 },
-            borderRadius: '24px',
-            boxShadow: isDark
-              ? '0 24px 80px rgba(0,0,0,0.75)'
-              : '0 22px 60px rgba(15,23,42,0.18)',
-            border: isDark
-              ? '1px solid rgba(148,163,184,0.25)'
-              : '1px solid rgba(148,163,184,0.35)',
+      {/* Sol panel: gradient + böyük loqo */}
+      <Box
+        sx={{
+          width: { xs: '100%', md: '50%' },
+          minHeight: { xs: '280px', md: '100vh' },
+          background: 'linear-gradient(135deg, #2563eb 0%, #0ea5e9 50%, #06b6d4 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 4,
+        }}
+      >
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: { xs: 320, md: 440 },
+            bgcolor: 'rgba(255,255,255,0.98)',
+            borderRadius: 4,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            overflow: 'hidden',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            position: 'relative',
-            overflow: 'hidden'
+            justifyContent: 'center',
+            py: 6,
+            px: 4,
+            minHeight: { xs: 240, md: 380 },
           }}
         >
           <Box
+            component="img"
+            src={logo}
+            alt="Vətəndaş müraciətlərinin elektron qeydiyyatı"
             sx={{
-              position: 'absolute',
-              inset: 0,
-              background: isDark
-                ? 'radial-gradient(circle at top left, rgba(129,140,248,0.24) 0, transparent 55%)'
-                : 'radial-gradient(circle at top left, rgba(129,140,248,0.16) 0, transparent 55%)',
-              opacity: 0.9,
-              pointerEvents: 'none',
+              width: '85%',
+              maxWidth: 340,
+              height: 'auto',
+              objectFit: 'contain',
             }}
           />
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 1,
-              borderRadius: '22px',
-              border: `1px solid ${primary}33`,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Circular Logo Container */}
-          <Box 
-            sx={{ 
-              width: 140, 
-              height: 140, 
-              borderRadius: '50%', 
-              border: `2px solid ${isDark ? 'rgba(148,163,184,0.7)' : 'rgba(148,163,184,0.6)'}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mb: 3,
-              p: 1.5,
-              filter: 'drop-shadow(0 10px 24px rgba(15,23,42,0.4))',
-              bgcolor: isDark ? 'rgba(15,23,42,0.9)' : 'rgba(15,23,42,0.02)'
-            }}
-          >
-            <Box 
-              component="img"
-              src={logo} 
-              alt="Müraciət Qeydiyyat Sistemi" 
-              sx={{ 
-                maxWidth: '90%', 
-                maxHeight: '90%',
-                objectFit: 'contain'
-              }} 
-            />
-          </Box>
+        </Box>
+      </Box>
 
+      {/* Sağ panel: giriş formu */}
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: { xs: 'auto', md: '100vh' },
+          bgcolor: isDark ? '#1e293b' : '#e5e7eb',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: { xs: 3, sm: 4 },
+        }}
+      >
+        <Box
+          sx={{
+            width: '100%',
+            maxWidth: 400,
+            bgcolor: isDark ? 'rgba(30,41,59,0.98)' : '#ffffff',
+            borderRadius: 4,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+            p: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          {/* <Box
+            component="img"
+            src={logo}
+            alt="Vətəndaş müraciətlərinin elektron qeydiyyatı"
+            sx={{ width: 80, height: 'auto', objectFit: 'contain', mb: 2 }}
+          /> */}
           <Typography
             variant="h5"
             sx={{
-              color: isDark ? '#e5e7eb' : '#0f172a',
+              color: primary,
               fontWeight: 800,
-              letterSpacing: '0.24rem',
-              mb: 2.5,
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              fontSize: '1.25rem',
-              textAlign: 'center'
+              fontSize: '1.1rem',
+              mb: 3,
             }}
           >
-            İSTİFADƏÇİ GİRİŞİ
-          </Typography>
-          <Typography
-            sx={{
-              color: isDark ? 'rgba(148,163,184,0.9)' : 'rgba(71,85,105,0.9)',
-              fontSize: '0.85rem',
-              mb: 4,
-              textAlign: 'center',
-              maxWidth: 260,
-            }}
-          >
-            Sistemə təhlükəsiz giriş üçün məlumatlarınızı daxil edin.
+            Xoş gəlmisiniz
           </Typography>
 
           {error && (
-            <Alert
-              severity="error"
-              sx={{
-                width: '100%',
-                mb: 3,
-                bgcolor: 'rgba(239, 68, 68, 0.1)',
-                color: '#fca5a5',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                borderRadius: '4px',
-                '& .MuiAlert-icon': { color: '#f87171' }
-              }}
-            >
+            <Alert severity="error" sx={{ width: '100%', mb: 2, borderRadius: 2 }}>
               {error}
             </Alert>
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
-            <Box sx={{ mb: 4 }}>
-              <TextField
-                fullWidth
-                variant="standard"
-                label="İstifadəçi adı"
-                {...register('username', { required: 'Tələb olunur' })}
-                error={!!errors.username}
-                disabled={loading}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonOutlineIcon sx={{ color: isDark ? 'rgba(226,232,240,0.8)' : 'rgba(15,23,42,0.8)' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiInput-root': {
-                    color: isDark ? '#e5e7eb' : '#0f172a',
-                    paddingY: 0.5,
-                    '&:before': { borderColor: isDark ? 'rgba(148,163,184,0.6)' : 'rgba(148,163,184,0.8)' },
-                    '&:hover:not(.Mui-disabled):before': { borderColor: primary },
-                    '&:after': { borderColor: primary },
-                  },
-                  '& .MuiInputLabel-root': { 
-                    color: isDark ? 'rgba(148,163,184,0.85)' : 'rgba(100,116,139,0.9)',
-                    ml: 4
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': { color: primary, ml: 0 },
-                  '& .MuiInputLabel-shrink': { ml: 0 }
-                }}
-              />
-            </Box>
-
-            <Box sx={{ mb: 4 }}>
-              <TextField
-                fullWidth
-                type="password"
-                variant="standard"
-                label="Şifrə"
-                {...register('password', { required: 'Tələb olunur' })}
-                error={!!errors.password}
-                disabled={loading}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon sx={{ color: isDark ? 'rgba(226,232,240,0.8)' : 'rgba(15,23,42,0.8)' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiInput-root': {
-                    color: isDark ? '#e5e7eb' : '#0f172a',
-                    paddingY: 0.5,
-                    '&:before': { borderColor: isDark ? 'rgba(148,163,184,0.6)' : 'rgba(148,163,184,0.8)' },
-                    '&:hover:not(.Mui-disabled):before': { borderColor: primary },
-                    '&:after': { borderColor: primary },
-                  },
-                  '& .MuiInputLabel-root': { 
-                    color: isDark ? 'rgba(148,163,184,0.85)' : 'rgba(100,116,139,0.9)',
-                    ml: 4
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': { color: primary, ml: 0 },
-                  '& .MuiInputLabel-shrink': { ml: 0 }
-                }}
-              />
-            </Box>
-
-            <Box sx={{ mb: 4 }}>
+            <TextField
+              fullWidth
+              placeholder="İstifadəçi adı"
+              {...register('username', { required: 'İstifadəçi adı tələb olunur' })}
+              error={!!errors.username}
+              helperText={errors.username?.message}
+              disabled={loading}
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc',
+                  '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' },
+                  '&:hover fieldset': { borderColor: primary },
+                  '&.Mui-focused fieldset': { borderWidth: 2, borderColor: primary },
+                },
+              }}
+            />
+            <TextField
+              fullWidth
+              type="password"
+              placeholder="Şifrə"
+              {...register('password', { required: 'Şifrə tələb olunur' })}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              disabled={loading}
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc',
+                  '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)' },
+                  '&:hover fieldset': { borderColor: primary },
+                  '&.Mui-focused fieldset': { borderWidth: 2, borderColor: primary },
+                },
+              }}
+            />
+            <Box sx={{ mb: 3 }}>
               <FormControlLabel
                 control={
-                  <Checkbox 
+                  <Checkbox
                     checked={rememberMe}
                     {...register('rememberMe')}
-                    size="small" 
-                    sx={{
-                      color: isDark ? 'rgba(148,163,184,0.7)' : 'rgba(148,163,184,0.9)',
-                      '&.Mui-checked': { color: primary }
-                    }} 
+                    size="small"
+                    sx={{ color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)', '&.Mui-checked': { color: primary } }}
                   />
                 }
                 label={
-                  <Typography sx={{ color: isDark ? 'rgba(226,232,240,0.9)' : 'rgba(71,85,105,0.9)', fontSize: '0.85rem' }}>
+                  <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)', fontSize: '0.875rem' }}>
                     Məni xatırla
                   </Typography>
                 }
               />
             </Box>
-
             <Button
               fullWidth
               type="submit"
               variant="contained"
               disabled={loading}
               sx={{
-                py: 2,
+                py: 1.75,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '1rem',
                 bgcolor: primary,
-                color: '#fff',
-                borderRadius: '999px',
-                textTransform: 'uppercase',
-                fontWeight: 600,
-                letterSpacing: '0.15rem',
-                '&:hover': {
-                  bgcolor: muiTheme.palette.primary.dark,
-                  boxShadow: `0 12px 35px ${primary}60`,
-                  transform: 'translateY(-2px)',
-                },
-                transition: 'all 0.3s',
-                boxShadow: `0 10px 30px ${primary}55`,
+                '&:hover': { bgcolor: muiTheme.palette.primary.dark },
               }}
             >
-              {loading ? 'DAXİL OLUNUR...' : 'DAXİL OL'}
+              {loading ? 'Daxil olunur...' : 'Daxil ol'}
             </Button>
           </form>
+
+          <Typography
+            sx={{
+              mt: 4,
+              fontSize: '0.75rem',
+              color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)',
+            }}
+          >
+            © Vətəndaş müraciətlərinin elektron qeydiyyatı
+          </Typography>
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Box,
@@ -14,8 +14,14 @@ import {
     TableRow,
     LinearProgress,
     useTheme,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from '@mui/material';
 import Select from 'react-select';
+import PrintIcon from '@mui/icons-material/Print';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import { Azerbaijan } from 'flatpickr/dist/l10n/az';
@@ -48,6 +54,8 @@ export default function Reports() {
         start_date: '',
         end_date: '',
     });
+    const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+    const [printAfterOpen, setPrintAfterOpen] = useState(false);
     const startDateRef = useRef<any>(null);
     const endDateRef = useRef<any>(null);
 
@@ -91,6 +99,76 @@ export default function Reports() {
             default: return 'Kateqoriya';
         }
     };
+
+    const groupLabel = getGroupLabel(params.group_by || 'department');
+    const periodStr = `${params.start_date ? formatDateToDDMMYYYY(params.start_date) : 'ƏVVƏLDƏN'} — ${params.end_date ? formatDateToDDMMYYYY(params.end_date) : 'BUGÜNƏDƏK'}`;
+    const total = reportData?.total ?? 0;
+    const printHtml = useMemo(() => {
+        const esc = (s: string) => {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        };
+        const rows = (reportData?.items || []).map((item) => {
+            const pct = total > 0 ? ((item.count / total) * 100).toFixed(1) : '0';
+            return `<tr><td>${esc(item.name)}</td><td>${item.count}</td><td>${pct}%</td></tr>`;
+        }).join('');
+        return `
+            <div class="report-title">MÜRACİƏTLƏRİN STATİSTİK HESABATI</div>
+            <div class="report-meta">Qruplaşdırma: ${esc(groupLabel)} üzrə</div>
+            <div class="report-meta">Hesabat dövrü: ${esc(periodStr)}</div>
+            <table>
+                <thead><tr><th>${esc(groupLabel)}</th><th>Sayı</th><th>Nisbət (%)</th></tr></thead>
+                <tbody>${rows}<tr class="total-row"><td>CƏMİ</td><td>${total}</td><td>100.0%</td></tr></tbody>
+            </table>
+        `;
+    }, [reportData, total, groupLabel, periodStr]);
+
+    const handlePrintPreview = useCallback((andPrint: boolean) => {
+        setPrintAfterOpen(andPrint);
+        setPrintPreviewOpen(true);
+    }, []);
+
+    const handlePrint = useCallback(() => {
+        const win = window.open('', '_blank');
+        if (!win) return;
+        win.document.write(`
+            <!DOCTYPE html><html><head>
+            <meta charset="utf-8"><title>Hesabat - Çap</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; color: #000; }
+                .report-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 8px; }
+                .report-meta { font-size: 14px; margin-bottom: 16px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+                th, td { border: 1px solid #000; padding: 8px 12px; text-align: center; }
+                th { font-weight: bold; background: #f5f5f5; }
+                .total-row { font-weight: bold; background: #eee; }
+            </style></head><body>
+            ${printHtml}
+            </body></html>
+        `);
+        win.document.close();
+        win.focus();
+        setTimeout(() => {
+            win.print();
+            win.close();
+        }, 250);
+    }, [printHtml]);
+
+    const handleClosePrintPreview = useCallback(() => {
+        setPrintPreviewOpen(false);
+        setPrintAfterOpen(false);
+    }, []);
+
+    useEffect(() => {
+        if (printPreviewOpen && printAfterOpen) {
+            const t = setTimeout(() => {
+                handlePrint();
+                setPrintAfterOpen(false);
+            }, 400);
+            return () => clearTimeout(t);
+        }
+    }, [printPreviewOpen, printAfterOpen, handlePrint]);
 
     return (
         <Layout>
@@ -346,38 +424,49 @@ export default function Reports() {
                                 </Typography>
                             </Box>
 
-                            {/* Summary for Print (hidden in web) */}
-                            <Box className="print-only" sx={{ mt: 4, textAlign: 'left', borderTop: '1px solid #eee', pt: 2 }}>
-                                <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                                    ÜMUMİ SAY: {reportData?.total || 0}
-                                </Typography>
-                            </Box>
-
                             <Button
                                 variant="outlined"
                                 fullWidth
+                                startIcon={<VisibilityIcon />}
                                 sx={{ mt: 4, borderWidth: 2, fontWeight: 800, '&:hover': { borderWidth: 2 } }}
-                                onClick={() => window.print()}
+                                onClick={() => handlePrintPreview(false)}
+                            >
+                                ÇAP ÖNCƏSİ BAXIŞ
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                fullWidth
+                                startIcon={<PrintIcon />}
+                                sx={{ mt: 1, borderWidth: 2, fontWeight: 800, '&:hover': { borderWidth: 2 } }}
+                                onClick={() => handlePrintPreview(true)}
                             >
                                 ÇAP ET
                             </Button>
 
-                            <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                 <Button
                                     variant="contained"
                                     color="success"
                                     fullWidth
                                     onClick={() => exportAppealStats('excel', params)}
-                                    sx={{ fontWeight: 700 }}
+                                    sx={{ fontWeight: 700, flex: 1, minWidth: 80 }}
                                 >
                                     EXCEL
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    sx={{ fontWeight: 700, flex: 1, minWidth: 80, bgcolor: '#2b579a', '&:hover': { bgcolor: '#1e3e6d' } }}
+                                    startIcon={<DescriptionIcon />}
+                                    onClick={() => exportAppealStats('word', params)}
+                                >
+                                    WORD
                                 </Button>
                                 <Button
                                     variant="contained"
                                     color="error"
                                     fullWidth
                                     onClick={() => exportAppealStats('pdf', params)}
-                                    sx={{ fontWeight: 700 }}
+                                    sx={{ fontWeight: 700, flex: 1, minWidth: 80 }}
                                 >
                                     PDF
                                 </Button>
@@ -386,6 +475,43 @@ export default function Reports() {
                     </Grid>
                 </Grid>
             )}
+
+            {/* Çap öncəsi baxış — Word-də olduğu kimi */}
+            <Dialog
+                open={printPreviewOpen}
+                onClose={handleClosePrintPreview}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 3 } }}
+            >
+                <DialogTitle sx={{ fontWeight: 800, textAlign: 'center' }}>
+                    Çap öncəsi baxış
+                </DialogTitle>
+                <DialogContent>
+                    <Box
+                        className="report-print-preview"
+                        sx={{
+                            fontFamily: "'Segoe UI', Arial, sans-serif",
+                            color: '#000',
+                            '& .report-title': { fontSize: 18, fontWeight: 700, textAlign: 'center', mb: 1 },
+                            '& .report-meta': { fontSize: 14, mb: 1 },
+                            '& table': { width: '100%', borderCollapse: 'collapse', mt: 2 },
+                            '& th, & td': { border: '1px solid #000', p: 1.5, textAlign: 'center' },
+                            '& th': { fontWeight: 700, bgcolor: '#f5f5f5' },
+                            '& .total-row': { fontWeight: 700, bgcolor: '#eee' },
+                        }}
+                        dangerouslySetInnerHTML={{ __html: printHtml }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={handleClosePrintPreview} sx={{ fontWeight: 700 }}>
+                        Bağla
+                    </Button>
+                    <Button variant="contained" startIcon={<PrintIcon />} onClick={handlePrint} sx={{ fontWeight: 700 }}>
+                        Çap ET
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Forma No. 4 Section */}
             <Paper

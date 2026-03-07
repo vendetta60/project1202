@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "MuracietQeydiyyat"
+    app_name: str = "Vətəndaş müraciətlərinin elektron qeydiyyatı"
     env: str = "dev"
 
     database_url: str = "sqlite:///./app.db"

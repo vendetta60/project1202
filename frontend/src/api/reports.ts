@@ -46,7 +46,7 @@ export const exportForma4 = async (type: 'excel' | 'word' | 'pdf', params: Repor
     link.remove();
 };
 
-export const exportAppealStats = async (type: 'excel' | 'pdf', params: ReportParams) => {
+export const exportAppealStats = async (type: 'excel' | 'word' | 'pdf', params: ReportParams) => {
     // Filter out empty params
     const filteredParams = Object.fromEntries(
         Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
@@ -60,7 +60,7 @@ export const exportAppealStats = async (type: 'excel' | 'pdf', params: ReportPar
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    const extension = type === 'excel' ? 'xlsx' : 'pdf';
+    const extension = type === 'excel' ? 'xlsx' : type === 'word' ? 'docx' : 'pdf';
     link.setAttribute('download', `appeal_stats_${new Date().toISOString().split('T')[0]}.${extension}`);
     document.body.appendChild(link);
     link.click();

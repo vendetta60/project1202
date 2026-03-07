@@ -157,9 +157,26 @@ export default function Dashboard() {
   const globalTotal = statusReport?.total || 0;
 
   // derive global counts from statusReport
-  const completedCount = statusReport?.items.filter(i => { const n = i.name?.toLowerCase() ?? ''; return n.includes('icra') && (n.includes('olun') || n.includes('edildi')); }).reduce((acc, i) => acc + i.count, 0) ?? 0;
-  const inProgressCount = statusReport?.items.filter(i => { const n = i.name?.toLowerCase() ?? ''; return n.includes('icra') && !n.includes('olun') && !n.includes('edildi'); }).reduce((acc, i) => acc + i.count, 0) ?? 0;
-  const pendingCount = statusReport?.items.filter(i => { const n = i.name?.toLowerCase() ?? ''; return n.includes('baxılmamış') || n.includes('gözl'); }).reduce((acc, i) => acc + i.count, 0) ?? 0;
+  const completedCount = statusReport?.items
+    .filter(i => {
+      const n = i.name?.toLowerCase() ?? '';
+      return n.includes('həll');
+    })
+    .reduce((acc, i) => acc + i.count, 0) ?? 0;
+
+  const inProgressCount = statusReport?.items
+    .filter(i => {
+      const n = i.name?.toLowerCase() ?? '';
+      return !n.includes('həll') && (n.includes('icra') || n.includes('baxılma'));
+    })
+    .reduce((acc, i) => acc + i.count, 0) ?? 0;
+
+  const pendingCount = statusReport?.items
+    .filter(i => {
+      const n = i.name?.toLowerCase() ?? '';
+      return n.includes('baxılmamış') || n.includes('gözl');
+    })
+    .reduce((acc, i) => acc + i.count, 0) ?? 0;
 
   const statusPieData = (statusReport?.items || []).filter(i => i.name && i.count > 0);
   const deptBarData = (deptReport?.items || []).filter(i => i.name && i.name !== 'Naməlum').slice(0, 6);
@@ -237,7 +254,7 @@ export default function Dashboard() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Gözləmədə" value={pendingCount}
+              label="Baxılmamış" value={pendingCount}
               icon={<PendingActionsIcon fontSize="inherit" />}
               iconBg="#dbeafe" iconColor="#2563eb"
               staggerClass="animate-stagger-2"
@@ -253,7 +270,7 @@ export default function Dashboard() {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <StatCard
-              label="Tamamlanmış" value={completedCount}
+              label="Həll olunub" value={completedCount}
               icon={<CheckCircleOutlineIcon fontSize="inherit" />}
               iconBg="#d1fae5" iconColor="#059669"
               staggerClass="animate-stagger-4"

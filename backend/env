@@ -1,4 +1,4 @@
-APP_NAME=MuracietQeydiyyat
+APP_NAME=Vətəndaş müraciətlərinin elektron qeydiyyatı
 ENV=dev
 
 # MSSQL Database

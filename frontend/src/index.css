@@ -426,3 +426,32 @@ body[data-theme="dark"] .glass-card:hover {
 .flatpickr-day:hover {
   background: rgba(99, 102, 241, 0.1) !important;
 }
+
+/* ─── Hesabat çapı: yalnız sənəd görünsün ───────────────────── */
+@media print {
+  .no-print,
+  .no-print * {
+    visibility: hidden !important;
+    display: none !important;
+  }
+  .print-only {
+    visibility: visible !important;
+    display: block !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-only,
+  .print-only *,
+  .report-print-preview,
+  .report-print-preview * {
+    visibility: visible !important;
+  }
+  .report-print-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    display: block !important;
+  }
+}

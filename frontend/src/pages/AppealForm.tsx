@@ -659,6 +659,49 @@ export default function AppealForm() {
   };
 
   const onSubmit = async (data: AppealFormData) => {
+    // Basic client-side validations
+    const messages: string[] = [];
+
+    // 1. Vərəq sayı yalnız rəqəm olsun
+    if (data.paper_count && data.paper_count.toString().trim() !== '') {
+      const pc = data.paper_count.toString().trim();
+      if (!/^\d+$/.test(pc)) {
+        messages.push('Vərəq sayı yalnız rəqəmlə yazılmalıdır');
+      }
+    }
+
+    // 2. E-mail formatını yoxla (əgər doldurulubsa)
+    if (data.email && data.email.trim() !== '') {
+      const email = data.email.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        messages.push('Elektron poçt ünvanı düzgün formatda deyil');
+      }
+    }
+
+    // 3. Telefon nömrələri tam olsun: +994xx xxx xx xx (hər sətrdə bir nömrə)
+    if (data.phone && data.phone.trim() !== '') {
+      const rawPhones = data.phone.split(',').map(p => p.trim()).filter(Boolean);
+      const hasInvalidPhone = rawPhones.some(p => {
+        let digits = p.replace(/\D/g, '');
+        if (digits.startsWith('994')) {
+          digits = digits.slice(3);
+        }
+        // Tam nömrə üçün 9 rəqəm (xx xxx xx xx) tələb edirik
+        return digits.length !== 9;
+      });
+      if (hasInvalidPhone) {
+        messages.push('Telefon nömrəsi tam formatda olmalıdır: +994xx xxx xx xx');
+      }
+    }
+
+    if (messages.length > 0) {
+      setError(messages.join(' | '));
+      return;
+    } else {
+      setError('');
+    }
+
     // On create mode: check for duplicate BEFORE sanitizing (to keep user_section_id intact)
     if (!isEditMode) {
       const isDuplicate = await checkDuplicateBeforeSubmit(data);

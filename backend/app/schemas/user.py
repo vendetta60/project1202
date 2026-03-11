@@ -34,13 +34,8 @@ class UserOut(ORMBase):
     is_super_admin: bool = False
     is_active: bool = True
     is_blocked: bool = False
+    must_change_password: bool = False
     rank: int = 1
-    # Tab permissions
-    tab1: bool | None = None
-    tab2: bool | None = None
-    tab3: bool | None = None
-    tab4: bool | None = None
-    tab5: bool | None = None
     # RBAC permissions (list of permission codes)
     permissions: list[str] = []
 
@@ -56,6 +51,7 @@ class TokenOut(ORMBase):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    must_change_password: bool = False
 
 
 class UserPasswordReset(BaseModel):

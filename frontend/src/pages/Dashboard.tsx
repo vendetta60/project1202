@@ -164,17 +164,21 @@ export default function Dashboard() {
     })
     .reduce((acc, i) => acc + i.count, 0) ?? 0;
 
-  const inProgressCount = statusReport?.items
-    .filter(i => {
-      const n = i.name?.toLowerCase() ?? '';
-      return !n.includes('həll') && (n.includes('icra') || n.includes('baxılma'));
-    })
-    .reduce((acc, i) => acc + i.count, 0) ?? 0;
-
   const pendingCount = statusReport?.items
     .filter(i => {
       const n = i.name?.toLowerCase() ?? '';
+      // Baxılmamış / gözləmədə olanlar
       return n.includes('baxılmamış') || n.includes('gözl');
+    })
+    .reduce((acc, i) => acc + i.count, 0) ?? 0;
+
+  const inProgressCount = statusReport?.items
+    .filter(i => {
+      const n = i.name?.toLowerCase() ?? '';
+      const isCompleted = n.includes('həll');
+      const isPending = n.includes('baxılmamış') || n.includes('gözl');
+      // İcrada olanlar: nə həll olunub, nə də baxılmamış/gözləmədə
+      return !isCompleted && !isPending;
     })
     .reduce((acc, i) => acc + i.count, 0) ?? 0;
 

@@ -27,7 +27,7 @@ import {
 } from '@mui/material';
 import logo from '../assets/logo.png';
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { removeToken } from '../utils/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { changePassword } from '../api/auth';
@@ -330,6 +330,11 @@ export default function Layout({ children }: LayoutProps) {
 
     return () => window.clearInterval(id);
   }, [maintenanceSecondsLeft, user, isAdmin, isSuperAdmin, queryClient]);
+
+  // İlk giriş: parol dəyişməyənə qədər yalnız /change-password səhifəsinə icazə
+  if (user?.must_change_password) {
+    return <Navigate to="/change-password" replace />;
+  }
 
   const formatCountdown = (totalSeconds: number) => {
     const s = Math.max(0, totalSeconds);
@@ -832,10 +837,10 @@ export default function Layout({ children }: LayoutProps) {
             }}
           >
             <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: 'text.secondary' }}>
-              Bizimlə əlaqə: Telefon (012) 123 45 67
+              Bizimlə əlaqə: Telefon 10-195
             </Typography>
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-              Proqramı yazan: Program təminatı şöbəsi
+             ©Program təminatı şöbəsi
             </Typography>
           </Box>
         </Box>

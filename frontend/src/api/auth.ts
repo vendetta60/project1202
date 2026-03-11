@@ -9,6 +9,7 @@ export interface LoginResponse {
   access_token: string;
   refresh_token: string;
   token_type: string;
+  must_change_password?: boolean;
 }
 
 export interface User {
@@ -23,6 +24,7 @@ export interface User {
   is_super_admin: boolean;
   is_active: boolean;
   is_blocked: boolean;
+  must_change_password?: boolean;
   rank: number;
 
   // Tab permissions

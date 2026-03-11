@@ -66,7 +66,11 @@ export default function Login() {
       }
       setToken(response.access_token, response.refresh_token);
       queryClient.clear();
-      navigate('/');
+      if (response.must_change_password) {
+        navigate('/change-password');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

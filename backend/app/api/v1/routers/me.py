@@ -43,5 +43,7 @@ def change_password(
     if not user:
         raise HTTPException(status_code=404, detail="İstifadəçi tapılmadı")
     user.password = new_hashed
+    if hasattr(user, "must_change_password"):
+        user.must_change_password = False
     repo.save(user)
     return {"message": "Şifrə uğurla dəyişdirildi"}

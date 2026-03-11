@@ -39,8 +39,8 @@ async def login(
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="username and password required")
 
-    access, refresh = auth_service.login(username, password)
-    return TokenOut(access_token=access, refresh_token=refresh)
+    access, refresh, must_change = auth_service.login(username, password)
+    return TokenOut(access_token=access, refresh_token=refresh, must_change_password=must_change)
 
 
 @router.post("/refresh", response_model=TokenOut)

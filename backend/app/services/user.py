@@ -66,7 +66,8 @@ class UserService:
             password=hashed_password,
             section_id=payload.section_id,
             is_admin=payload.is_admin,
-            is_super_admin=payload.is_super_admin
+            is_super_admin=payload.is_super_admin,
+            must_change_password=True,
         )
         user = self.repo.create(obj)
 
@@ -154,7 +155,9 @@ class UserService:
             
         hashed_password = hashlib.sha256(new_password.encode("utf-8")).hexdigest()
         user.password = hashed_password
-        
+        if hasattr(user, "must_change_password"):
+            user.must_change_password = True  # sıfırlamadan sonra ilk girişdə yeni parol təyin etməli
+
         updated_user = self.repo.save(user)
         
         if self.audit:

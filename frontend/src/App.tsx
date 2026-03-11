@@ -14,6 +14,7 @@ import Reports from './pages/Reports';
 import Logs from './pages/Logs';
 import SystemAdmin from './pages/admin/SystemAdmin';
 import Maintenance from './pages/Maintenance';
+import FirstTimeChangePassword from './pages/FirstTimeChangePassword';
 import FeedbackPage from './pages/Feedback';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
@@ -161,6 +162,14 @@ function AppContent() {
             element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
           />
           <Route path="/maintenance" element={<Maintenance />} />
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute>
+                <FirstTimeChangePassword />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={

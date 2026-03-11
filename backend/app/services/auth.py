@@ -14,7 +14,7 @@ class AuthService:
         self.users = users
         self.audit = audit
 
-    def login(self, username: str, password: str) -> tuple[str, str]:
+    def login(self, username: str, password: str) -> tuple[str, str, bool]:
         user = self.users.get_by_username(username)
         if not user:
             raise HTTPException(status_code=400, detail="İstifadəçi adı və ya şifrə yanlışdır")
@@ -43,7 +43,8 @@ class AuthService:
 
         access = create_access_token(subject=user.username)
         refresh = create_refresh_token(subject=user.username)
-        return access, refresh
+        must_change = getattr(user, "must_change_password", False)
+        return access, refresh, must_change
 
     def refresh(self, refresh_token: str) -> tuple[str, str]:
         """Validate refresh token and issue a new access/refresh pair."""

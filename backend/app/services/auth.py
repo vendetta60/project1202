@@ -15,7 +15,11 @@ class AuthService:
         self.audit = audit
 
     def login(self, username: str, password: str) -> tuple[str, str, bool]:
-        user = self.users.get_by_username(username)
+        try:
+            user = self.users.get_by_username(username)
+        except Exception:
+            user = None
+
         if not user:
             raise HTTPException(status_code=400, detail="İstifadəçi adı və ya şifrə yanlışdır")
 

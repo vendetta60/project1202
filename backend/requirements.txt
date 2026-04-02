@@ -1,12 +1,18 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-pydantic
-pydantic-settings
-python-jose[cryptography]
-passlib[bcrypt]
-pyodbc
-pandas
-openpyxl
-python-docx
-reportlab
+fastapi>=0.110,<1
+uvicorn[standard]>=0.29,<1
+
+sqlalchemy>=2.0,<3
+pydantic>=2.5,<3
+pydantic-settings>=2,<3
+
+python-jose[cryptography]>=3.3,<4
+passlib[bcrypt]>=1.7,<2
+
+# MSSQL driver. NOTE: Linux/Ubuntu needs system packages too (unixodbc + msodbcsql).
+pyodbc>=5,<6
+
+# Reporting/export
+pandas>=2.0,<3
+openpyxl>=3.1,<4
+python-docx>=1.1,<2
+reportlab>=4,<5

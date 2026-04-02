@@ -9,7 +9,7 @@ interface PermissionRouteProps {
     children: React.ReactNode;
     /** The permission code required to access this route */
     permission: string;
-    /** Optional: redirect destination if permission is missing (default: /dashboard) */
+    /** Optional: redirect destination if permission is missing (default: /403) */
     redirectTo?: string;
 }
 
@@ -20,7 +20,7 @@ interface PermissionRouteProps {
 export default function PermissionRoute({
     children,
     permission,
-    redirectTo = '/dashboard',
+    redirectTo = '/403',
 }: PermissionRouteProps) {
     if (!isAuthenticated()) {
         return <Navigate to="/login" replace />;

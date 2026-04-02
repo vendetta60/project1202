@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
     Box,
@@ -56,8 +56,6 @@ export default function Reports() {
     });
     const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
     const [printAfterOpen, setPrintAfterOpen] = useState(false);
-    const startDateRef = useRef<any>(null);
-    const endDateRef = useRef<any>(null);
 
     const { data: reportData, isLoading } = useQuery({
         queryKey: ['report', params],
@@ -252,8 +250,7 @@ export default function Reports() {
                     <Grid size={{ xs: 12, md: 2.5 }}>
                         <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Başlanğıc Tarix</Typography>
                         <Flatpickr
-                            ref={startDateRef}
-                            value={params.start_date ? new Date(params.start_date) : undefined}
+                            value={params.start_date ? [new Date(params.start_date)] : []}
                             onChange={(dates) => setParams({ ...params, start_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',
@@ -278,8 +275,7 @@ export default function Reports() {
                     <Grid size={{ xs: 12, md: 2.5 }}>
                         <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Son Tarix</Typography>
                         <Flatpickr
-                            ref={endDateRef}
-                            value={params.end_date ? new Date(params.end_date) : undefined}
+                            value={params.end_date ? [new Date(params.end_date)] : []}
                             onChange={(dates) => setParams({ ...params, end_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',
@@ -534,7 +530,7 @@ export default function Reports() {
                     <Grid size={{ xs: 12, md: 3 }}>
                         <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Başlanğıc Tarix</Typography>
                         <Flatpickr
-                            value={params.start_date ? new Date(params.start_date) : undefined}
+                            value={params.start_date ? [new Date(params.start_date)] : []}
                             onChange={(dates) => setParams({ ...params, start_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',
@@ -548,7 +544,7 @@ export default function Reports() {
                     <Grid size={{ xs: 12, md: 3 }}>
                         <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: 'text.secondary', mb: 0.5 }}>Son Tarix</Typography>
                         <Flatpickr
-                            value={params.end_date ? new Date(params.end_date) : undefined}
+                            value={params.end_date ? [new Date(params.end_date)] : []}
                             onChange={(dates) => setParams({ ...params, end_date: dates[0]?.toISOString().split('T')[0] || '' })}
                             options={{
                                 mode: 'single',

@@ -25,9 +25,9 @@ export default function AdminRoute({ children }: AdminRouteProps) {
         return <Layout><LoadingSpinner /></Layout>;
     }
 
-    // Non-admin users → redirect to their own dashboard
+    // Non-admin users → forbidden page
     if (!user?.is_admin) {
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/403" replace />;
     }
 
     return <>{children}</>;

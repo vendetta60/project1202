@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     bootstrap_admin_password: str | None = None
     bootstrap_admin_full_name: str | None = None
 
+    # Startup bootstrap: env superadmini Users-də yaradır/yeniləyir (şifrə + admin bayraqları).
+    # Parol: BOOTSTRAP_SUPERADMIN_PASSWORD və ya (fallback) BOOTSTRAP_ADMIN_PASSWORD.
+    bootstrap_superadmin_enabled: bool = True
+    bootstrap_superadmin_username: str = "superadmin"
+    bootstrap_superadmin_password: str | None = None
+    bootstrap_superadmin_surname: str = "Super"
+    bootstrap_superadmin_name: str = "Admin"
+
     model_config = SettingsConfigDict(
         env_file=("env", ".env", "backend/env", "backend/.env"),
         env_prefix="",

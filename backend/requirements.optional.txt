@@ -1,0 +1,47 @@
+# Optional / "nice-to-have" packages for production servers.
+# Install only if you need them:
+#   python -m pip install -r requirements.txt -r requirements.optional.txt
+#
+# IMPORTANT: Versions are intentionally NOT pinned here (so you can decide).
+
+# ---- App server / deployment helpers ----
+gunicorn
+waitress
+uvloop
+
+# ---- Env & config helpers ----
+python-dotenv
+
+# ---- Caching / background jobs ----
+redis
+celery
+flower
+
+# ---- DB migrations / utilities ----
+alembic
+sqlalchemy-utils
+
+# ---- Postgres support (if you ever switch from MSSQL) ----
+psycopg2-binary
+
+# ---- Observability ----
+loguru
+sentry-sdk
+prometheus-fastapi-instrumentator
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-requests
+
+# ---- Security / rate limiting ----
+slowapi
+
+# ---- Testing / tooling ----
+pytest
+pytest-asyncio
+httpx
+ruff
+mypy
+types-python-dateutil
+

@@ -2,7 +2,7 @@
 
 Bu backend-də əsas base URL:
 
-- **Base**: `http://localhost:8000`
+- **Base**: `http://localhost:8002`
 - **API prefix**: `/api/v1`
 
 ### Auth (token)

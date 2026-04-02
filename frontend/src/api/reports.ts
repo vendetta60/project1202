@@ -21,7 +21,12 @@ export interface ReportParams {
 }
 
 export const getAppealReport = async (params: ReportParams): Promise<ReportResponse> => {
-    const response = await apiClient.get('/reports/appeals', { params });
+    // Avoid sending empty strings; backend date validators often reject "" with 422.
+    const filteredParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+    );
+
+    const response = await apiClient.get('/reports/appeals', { params: filteredParams });
     return response.data;
 };
 

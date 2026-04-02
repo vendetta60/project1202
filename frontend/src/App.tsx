@@ -16,6 +16,9 @@ import SystemAdmin from './pages/admin/SystemAdmin';
 import Maintenance from './pages/Maintenance';
 import FirstTimeChangePassword from './pages/FirstTimeChangePassword';
 import FeedbackPage from './pages/Feedback';
+import NotFound from './pages/NotFound';
+import Forbidden from './pages/Forbidden';
+import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import PermissionRoute from './components/PermissionRoute';
@@ -162,6 +165,9 @@ function AppContent() {
             element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />}
           />
           <Route path="/maintenance" element={<Maintenance />} />
+          <Route path="/401" element={<Unauthorized />} />
+          <Route path="/403" element={<Forbidden />} />
+          <Route path="/404" element={<NotFound />} />
           <Route
             path="/change-password"
             element={
@@ -267,7 +273,7 @@ function AppContent() {
             }
           />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </MuiThemeProvider>

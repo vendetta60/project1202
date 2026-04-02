@@ -14,12 +14,12 @@ pip install -r requirements.txt
 # env konfigurasiya (opsional)
 copy env.example env
 
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
 ```
 
 API docs:
-- Swagger: `http://localhost:8000/docs`
-- Health: `http://localhost:8000/health`
+- Swagger: `http://localhost:8002/docs`
+- Health: `http://localhost:8002/health`
 
 ## Default DB
 

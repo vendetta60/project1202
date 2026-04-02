@@ -2,7 +2,10 @@ import axios from 'axios';
 import { getToken, getRefreshToken, setToken, removeToken } from '../utils/auth';
 import { refreshToken as refreshTokenApi } from './auth';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://172.22.111.156:8000/api/v1';
+// Dev-də həmişə eyni origin (Vite proxy backend-ə yönləndirir, indi 8002 portunda)
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? '/api/v1' : 'http://localhost:8002/api/v1');
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

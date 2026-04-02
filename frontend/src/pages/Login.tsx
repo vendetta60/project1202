@@ -15,7 +15,10 @@ import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { login, LoginRequest } from '../api/auth';
 import { setToken } from '../utils/auth';
 import { getErrorMessage } from '../utils/errors';
+import { encryptPassword, decryptPassword } from '../utils/rememberLoginEncryption';
 import logo from '../assets/logo.png';
+
+const REMEMBER_KEY = 'mq_remember_login_v1';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -37,16 +40,33 @@ export default function Login() {
   const rememberMe = watch('rememberMe', false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('mq_remember_login_v1');
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as { username?: string; password?: string } | null;
-      if (parsed?.username) setValue('username', parsed.username);
-      if (parsed?.password) setValue('password', parsed.password);
-      setValue('rememberMe', true);
-    } catch {
-      // ignore
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = localStorage.getItem(REMEMBER_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as {
+          username?: string;
+          password?: string;
+          passwordEnc?: string;
+        } | null;
+        if (!parsed?.username) return;
+        setValue('username', parsed.username);
+        setValue('rememberMe', true);
+        // Köhnə format: açıq parol — artıq bərpa etmirik, silirik
+        if ('password' in parsed && typeof parsed.password === 'string') {
+          localStorage.setItem(REMEMBER_KEY, JSON.stringify({ username: parsed.username }));
+          return;
+        }
+        if (parsed.passwordEnc && !cancelled) {
+          const pwd = await decryptPassword(parsed.passwordEnc);
+          if (pwd && !cancelled) setValue('password', pwd);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { cancelled = true; };
   }, [setValue]);
 
   const onSubmit = async (data: LoginRequest & { rememberMe: boolean }) => {
@@ -57,9 +77,13 @@ export default function Login() {
       const response = await login(loginData);
       try {
         if (rememberMe) {
-          localStorage.setItem('mq_remember_login_v1', JSON.stringify({ username: loginData.username, password: loginData.password }));
+          const passwordEnc = await encryptPassword(loginData.password);
+          localStorage.setItem(
+            REMEMBER_KEY,
+            JSON.stringify({ username: loginData.username, passwordEnc })
+          );
         } else {
-          localStorage.removeItem('mq_remember_login_v1');
+          localStorage.removeItem(REMEMBER_KEY);
         }
       } catch {
         // ignore

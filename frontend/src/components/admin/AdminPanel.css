@@ -356,30 +356,53 @@ body[data-theme="dark"] .user-item.active {
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Modal Styling */
+/* Modal Styling — tam ekran overlay, forma yuxarıda/mərkəzdə */
 .modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 20px 32px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: rgba(26, 31, 22, 0.8);
   backdrop-filter: blur(4px);
 }
 
 .modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  max-height: min(92vh, 900px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
   background: var(--military-bone);
   border-radius: 12px;
   border: 2px solid var(--military-olive);
   overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
   background: var(--military-olive);
   color: white;
   padding: 20px 24px;
+  flex-shrink: 0;
 }
 
 .modal-body {
   padding: 32px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .modal-footer {
+  flex-shrink: 0;
   padding: 16px 24px;
   background: var(--app-paper);
   border-top: 1px solid var(--glass-border);

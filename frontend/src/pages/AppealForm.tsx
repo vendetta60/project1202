@@ -163,6 +163,8 @@ export default function AppealForm() {
   const queryClient = useQueryClient();
   const theme = useTheme();
   const isEditMode = !!id;
+  const appealId = isEditMode ? Number(id) : null;
+  const isValidAppealId = !isEditMode || (Number.isFinite(appealId) && (appealId as number) > 0);
   const [error, setError] = useState<string>('');
   const selectStyles = getSelectStyles(theme.palette.primary.main);
   const { canEditAppeal } = usePermissions();
@@ -413,24 +415,30 @@ export default function AppealForm() {
 
   const { data: appealExecutors } = useQuery({
     queryKey: ['appeal-executors', id],
-    queryFn: () => id ? getAppealExecutors(Number(id)) : Promise.resolve([]),
-    enabled: isEditMode && !!id,
+    queryFn: () => (appealId ? getAppealExecutors(appealId) : Promise.resolve([])),
+    enabled: isEditMode && !!id && isValidAppealId,
   });
 
   const { data: appeal, isLoading: appealLoading, isError: appealError, error: appealFetchError } = useQuery({
     queryKey: ['appeal', id],
-    queryFn: () => getAppeal(Number(id)),
-    enabled: isEditMode,
+    queryFn: () => getAppeal(appealId as number),
+    enabled: isEditMode && isValidAppealId,
     retry: false, // Silinmiş müraciət üçün yenidən cəhd etmə
   });
+
+  // URL-də səhv ID (hərf qarışıq və s.) → 404
+  useEffect(() => {
+    if (isEditMode && !isValidAppealId) {
+      navigate('/404', { replace: true });
+    }
+  }, [isEditMode, isValidAppealId, navigate]);
 
   // React Query v5-də onError yoxdur – useEffect ilə izləyirik
   useEffect(() => {
     if (appealError) {
       const status = (appealFetchError as any)?.response?.status;
-      if (status === 404 || status === 403) {
-        navigate('/dashboard');
-      }
+      if (status === 404) navigate('/404', { replace: true });
+      if (status === 403) navigate('/403', { replace: true });
     }
   }, [appealError, appealFetchError, navigate]);
 

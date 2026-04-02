@@ -571,7 +571,7 @@ export default function Parameters() {
                     Parametrlər
                 </Typography>
                 <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, opacity: 0.8 }}>
-                    Sistemdəki soraqçaların siyahısını idarə edin
+                    Sistemdəki siyahıların idarə edin
                 </Typography>
             </Box>
 

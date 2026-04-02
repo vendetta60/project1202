@@ -2,7 +2,7 @@ APP_NAME=Vətəndaş müraciətlərinin elektron qeydiyyatı
 ENV=dev
 
 # MSSQL Database
-DATABASE_URL=mssql+pyodbc://sa:199696Mq@555-PTSAKTB-Z\SQLEXPRESS/APPEALS?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
+DATABASE_URL=mssql+pyodbc://sa:123@555-PTSAKTB-Z\SQLEXPRESS/APPEALS?driver=ODBC+Driver+17+for+SQL+Server&TrustServerCertificate=yes
 
 # Auth (change in prod)
 JWT_SECRET=change-me
@@ -15,7 +15,11 @@ REFRESH_TOKEN_EXPIRE_MINUTES=10080
 CORS_ALLOW_ORIGINS=*
 
 # Optional: create initial admin if DB is empty (first run convenience)
-BOOTSTRAP_ADMIN_USERNAME=admin
+BOOTSTRAP_ADMIN_USERNAME=admin45
 BOOTSTRAP_ADMIN_PASSWORD=admin123
 BOOTSTRAP_ADMIN_FULL_NAME=System Admin
 
+# İlk run: DB-də superadmin yoxdursa yaradılır (parol üçün aşağıdakı və ya BOOTSTRAP_ADMIN_PASSWORD)
+BOOTSTRAP_SUPERADMIN_ENABLED=true
+BOOTSTRAP_SUPERADMIN_USERNAME=superadmin45
+BOOTSTRAP_SUPERADMIN_PASSWORD=admin123

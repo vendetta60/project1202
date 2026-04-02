@@ -39,7 +39,11 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     except JWTError:
         raise credentials_exception
 
-    user = db.query(User).filter(User.username == username).first()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+    except Exception:
+        user = None
+
     if not user:
         raise credentials_exception
 

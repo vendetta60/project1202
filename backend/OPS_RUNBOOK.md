@@ -37,12 +37,12 @@ Qeyd: DB-də ən az 1 user varsa, bootstrap işləmir.
 ### 4) Serveri işə salmaq
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
 ```
 
 Yoxlama:
-- `GET http://localhost:8000/health`
-- Swagger: `http://localhost:8000/docs`
+- `GET http://localhost:8002/health`
+- Swagger: `http://localhost:8002/docs`
 
 ### 5) İlkin istifadə ardıcıllığı (tövsiyə)
 

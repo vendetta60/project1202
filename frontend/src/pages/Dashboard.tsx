@@ -120,6 +120,84 @@ const ChartTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+function truncateLabel(v: unknown, max = 14) {
+  const s = String(v ?? '');
+  if (s.length <= max) return s;
+  return s.slice(0, Math.max(1, max - 1)) + '…';
+}
+
+function hashColorFromPalette(name: string, palette: string[]) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return palette[h % palette.length];
+}
+
+function deptColor(name: unknown) {
+  const n = String(name ?? '').toLowerCase().trim();
+  if (!n) return '#94a3b8';
+  // Requested/expected mappings
+  if (n.includes('məlum deyil') || n.includes('naməlum')) return '#4f46e5'; // blue/indigo
+  if (n.includes('elektron')) return '#22c55e'; // green
+  // Stable fallback
+  return hashColorFromPalette(n, CHART_PALETTE);
+}
+
+function PillsLegend({ items }: { items: Array<{ name: string; count: number; color?: string }> }) {
+  if (!items?.length) return null;
+  return (
+    <Box
+      sx={{
+        mt: 1.5,
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {items.map((it, i) => {
+        const c = it.color ?? deptColor(it.name);
+        return (
+          <Box
+            key={`${it.name}-${i}`}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.9,
+              px: 1.25,
+              py: 0.7,
+              borderRadius: '999px',
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+              boxShadow: '0 6px 18px rgba(15,23,42,0.06)',
+              maxWidth: 280,
+            }}
+            title={it.name}
+          >
+            <Box
+              sx={{
+                width: 11,
+                height: 11,
+                borderRadius: '999px',
+                bgcolor: c,
+                boxShadow: `0 0 0 4px ${c}22`,
+                flexShrink: 0,
+              }}
+            />
+            <Typography noWrap sx={{ fontSize: '0.74rem', fontWeight: 900, color: 'text.primary', minWidth: 0 }}>
+              {it.name}
+            </Typography>
+            <Typography sx={{ fontSize: '0.74rem', fontWeight: 900, color: 'text.secondary', flexShrink: 0 }}>
+              ({it.count})
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+}
+
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -183,7 +261,10 @@ export default function Dashboard() {
     .reduce((acc, i) => acc + i.count, 0) ?? 0;
 
   const statusPieData = (statusReport?.items || []).filter(i => i.name && i.count > 0);
-  const deptBarData = (deptReport?.items || []).filter(i => i.name && i.name !== 'Naməlum').slice(0, 6);
+  const deptBarData = (deptReport?.items || [])
+    .filter(i => i.name && i.name !== 'Naməlum')
+    .slice(0, 6)
+    .map((i: any) => ({ ...i, __color: deptColor(i.name) }));
   const regionBarData = (regionReport?.items || []).filter(i => i.name && i.name !== 'Naməlum').slice(0, 5);
 
   const textPrimary = muiTheme.palette.text.primary;
@@ -326,24 +407,37 @@ export default function Dashboard() {
                 fontWeight: 800, fontSize: '0.78rem', color: textSecondary,
                 mb: 3, textTransform: 'uppercase', letterSpacing: '0.1em',
               }}>
-                İdarələr üzrə statistika (top 6)
+                code 
               </Typography>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={deptBarData} margin={{ top: 10, right: 10, left: -20, bottom: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGrid} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: textSecondary, fontWeight: 600 }} interval={0} angle={-35} textAnchor="end" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    angle={-45}
+                    height={60}
+                    tickMargin={10}
+                    textAnchor="end"
+                    tick={{ fontSize: 10, fill: textSecondary, fontWeight: 700 }}
+                    tickFormatter={(v) => truncateLabel(v, 14)}
+                  />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: textSecondary }} />
                   <RTooltip
                     content={<ChartTooltip />}
+                    labelFormatter={(label) => String(label ?? '')}
                     cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
                   />
                   <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={28}>
                     {deptBarData.map((_, i) => (
-                      <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} />
+                      <Cell key={i} fill={(deptBarData as any)?.[i]?.__color ?? CHART_PALETTE[i % CHART_PALETTE.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              <PillsLegend items={deptBarData.map((d: any) => ({ name: d.name, count: d.count, color: d.__color }))} />
             </Paper>
           </Grid>
 
